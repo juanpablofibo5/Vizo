@@ -122,6 +122,8 @@ Las decisiones heredadas del paquete de referencia (`00_PLAN_MAESTRO.md`, `01_AR
    - **Por qué no bloquea el build:** la base es la columna `umbrales.base`. Si la confirmación dice "con impuestos", el cambio es cerrar la vigencia e insertar la fila nueva — cero código. Los casos V-01 y V-02 de `PRUEBAS.md` se recalculan cambiando el fixture del catálogo, no el motor. **Esta contradicción es, de hecho, la mejor demostración de por qué la Capa 0 existe.**
    - **Lo que sí hay que hacer desde el día 1** (y por eso está aquí y no solo en la lista de dudas): capturar **ISAI y accesorios como columnas propias** de la operación. Si no se capturan y después se confirma que cuentan, las operaciones viejas no tienen el dato y no hay forma de reevaluarlas. Ver ARQUITECTURA.md §3.3.
 
+6. **¿El portal SPPLD valida estrictamente contra el XSD?** El ejemplo oficial de XML publicado por el SAT para Fr. V Bis **no valida contra su propio XSD** (trae `caractersiticas_desarrollo` donde el esquema declara `caracteristicas_desarrollo`; ver `regulatorio/README.md`). Si el portal es estricto, el ejemplo publicado induce a error a quien lo copie. **Postura del MVP, que no depende de la respuesta:** VIZO genera y valida según el **XSD**, nunca según el ejemplo. Validar más duro que la autoridad no produce avisos rechazados; lo contrario sí.
+
 5. **Registro real de los asesores inmobiliarios:** qué porcentaje está dado de alta en el SPPLD por cuenta propia (Fr. V/XI) vs. operando bajo el RFC de la inmobiliaria. Define si la tercera rama del flujo multi-parte existe de verdad (ADR-15).
 
 Las preguntas 1–3 ya están redactadas en detalle en `02_FASE_0_PROVEEDORES.md §C`; aquí se listan porque el MVP toma postura provisional en todas y debe decirse en la demo.

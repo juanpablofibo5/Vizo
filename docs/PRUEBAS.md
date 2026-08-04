@@ -127,7 +127,8 @@ No son del motor, pero son parte del criterio de aceptación:
 
 | # | Caso | Esperado |
 |---|---|---|
-| P-01 | Generar el aviso del periodo may 2026 (contiene A-01) | El XML **valida contra el XSD oficial** de V Bis descargado del SPPLD. Si no valida, el aviso no avanza de estado. Monto reportado = total con contribuciones |
+| P-01 | Generar el aviso del periodo may 2026 (contiene A-01) | El XML **valida contra `regulatorio/xsd/din.xsd`** (descargado del SPPLD el 4 ago 2026). Si no valida, el aviso no avanza de estado. Monto reportado = total con contribuciones |
+| P-00 | Fixture de referencia: `regulatorio/ejemplos/ejemplo_din.CORREGIDO.xml` valida contra el XSD | Pasa. **Ojo:** el ejemplo oficial sin corregir **falla** — el SAT publicó un typo (`caractersiticas`). Se usa el corregido como fixture; el original se conserva como evidencia. Ver `regulatorio/README.md` |
 | P-02 | Periodo sin operaciones reportables (jul 2026 en datos demo) | Se genera **informe en cero** por el mismo pipeline, y también valida |
 | P-03 | Aprobación con rol capturista | **Rechazada** por RLS/función de transición; ningún cambio de estado; nada en bitácora salvo el intento fallido si se decide registrarlo |
 | P-04 | Aprobación con rol admin | Estado → 'aprobado' y evento `aviso.aprobado` con actor en bitácora, misma transacción |

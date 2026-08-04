@@ -95,7 +95,7 @@ vercel --prod           # deploy manual; lo normal es que main despliegue solo
 | ~~1~~ | ~~`supabase login`~~ | — | ✅ hecho el 4 ago |
 | ~~2~~ | ~~Docker Desktop corriendo~~ | — | ✅ hecho el 4 ago |
 | ~~3~~ | ~~`supabase link --project-ref qmlmoyvjdejklkfussza`~~ | — | ✅ hecho el 4 ago |
-| 4 | **Descargar los XSD del SPPLD a `regulatorio/xsd/`** | Juan Pablo | semana 0 — **el único pendiente que bloquea diseño** |
+| ~~4~~ | ~~Descargar los XSD del SPPLD~~ | — | ✅ hecho el 4 ago — ver `regulatorio/README.md` |
 | 5 | Crear el proyecto de Vercel con `vercel link` | cualquiera, tras el scaffold | semana 1 |
 | 6 | Alerta del DOF por la publicación de las RCG | Juan Pablo | semana 0 |
 | 7 | Upgrade a Supabase Pro | Juan Pablo (es una compra) | semana 5 |

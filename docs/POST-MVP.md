@@ -1,0 +1,19 @@
+# VIZO — Puertas que el MVP deja abiertas
+
+**Versión 1 · 4 de agosto de 2026.** Esto **NO es un plan ni un compromiso**: es el inventario de lo que quedó fuera del build y de qué dejó preparado el esquema del MVP para recibirlo **sin migración de riesgo**. El plan de 12 meses se hace después, con la velocidad real medida en las 12 semanas como insumo (retro de la semana 12).
+
+| Feature fuera del MVP | Qué dejó preparado el esquema |
+|---|---|
+| **Screening de listas** (OFAC, ONU/UIF, LPB, 69-B, PEPs) | Tabla `consultas_screening` completa (listas consultadas con versión, coincidencias, resolución **humana** con quién/cuándo/razonamiento) vacía y con RLS. `alertas.tipo` ya incluye `'screening'` y `alertas.consulta_screening_id` ya existe. Activarlo = escribir el conector y empezar a insertar. |
+| **MERC — matriz de riesgo de cliente** (interpretado así: nivel + factores por cliente) | Columna `clientes_finales.nivel_riesgo` (nadie la escribe en v1) y tabla `factores_riesgo` vacía. El modelo de factores/pesos espera a las RCG; llenarlo no toca ninguna tabla existente. |
+| **Administración de casos** | Tabla `casos` vacía y `alertas.caso_id` listo. Ligar alertas a casos es un UPDATE de una FK ya existente, no una migración. |
+| **Monitoreo transaccional / aviso de 24 horas** | `avisos.tipo` ya incluye `'24h'` (y `'modificatorio'`). La evaluación ya es *event-driven* (cada operación dispara el motor, no hay job mensual), que es exactamente la forma que exige el 24h. Falta solo el disparador de sospecha y su flujo. |
+| **EBR institucional** (Art. 18 fr. VII) | Depende de las RCG pendientes. Todo lo regulatorio que traigan entra como filas del catálogo (`umbrales`, `campos_expediente`, `parametros_motor`, `formatos_aviso` — todos con vigencias). La puerta es la Capa 0 misma. |
+| **Multi-fracción** (V, VIII, XV…) | Es la puerta más probada: motor agnóstico (`evaluar(operacion, configActividad)`), catálogo por actividad, `actividades_tenant`, acumulados y avisos separados por fracción por diseño. La prueba X-01 (semana 11) demuestra que un alta de fracción son INSERTs, no deploy. |
+| **Link público de captura** ("el expediente se cierra solo") | Documentos y expediente no dependen de quién capturó (`subido_por` es un usuario cualquiera). Falta solo la superficie: tabla de tokens + formulario público + su seguridad. Cero cambios en expediente/documentos/completitud. |
+| **WhatsApp** (recordatorios/captura) | Nada específico en el esquema — a propósito: es canal, no dominio. Cuando entre, cuelga del link público y de `alertas`. |
+| **Multi-tenant real** (varios clientes obligados) | `tenant_id` + RLS en toda tabla desde el día 1 y prueba negativa cross-tenant en CI desde la semana 5. Lo que falta es onboarding, facturación y administración — producto, no migración. |
+| **Sellado NOM-151** | El manifiesto canónico por versión ya se genera con su hash y la cabeza de bitácora; `sellos_nom151` espera vacía. Contratar el PSC = sellar hashes ya existentes y llenar esa tabla (ADR-10; granularidad POR CONFIRMAR-1). |
+| **Ingesta CFDI masiva / asistente LLM de captura** | `operaciones.cfdi_uuid` existe desde el día 1; el parser CFDI (si no se recortó) ya extrae los campos. La descarga masiva va vía proveedor que custodie la e.firma — nunca VIZO (plan maestro §1.9). Un LLM asistiría solo captura, jamás cálculo (restricción #4). |
+
+**Regla de esta lista:** una puerta abierta no genera código ni UI en el MVP. Si durante el build alguien propone "aprovechar y hacer de una vez" algo de esta tabla, la respuesta es no — está aquí precisamente para que no haga falta.

@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Valida que las migraciones apliquen en una base LIMPIA, siempre.
+  # Es el check que impide que una migración rota llegue a producción:
+  # las migraciones no se editan una vez aplicadas, así que lo único que
+  # protege es que nunca se aplique una rota.
+  migraciones:
+    name: Migraciones aplican en limpio
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: ¿Hay migraciones que validar?
+        id: check
+        run: |
+          if [ -n "$(ls -A supabase/migrations/*.sql 2>/dev/null)" ]; then
+            echo "hay=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "hay=false" >> "$GITHUB_OUTPUT"
+            echo "Sin migraciones todavía (semana 1). Nada que validar."
+          fi
+
+      - name: Levantar Postgres y aplicar migraciones + seed
+        if: steps.check.outputs.hay == 'true'
+        run: supabase db start
+
+      - name: Verificar que no quedaron diffs sin migrar
+        if: steps.check.outputs.hay == 'true'
+        run: supabase db diff --check
+
+  # Suite del motor de umbrales: el criterio de aceptación real del proyecto
+  # (docs/PRUEBAS.md). Se activa en la semana 2, cuando exista package.json.
+  pruebas:
+    name: Suite de umbrales + typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ¿Ya hay app?
+        id: check
+        run: |
+          if [ -f package.json ]; then
+            echo "hay=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "hay=false" >> "$GITHUB_OUTPUT"
+            echo "Sin package.json todavía (semana 1). Nada que probar."
+          fi
+
+      - uses: pnpm/action-setup@v4
+        if: steps.check.outputs.hay == 'true'
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.hay == 'true'
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Instalar dependencias
+        if: steps.check.outputs.hay == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        if: steps.check.outputs.hay == 'true'
+        run: pnpm typecheck
+
+      - name: Suite de umbrales
+        if: steps.check.outputs.hay == 'true'
+        run: pnpm test:umbrales

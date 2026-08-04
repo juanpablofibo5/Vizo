@@ -1,0 +1,12 @@
+{"ts":"2026-08-04T20:21:41.610Z","cmd":"newtab","args":"--json","origin":"about:blank","durationMs":34,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-08-04T20:21:41.681Z","cmd":"load-html","args":"--from-file /tmp/make-pdf-browse-10431-0a503a08b63c.json","origin":"about:blank","durationMs":7,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-08-04T20:21:41.755Z","cmd":"pdf","args":"/Users/juanpablofigueroa/Developer/vizo/docs/VIZO-one-pager.pdf --format letter --margin-top 1in --margin-right 1in --margin-bottom 1in --margin-left 1in --tagged --outline","origin":"about:blank","durationMs":23,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-08-04T20:21:41.806Z","cmd":"closetab","args":"2","origin":"about:blank","durationMs":3,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-08-04T20:22:28.513Z","cmd":"newtab","args":"--json","origin":"about:blank","durationMs":28,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-08-04T20:22:28.568Z","cmd":"load-html","args":"--from-file /tmp/make-pdf-browse-10465-75a17b783195.json","origin":"about:blank","durationMs":3,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-08-04T20:22:28.629Z","cmd":"pdf","args":"/Users/juanpablofigueroa/Developer/vizo/docs/VIZO-one-pager.pdf --format letter --margin-top 1in --margin-right 1in --margin-bottom 1in --margin-left 1in --tagged --outline","origin":"about:blank","durationMs":14,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-08-04T20:22:28.674Z","cmd":"closetab","args":"3","origin":"about:blank","durationMs":2,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-08-04T23:05:47.081Z","cmd":"newtab","args":"--json","origin":"about:blank","durationMs":35,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-08-04T23:05:47.162Z","cmd":"load-html","args":"--from-file /tmp/make-pdf-browse-12588-49c95df95137.json","origin":"about:blank","durationMs":12,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-08-04T23:05:47.256Z","cmd":"pdf","args":"/Users/juanpablofigueroa/Developer/vizo/docs/VIZO-one-pager.pdf --format letter --margin-top 1in --margin-right 1in --margin-bottom 1in --margin-left 1in --tagged --outline","origin":"about:blank","durationMs":43,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-08-04T23:05:47.305Z","cmd":"closetab","args":"2","origin":"about:blank","durationMs":2,"status":"ok","hasCookies":false,"mode":"launched"}

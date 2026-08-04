@@ -180,9 +180,11 @@ La completitud se **calcula** contra el catálogo en cada consulta/cambio; el js
 |---|---|---|
 | tenant_id, sucursal_id, cliente_id, actividad_id | uuid FK | |
 | fecha_operacion | date | fecha del acto (la aporta el capturista) |
-| monto_base | numeric(14,2) | sin IVA ni accesorios — base del Art. 17 |
+| monto_base | numeric(14,2) | sin IVA ni accesorios — base del Art. 17 bajo la postura provisional |
 | iva | numeric(14,2) DEFAULT 0 | |
-| monto_total | numeric(14,2) | = base + iva (CHECK) — base del Art. 32 y monto del aviso |
+| isai | numeric(14,2) DEFAULT 0 | Impuesto Sobre Adquisición de Inmuebles |
+| otros_accesorios | numeric(14,2) DEFAULT 0 | derechos, gastos y demás accesorios |
+| monto_total | numeric(14,2) | = base + iva + isai + otros_accesorios (CHECK) — base del Art. 32 y monto del aviso |
 | forma_pago | text | catálogo SAT (c_FormaPago) |
 | moneda | char(3) DEFAULT 'MXN' | |
 | cfdi_uuid | uuid NULL | listo para el parser CFDI; NULL en captura manual |
@@ -190,6 +192,8 @@ La completitud se **calcula** contra el catálogo en cada consulta/cambio; el js
 | corrige_a | uuid FK NULL | corrección = fila nueva; vista `operaciones_vigentes` excluye toda fila que sea blanco de un `corrige_a` |
 | registrado_por | uuid FK | |
 | registrado_en | timestamptz DEFAULT now() | **reloj del servidor. El cliente no puede escribir esta columna** |
+
+**Por qué ISAI y accesorios se capturan desde el día 1 aunque hoy no se usen:** hay una contradicción abierta sobre si el umbral del Art. 17 se evalúa sin impuestos (postura provisional) o con impuestos incluidos (ver DECISIONES.md, POR CONFIRMAR-4). Cambiar la **base** después es un INSERT al catálogo; pero si el dato nunca se capturó, las operaciones viejas son irreevaluables. Capturarlo es gratis; no capturarlo es irreversible.
 
 **`evaluaciones_umbral`** — append-only; el registro defendible de cada corrida del motor
 
@@ -307,6 +311,38 @@ Se crean en la migración 001 y **nadie las escribe en v1**. Existen porque agre
 
 **`verificaciones_kyc`** — `tenant_id`, `expediente_id`, `proveedor`, `resultado`, `payload jsonb`, `verificado_en`. Vacía hasta que haya proveedor KYC.
 
+**Esqueleto del cumplimiento multi-parte** (ADR-15). La tesis del producto es que una venta inmobiliaria involucra hasta tres sujetos obligados que hoy piden al mismo comprador la misma documentación tres veces: se captura **una vez** y cada obligado presenta **su propio aviso**. El MVP no lo construye, pero sin estas piezas separar después "persona" de "cliente-de-un-tenant" sería cirugía sobre datos vivos.
+
+**`personas`** — identidad canónica del comprador, **cross-tenant** (sin `tenant_id`)
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| rfc / curp | text NULL | claves de resolución |
+| identidad_alterna | jsonb NULL | extranjero sin RFC |
+| nombre_normalizado | text | |
+| creada_por_tenant_id | uuid FK | quién levantó la captura original |
+
+`clientes_finales.persona_id uuid NULL REFERENCES personas(id)` — **siempre NULL en v1**. Es lo que permite que tres obligados apunten a la misma captura sin consolidar su responsabilidad legal.
+
+**RLS de `personas` — la única excepción del modelo:** al no tener `tenant_id`, su política no puede ser la estándar. Se lee solo si existe un consentimiento vigente que nombre al tenant del usuario:
+`EXISTS (SELECT 1 FROM consentimientos_comparticion c WHERE c.persona_id = personas.id AND c.tenant_id = auth_tenant_id() AND c.revocado_en IS NULL)`.
+Está escrita aquí explícitamente para que nadie la implemente como "tabla sin RLS porque es global".
+
+**`consentimientos_comparticion`** — el comprador autoriza expresamente compartir su expediente
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| persona_id | uuid FK | |
+| tenant_id | uuid FK | el obligado autorizado |
+| alcance | jsonb | qué documentos/datos cubre |
+| otorgado_en | timestamptz | |
+| evidencia | jsonb | cómo se recabó (texto aceptado, IP, canal) |
+| revocado_en | timestamptz NULL | el consentimiento es revocable |
+
+Compartir datos personales entre tres entidades exige consentimiento expreso bajo la LFPDPPP y una definición clara de quién es responsable del tratamiento. Sin esta tabla, el flujo multi-parte nace en incumplimiento.
+
+**`documentos.persona_id uuid NULL`** — para que un documento pertenezca a la captura única y no solo al expediente de un tenant. NULL en v1.
+
 ### 3.7 Diagrama
 
 ```mermaid
@@ -349,6 +385,12 @@ erDiagram
     CLIENTES_FINALES ||--o{ FACTORES_RIESGO : "ESQUELETO"
     CASOS ||--o{ ALERTAS : "ESQUELETO"
     EXPEDIENTES ||--o{ VERIFICACIONES_KYC : "ESQUELETO"
+
+    %% ---- Esqueleto multi-parte (ADR-15) ----
+    PERSONAS ||--o{ CLIENTES_FINALES : "ESQUELETO: misma captura, N obligados"
+    PERSONAS ||--o{ CONSENTIMIENTOS_COMPARTICION : "ESQUELETO: LFPDPPP"
+    TENANTS ||--o{ CONSENTIMIENTOS_COMPARTICION : "ESQUELETO"
+    PERSONAS ||--o{ DOCUMENTOS : "ESQUELETO: captura unica"
 ```
 
 ---

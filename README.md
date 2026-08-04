@@ -6,7 +6,29 @@
 
 La ley dice: si vendes inmuebles en preventa (Fracción V Bis), estás obligado a **identificar a cada comprador**, armarle un **expediente con documentos**, y **avisarle al SAT** cuando sus pagos rebasan cierto monto. Hacerlo mal o tarde = multas de cientos de miles a millones de pesos. Hoy la gente lo lleva en Excel, y el Excel se equivoca justo en las partes difíciles.
 
-Este MVP es un **prototipo de aprendizaje**: 12 semanas para construir el ciclo completo una vez, de punta a punta.
+## La tesis del producto: una venta, tres obligados
+
+Aquí está lo que ningún competidor modela. **Una sola venta inmobiliaria genera obligaciones para hasta tres empresas distintas al mismo tiempo:**
+
+| Quién | Bajo qué fracción | Qué le toca |
+|---|---|---|
+| **Desarrollador** | V / V Bis | Su propio expediente y su propio aviso |
+| **Inmobiliaria** que comercializa | V | Su propio expediente y su propio aviso |
+| **Asesor** (si está registrado por su cuenta) | V / XI | Su propio expediente y su propio aviso |
+
+Hoy los tres le piden **al mismo comprador la misma identificación, el mismo comprobante de domicilio y la misma declaración de beneficiario controlador**. Tres veces, en tres formatos. Y con frecuencia dos de los tres no presentan el aviso, porque ni saben que les tocaba.
+
+**La solución de VIZO: capturar una vez, cumplir tres veces.** El comprador sube sus documentos una sola vez; cada obligado recibe **su propio borrador de aviso**, en el formato de su fracción, y lo presenta con **su propia e.firma**.
+
+> La ley no tiene una figura de "cumplimiento consolidado": nadie puede cumplir por otro, y la multa recae siempre sobre quien omitió. Por eso VIZO elimina la **captura** triplicada, nunca la **obligación** individual. Cualquier producto que prometa lo contrario está vendiendo un riesgo legal.
+
+Detalle completo en `docs/referencia/VIZO-flujo-multiparte.pdf`.
+
+## Este repo: el prototipo de 12 semanas
+
+Lo de arriba es el producto. **Lo que se construye ahora es más chico a propósito**: un solo obligado (el desarrollador, Fr. V Bis), captura interna, sin screening ni sellado. 12 semanas para hacer el ciclo completo una vez, de punta a punta, y aprender construyéndolo.
+
+El esquema de la base de datos **ya deja lugar** para el multi-parte (tablas `personas` y `consentimientos_comparticion`, vacías), para que agregarlo después no sea una cirugía.
 
 ## ¿Qué hace? (el ciclo completo, 6 pasos)
 
@@ -36,7 +58,7 @@ Este MVP es un **prototipo de aprendizaje**: 12 semanas para construir el ciclo 
 
 | Trampa | Regla correcta |
 |---|---|
-| ¿Con IVA o sin IVA? | El umbral de aviso se evalúa **sin** IVA; el límite de efectivo **con** IVA; el aviso reporta el **total**. Tres reglas sobre el mismo número. |
+| ¿Con IVA o sin IVA? | El límite de efectivo se evalúa **con** IVA y el aviso reporta el **total**. Para el umbral de aviso la postura provisional es **sin** IVA, pero hay fuentes propias en conflicto: **pendiente de confirmar** (ver `docs/DECISIONES.md`). Como la base es un dato del catálogo, cambiarla es una fila nueva, no reprogramar. |
 | ¿Cuándo cambian los umbrales? | El **1 de febrero**, no el 1 de enero. Una operación de enero usa la UMA del año pasado. |
 | ¿A quién identifico? | En V Bis: a **todos**, sin importar el monto. |
 | ¿Y si no hubo nada que reportar? | Igual se presenta el **informe en cero**. Omitirlo también multa. |
@@ -51,7 +73,9 @@ Cada semana termina con algo que un tercero puede **verificar en 10 minutos** �
 
 ## Qué NO hace (a propósito)
 
-Screening contra listas negras, calificación de riesgo, sellado NOM-151, link público al comprador, WhatsApp, varios clientes reales. Todo eso quedó **fuera del build pero dentro del esquema**: las tablas ya existen vacías, para que agregarlo después no sea una cirugía. Ver `docs/POST-MVP.md`.
+El flujo multi-parte completo, el magic link al comprador, screening contra listas negras, calificación de riesgo, sellado NOM-151, WhatsApp, varios clientes reales. Todo eso quedó **fuera del build pero dentro del esquema**: las tablas ya existen vacías, para que agregarlo después no sea una cirugía. Ver `docs/POST-MVP.md`.
+
+**El orden natural después del MVP:** magic link (para que la captura llegue al comprador) → multi-parte (para que esa captura sirva a los tres obligados) → screening y sellado.
 
 ## Stack y mapa de documentos
 
@@ -65,6 +89,7 @@ Screening contra listas negras, calificación de riesgo, sellado NOM-151, link p
 | `docs/DECISIONES.md` | Por qué se decidió cada cosa (y qué falta confirmar con un especialista PLD) |
 | `docs/POST-MVP.md` | Las puertas que quedaron abiertas |
 | `docs/00–04_*.md` | El paquete de investigación original (mercado, plan maestro, proveedores) |
+| `docs/referencia/` | El documento de diseño del flujo multi-parte |
 
 ## Mini-glosario
 

@@ -89,6 +89,24 @@ Las decisiones heredadas del paquete de referencia (`00_PLAN_MAESTRO.md`, `01_AR
 **Alternativas descartadas:** tratar la sesión como validación regulatoria.
 **Por qué:** validar umbrales con un dev senior produce confianza falsa — el tipo de error más caro de este dominio. La frontera explícita evita que "suena razonable" se convierta en fundamento.
 
+## ADR-15 · El cumplimiento multi-parte entra al ESQUEMA, no al build — 2026-08-04
+
+**Contexto:** el documento de producto `docs/referencia/VIZO-flujo-multiparte.pdf` define la tesis central de VIZO: una sola venta inmobiliaria genera obligaciones para **hasta tres sujetos obligados** (desarrollador Fr. V/V Bis, inmobiliaria Fr. V, asesor Fr. V/XI). El comprador se captura **una vez**; cada obligado presenta **su propio aviso** con su propia e.firma. *Captura una vez, cumple tres veces, la responsabilidad nunca se consolida.*
+
+**Decisión:** el MVP de 12 semanas **no construye** el flujo multi-parte (sigue siendo un tenant, Fr. V Bis, captura interna), pero la migración 001 incluye las tres piezas que lo hacen posible sin migración de riesgo:
+
+1. **`personas`** — identidad canónica del comprador, cross-tenant, con `clientes_finales.persona_id` (NULL en v1). Es lo que permite que tres obligados apunten a la misma captura.
+2. **`consentimientos_comparticion`** — qué persona autorizó a qué tenant, con alcance, fecha y evidencia. Compartir el expediente entre tres entidades exige **consentimiento expreso** bajo la LFPDPPP, y define quién es responsable del tratamiento.
+3. **`documentos.persona_id`** (NULL en v1) — para que un documento pueda pertenecer a la captura única y no solo a un expediente de un tenant.
+
+**Alternativas descartadas:** (a) meter el flujo multi-parte al MVP — triplica el alcance y el prototipo dejaría de cerrar el ciclo; (b) dejarlo enteramente para después — separar "persona" de "cliente-de-un-tenant" con expedientes ya cargados es exactamente la cirugía sobre datos vivos y regulados que el esqueleto existe para evitar.
+
+**Costo:** ~1 h en la semana 1, dentro de la holgura. **Regla acompañante:** en v1 `persona_id` siempre es NULL y las tablas están vacías. Cero UI, cero lógica.
+
+**Nota de aislamiento:** `personas` no lleva `tenant_id` (es cross-tenant por definición), así que su RLS **no** puede ser la política estándar: se lee solo si existe un consentimiento vigente que nombre al tenant del usuario. Es la única excepción del modelo y está aquí para que no se implemente por accidente como "tabla sin RLS".
+
+**Confirmación adicional que abre:** qué porcentaje de asesores está realmente dado de alta en el SPPLD por cuenta propia. Si la mayoría opera bajo el RFC de la inmobiliaria, la tercera rama del flujo es mucho más chica de lo que parece — dato de mercado, no de arquitectura, pero cambia la prioridad post-MVP.
+
 ---
 
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
@@ -97,4 +115,13 @@ Las decisiones heredadas del paquete de referencia (`00_PLAN_MAESTRO.md`, `01_AR
 2. **Identidad de comprador extranjero sin RFC** (caso A-05): ¿qué criterio de identidad resiste una verificación? Mientras tanto el sistema acumula conservadoramente por documento de identidad y escala a revisión humana.
 3. **Expediente y umbrales de V Bis:** ¿qué campos son obligatorios más allá de lo que exige el XSD?, y validación formal de la tabla de umbrales/vigencias cargada al catálogo (8,025 UMA, vigencia 1 de febrero, bases de IVA).
 
-Estas tres preguntas ya están redactadas en detalle en `02_FASE_0_PROVEEDORES.md §C`; aquí se listan porque el MVP toma postura provisional en las tres y debe decirse en la demo.
+4. **⚠️ CONTRADICCIÓN ABIERTA — la base del umbral: ¿sin impuestos o con impuestos?** Es la pregunta más cara de la lista y hay dos fuentes propias en conflicto:
+   - `01_ARQUITECTURA_V4.md`, `00_PLAN_MAESTRO.md §1.5`, la skill `umbrales-lfpiorpi` y el prompt de esta sesión: **Art. 17 sin IVA**, Art. 32 con IVA, el aviso reporta el total. Los tres citan el Art. 6 del Reglamento reformado (DOF 27/03/2026).
+   - `docs/referencia/VIZO-flujo-multiparte.pdf §7`: *"Reforma al Reglamento del 27 de marzo de 2026. El umbral se calcula con impuestos incluidos. El motor debe sumar IVA, ISAI y accesorios al valor de la operación."* — citando **la misma reforma** para la conclusión contraria. El propio documento marca esto como pendiente de confirmar en el DOF antes de configurar el motor.
+   - **Postura provisional del MVP:** se mantiene `sin_iva` para Art. 17 (es lo que dicen tres de las cuatro fuentes y lo que fija el prompt de la sesión). **No es una conclusión legal.**
+   - **Por qué no bloquea el build:** la base es la columna `umbrales.base`. Si la confirmación dice "con impuestos", el cambio es cerrar la vigencia e insertar la fila nueva — cero código. Los casos V-01 y V-02 de `PRUEBAS.md` se recalculan cambiando el fixture del catálogo, no el motor. **Esta contradicción es, de hecho, la mejor demostración de por qué la Capa 0 existe.**
+   - **Lo que sí hay que hacer desde el día 1** (y por eso está aquí y no solo en la lista de dudas): capturar **ISAI y accesorios como columnas propias** de la operación. Si no se capturan y después se confirma que cuentan, las operaciones viejas no tienen el dato y no hay forma de reevaluarlas. Ver ARQUITECTURA.md §3.3.
+
+5. **Registro real de los asesores inmobiliarios:** qué porcentaje está dado de alta en el SPPLD por cuenta propia (Fr. V/XI) vs. operando bajo el RFC de la inmobiliaria. Define si la tercera rama del flujo multi-parte existe de verdad (ADR-15).
+
+Las preguntas 1–3 ya están redactadas en detalle en `02_FASE_0_PROVEEDORES.md §C`; aquí se listan porque el MVP toma postura provisional en todas y debe decirse en la demo.

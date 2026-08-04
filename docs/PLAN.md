@@ -28,9 +28,10 @@ Cada semana tiene un entregable que un tercero (Luis) puede verificar en ≤10 m
 | Bloque | Horas |
 |---|---|
 | Scaffold Next.js + TypeScript estricto + proyecto Supabase propio de VIZO + CI (GitHub Actions) | 4 |
-| Migración 001: `tenants`, `sucursales`, `usuarios`, catálogo regulatorio completo (`uma_vigencias`, `actividades_vulnerables`, `umbrales`, `campos_expediente`, `formatos_aviso`, `parametros_motor`), `bitacora` encadenada, y las tablas-esqueleto post-MVP — todas con RLS | 5 |
+| Migración 001: `tenants`, `sucursales`, `usuarios`, catálogo regulatorio completo (`uma_vigencias`, `actividades_vulnerables`, `umbrales`, `campos_expediente`, `formatos_aviso`, `parametros_motor`), `bitacora` encadenada, y las tablas-esqueleto post-MVP incluyendo las del multi-parte (`personas`, `consentimientos_comparticion` — ADR-15) — todas con RLS | 6 |
 | Seed del catálogo: UMA 2025/2026 con vigencias, umbrales Fr. V Bis, parámetros del motor | 1 |
 | Extraer campos del XSD de Fr. V Bis (descargado en semana 0) a `docs/campos-aviso.md` con Claude en modo plan | 2 |
+| *(la hora extra de la migración sale de la holgura de la semana)* | |
 
 **Entregable verificable:** `pnpm db:migrate` corre en una base limpia; una consulta al catálogo devuelve el umbral de aviso de V Bis vigente hoy; CI en verde en el último push; `docs/campos-aviso.md` existe con la lista de campos del XSD.
 **Sesión con Luis:** revisión del modelo de datos (ARQUITECTURA.md) antes de que tenga encima código que lo defienda. Pregunta clave: ¿ves algo en el esquema que nos obligue a migración destructiva después?

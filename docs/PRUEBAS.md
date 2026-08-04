@@ -52,6 +52,8 @@ Toda evaluación, además de su salida, debe registrar: UMA aplicada, umbrales s
 
 ## 2. Casos de IVA (las tres bases sobre el mismo número)
 
+> **⚠️ Estos dos casos dependen de una contradicción abierta** (DECISIONES.md, POR CONFIRMAR-4): hay fuentes propias en conflicto sobre si el umbral del Art. 17 se evalúa **sin** impuestos o **con** impuestos incluidos (IVA, ISAI y accesorios). Aquí se escriben con la postura provisional (`sin_iva`). Si la confirmación la cambia, **se edita el fixture del catálogo y las salidas esperadas de estos dos casos — nunca el motor**, porque la base es la columna `umbrales.base`. Que estos casos sean editables sin tocar código es la prueba de que la Capa 0 funciona.
+
 ### V-01 · Art. 17 sin IVA vs. Art. 32 con IVA — divergen
 - **Entrada:** CLI-B, V Bis (local comercial), 15 mar 2026, monto_base $900,000.00, IVA $144,000.00 (total $1,044,000.00), **pago en efectivo**.
 - **Esperado:** `resultado_aviso = 'no'` — el umbral de aviso se evalúa con la base **sin IVA**: 900,000 < 941,412.75 · `efectivo_restringido = true` — la restricción se evalúa **con IVA**: 1,044,000 ≥ 941,412.75 · `alerta_proximidad = true` (900,000 ≥ 847,271.48).

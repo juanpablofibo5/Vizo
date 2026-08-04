@@ -1,0 +1,13 @@
+# Artefactos de herramientas locales
+.gstack/
+.DS_Store
+
+# Dependencias y build (desde la semana 1)
+node_modules/
+.next/
+dist/
+
+# Secretos — ninguna llave vive en el repo
+.env
+.env.*
+!.env.example

@@ -1,0 +1,17 @@
+-- VIZO — seed local
+--
+-- Se ejecuta después de las migraciones en cada `supabase db reset`.
+--
+-- Aquí va el CATÁLOGO REGULATORIO (Capa 0): vigencias de UMA, umbrales por
+-- actividad, campos de expediente, formatos de aviso y parámetros del motor.
+-- Es el único lugar donde viven los valores regulatorios: nunca en código.
+-- Ver docs/ARQUITECTURA.md §4 y docs/DECISIONES.md ADR-09.
+--
+-- Regla heredada de docs/03_EJECUCION_CLAUDE_CODE.md: si un valor no está
+-- validado, se deja fuera y el motor falla ruidosamente. Un valor
+-- "provisional" se queda para siempre.
+--
+-- Además del catálogo, aquí van los datos demo (tenant, sucursales, usuarios,
+-- clientes) que ejercitan los casos de docs/PRUEBAS.md.
+--
+-- Vacío hasta la semana 1.

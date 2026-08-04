@@ -57,6 +57,10 @@ supabase migration new nombre_de_la_migracion   # crea el archivo vacío con tim
 supabase stop           # apaga el stack
 ```
 
+Verificado el 4 de agosto: 12 contenedores arriba, Postgres **17.6**, `db reset` completo en **~31 s**. Studio local en `http://127.0.0.1:54323`, API en `54321`, Postgres en `54322`.
+
+Las llaves que imprime `supabase start` son **defaults compartidos de desarrollo**, idénticas en cualquier máquina. No son secretos y no sirven contra producción. `supabase/seed.sql` es donde vive el catálogo regulatorio y los datos demo.
+
 **Contra el proyecto remoto** (requiere `supabase login` + `supabase link`):
 
 ```bash

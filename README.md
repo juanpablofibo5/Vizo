@@ -11,18 +11,17 @@ Este MVP es un **prototipo de aprendizaje**: 12 semanas para construir el ciclo 
 ## ¿Qué hace? (el ciclo completo, 6 pasos)
 
 ```
-1. ALTA          El capturista registra al cliente (persona o empresa,
-                 con su "beneficiario controlador" si es empresa)
-2. EXPEDIENTE    Se suben sus documentos; cada archivo recibe una huella
-                 digital (hash) y el sistema dice qué falta
-3. OPERACIONES   Cada pago del cliente se registra; nada se puede borrar
-                 ni editar después
-4. MOTOR         En automático, cada pago se evalúa: ¿hay que avisar al
-                 SAT? (por el pago solo, o porque la SUMA de 6 meses cruzó)
-5. AVISO         El sistema genera el archivo XML oficial y lo valida
-                 contra el formato del SAT; un admin lo aprueba y lo presenta
-6. BITÁCORA      Todo lo anterior queda en un historial encadenado e
-                 inalterable, que se puede reconstruir fecha por fecha
+1. ALTA         Registrar al cliente (persona o empresa, con su
+                "beneficiario controlador" si es empresa)
+2. EXPEDIENTE   Subir sus documentos; cada archivo recibe una
+                huella digital (hash) y el sistema dice qué falta
+3. OPERACIONES  Registrar cada pago; nada se borra ni se edita
+4. MOTOR        Cada pago se evalúa en automático: ¿hay que avisar
+                al SAT? (por el pago solo, o por la suma de 6 meses)
+5. AVISO        Se genera el XML oficial validado contra el formato
+                del SAT; un admin lo aprueba y lo presenta
+6. BITÁCORA     Historial encadenado e inalterable, que se puede
+                reconstruir fecha por fecha
 ```
 
 ## Las 5 ideas que sostienen todo

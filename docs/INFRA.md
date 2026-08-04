@@ -23,9 +23,9 @@
 |---|---|---|
 | `gh` | 2.95.0 | ✅ autenticado (`juanpablofibo5`) |
 | `vercel` | 54.14.0 | ✅ autenticado (`juanpablofibo5`) |
-| `supabase` | 2.107.0 | ⚠️ **falta `supabase login`** |
+| `supabase` | 2.107.0 | ✅ autenticado y **enlazado** a `qmlmoyvjdejklkfussza` |
 | `node` / `pnpm` | 24.16.0 / 11.7.0 | ✅ |
-| `docker` | instalado | ⚠️ **daemon apagado** — hace falta para el stack local |
+| `docker` | instalado | ✅ daemon corriendo |
 
 ---
 
@@ -88,10 +88,10 @@ vercel --prod           # deploy manual; lo normal es que main despliegue solo
 
 | # | Qué | Quién | Cuándo |
 |---|---|---|---|
-| 1 | `supabase login` (abre el navegador y guarda el token) | Juan Pablo | antes de la semana 1 |
-| 2 | Abrir Docker Desktop y dejarlo corriendo | Juan Pablo | antes de la semana 1 |
-| 3 | `supabase link --project-ref qmlmoyvjdejklkfussza` | cualquiera, tras el paso 1 | semana 1 |
-| 4 | Descargar los XSD del SPPLD a `regulatorio/xsd/` | Juan Pablo | semana 0 — **es lo que bloquea el diseño del aviso** |
+| ~~1~~ | ~~`supabase login`~~ | — | ✅ hecho el 4 ago |
+| ~~2~~ | ~~Docker Desktop corriendo~~ | — | ✅ hecho el 4 ago |
+| ~~3~~ | ~~`supabase link --project-ref qmlmoyvjdejklkfussza`~~ | — | ✅ hecho el 4 ago |
+| 4 | **Descargar los XSD del SPPLD a `regulatorio/xsd/`** | Juan Pablo | semana 0 — **el único pendiente que bloquea diseño** |
 | 5 | Crear el proyecto de Vercel con `vercel link` | cualquiera, tras el scaffold | semana 1 |
 | 6 | Alerta del DOF por la publicación de las RCG | Juan Pablo | semana 0 |
 | 7 | Upgrade a Supabase Pro | Juan Pablo (es una compra) | semana 5 |

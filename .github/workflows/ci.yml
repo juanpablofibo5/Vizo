@@ -26,9 +26,10 @@ jobs:
         with:
           version: latest
 
+      # Sin `version`: la toma del campo packageManager de package.json, que es
+      # la única fuente de verdad. Declararla en los dos lados hace fallar la
+      # action con "Multiple versions of pnpm specified".
       - uses: pnpm/action-setup@v4
-        with:
-          version: 11
 
       - uses: actions/setup-node@v5
         with:

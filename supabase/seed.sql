@@ -1,17 +1,15 @@
--- VIZO — seed local
+-- VIZO — seed local (solo datos DEMO)
 --
 -- Se ejecuta después de las migraciones en cada `supabase db reset`.
 --
--- Aquí va el CATÁLOGO REGULATORIO (Capa 0): vigencias de UMA, umbrales por
--- actividad, campos de expediente, formatos de aviso y parámetros del motor.
--- Es el único lugar donde viven los valores regulatorios: nunca en código.
--- Ver docs/ARQUITECTURA.md §4 y docs/DECISIONES.md ADR-09.
+-- EL CATÁLOGO REGULATORIO NO VIVE AQUÍ. Está en la migración
+-- 20260806190057_seed_catalogo_regulatorio.sql, porque es dato de PRODUCCIÓN:
+-- sin él el motor no puede evaluar nada, así que tiene que existir en el
+-- proyecto remoto, no solo en la máquina de quien desarrolla.
 --
--- Regla heredada de docs/03_EJECUCION_CLAUDE_CODE.md: si un valor no está
--- validado, se deja fuera y el motor falla ruidosamente. Un valor
--- "provisional" se queda para siempre.
+-- Este archivo es para los datos demo que ejercitan los casos de
+-- docs/PRUEBAS.md: un tenant ficticio con sus sucursales, usuarios y clientes.
+-- Nunca datos de un cliente real.
 --
--- Además del catálogo, aquí van los datos demo (tenant, sucursales, usuarios,
--- clientes) que ejercitan los casos de docs/PRUEBAS.md.
---
--- Vacío hasta la semana 1.
+-- Vacío hasta la semana 5, cuando exista el alta de clientes en la UI. Por
+-- ahora tests/estructura/smoke.sql crea los suyos y los deja limpios.

@@ -19,8 +19,6 @@ insert into tenants (rfc, razon_social) values
   ('DPE010101AAA', 'Desarrollos Península SA de CV'),
   ('OTR020202BBB', 'Otro Obligado SA');
 
-insert into actividades_vulnerables (fraccion, nombre)
-  values ('V_BIS', 'Desarrollo Inmobiliario');
 
 insert into clientes_finales (tenant_id, tipo_persona, rfc, nombre_o_razon_social) values
   ((select id from tenants where rfc='DPE010101AAA'), 'fisica', 'XAXX010101000', 'Cliente del tenant A'),
@@ -34,6 +32,7 @@ declare
   v_n        int;
   v_texto    text;
   v_ok       boolean;
+  v_monto    numeric;
 begin
   -- 1. Aserciones estructurales de la propia migración -----------------------
   perform 1 from app.verificar_rls()          limit 1; if found then raise exception 'FALLA 1a: hay tablas sin RLS o sin políticas'; end if;
@@ -112,22 +111,21 @@ begin
   raise notice '✓ 6. CHECK monto_total = base + iva + isai + accesorios';
 
   -- 7. Vigencias del catálogo sin traslape -----------------------------------
-  insert into uma_vigencias (valor_diario, vigente_desde, vigente_hasta, fuente_dof)
-    values (113.14, '2025-02-01', '2026-01-31', 'prueba');
+  -- El catálogo ya viene cargado por migración; cualquier fila que pise una
+  -- vigencia existente debe ser rechazada por la base, no por la aplicación.
   begin
     insert into uma_vigencias (valor_diario, vigente_desde, vigente_hasta, fuente_dof)
-      values (117.31, '2026-01-15', null, 'prueba: traslapa con la anterior');
+      values (999.99, '2026-06-01', null, 'prueba: traslapa con la UMA 2026 vigente');
     raise exception 'FALLA 7: se aceptaron dos UMA vigentes el mismo día';
   exception when exclusion_violation then null;
   end;
   raise notice '✓ 7. Vigencias sin traslape (dos UMA el mismo día = imposible)';
 
   -- 8. uma_vigente() respeta la frontera del 1 de febrero ---------------------
-  insert into uma_vigencias (valor_diario, vigente_desde, vigente_hasta, fuente_dof)
-    values (117.31, '2026-02-01', null, 'prueba');
-
+  -- Contra los valores REALES del catálogo, no contra fixtures inventados.
   if app.uma_vigente('2026-01-15') <> 113.14 then
-    raise exception 'FALLA 8a: una operación del 15 de enero de 2026 debe usar la UMA de 2025';
+    raise exception 'FALLA 8a: una operación del 15 de enero de 2026 debe usar la UMA de 2025 (113.14), se obtuvo %',
+      app.uma_vigente('2026-01-15');
   end if;
   if app.uma_vigente('2026-01-31') <> 113.14 then
     raise exception 'FALLA 8b: el 31 de enero todavía es UMA 2025';
@@ -136,6 +134,45 @@ begin
     raise exception 'FALLA 8c: el 1 de febrero ya es UMA 2026';
   end if;
   raise notice '✓ 8. uma_vigente(): la frontera es el 1 de febrero, no el 1 de enero';
+
+  -- 8-bis. El catálogo reproduce la tabla oficial del SAT ---------------------
+  select round(u.valor_uma * app.uma_vigente('2026-02-15'), 2) into v_monto
+  from umbrales u
+  join actividades_vulnerables a on a.id = u.actividad_id
+  where a.fraccion = 'V_BIS' and u.tipo = 'aviso'
+    and daterange(u.vigente_desde, u.vigente_hasta, '[]') @> '2026-02-15'::date;
+
+  if v_monto <> 941412.75 then
+    raise exception 'FALLA 8d: el umbral de aviso de V Bis debe dar $941,412.75 (tabla oficial SPPLD), dio %', v_monto;
+  end if;
+
+  -- Identificación "siempre" en V Bis: expediente de CADA comprador
+  select siempre into v_ok from umbrales u
+  join actividades_vulnerables a on a.id = u.actividad_id
+  where a.fraccion = 'V_BIS' and u.tipo = 'identificacion'
+    and daterange(u.vigente_desde, u.vigente_hasta, '[]') @> '2026-02-15'::date;
+  if not coalesce(v_ok, false) then
+    raise exception 'FALLA 8e: la identificación en Fr. V Bis debe ser "siempre"';
+  end if;
+
+  -- Art. 32 se evalúa con IVA
+  perform 1 from umbrales u
+  join actividades_vulnerables a on a.id = u.actividad_id
+  where a.fraccion = 'V_BIS' and u.tipo = 'efectivo' and u.base = 'con_iva';
+  if not found then
+    raise exception 'FALLA 8f: el umbral de efectivo (Art. 32) debe tener base con_iva';
+  end if;
+
+  raise notice '✓ 8-bis. Catálogo = tabla oficial del SAT: 8,025 UMA = $941,412.75, identificación siempre, efectivo con IVA';
+
+  -- 8-ter. Los parámetros del motor son datos, no constantes -----------------
+  if (app.parametro_vigente(null, 'ventana_acumulacion_meses', '2026-02-15'))::int <> 6 then
+    raise exception 'FALLA 8g: la ventana de acumulación debe ser 6 meses y venir del catálogo';
+  end if;
+  if (app.parametro_vigente(null, 'dia_limite_presentacion', '2026-02-15'))::int <> 17 then
+    raise exception 'FALLA 8h: el día límite de presentación debe ser 17 y venir del catálogo';
+  end if;
+  raise notice '✓ 8-ter. Ventana de 6 meses y día 17 son filas de parametros_motor, no constantes';
 
   -- 9. Normalización de nombres ----------------------------------------------
   if app.normalizar_nombre('  José   Ramírez  Ñuño ') <> 'JOSE RAMIREZ NUNO' then

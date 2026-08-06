@@ -66,10 +66,18 @@ jobs:
       - name: Smoke test estructural
         run: psql "$VIZO_DB_URL" -v ON_ERROR_STOP=1 -f tests/estructura/smoke.sql
 
-      # Capa 0, cargador y aritmética de centavos: BLOQUEANTE. Todo esto ya
-      # está implementado y no tiene por qué fallar.
-      - name: Catálogo, cargador y aritmética
-        run: pnpm exec vitest run tests/catalogo tests/umbrales/aritmetica.test.ts
+      # Capa 0, cargador, aritmética y registro de evaluaciones: BLOQUEANTE.
+      # Todo esto ya está implementado y no tiene por qué fallar.
+      #
+      # Corre DESPUÉS del smoke test a propósito: estos tests insertan datos y
+      # el smoke exige una base recién reseteada (la bitácora es append-only,
+      # así que no se puede limpiar).
+      - name: Catálogo, cargador, aritmética y persistencia
+        run: |
+          pnpm exec vitest run \
+            tests/catalogo \
+            tests/persistencia \
+            tests/umbrales/aritmetica.test.ts
 
       # ─────────────────────────────────────────────────────────────────────
       # ROJO CONTROLADO — se retira al cerrar la semana 4 (6 de septiembre)

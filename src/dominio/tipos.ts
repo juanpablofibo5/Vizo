@@ -36,6 +36,8 @@ export interface ConfigActividad {
   /** UMA aplicable a la fecha de la operación, no "la actual". */
   readonly uma: UmaCentavos
   readonly umaVigenteDesde: string
+  /** `null` = vigencia abierta. Se registra en cada evaluación. */
+  readonly umaVigenteHasta: string | null
   readonly umbrales: readonly Umbral[]
   /** Ventana de acumulación en meses. Parámetro del catálogo, no constante. */
   readonly ventanaMeses: number
@@ -116,6 +118,7 @@ export interface Evaluacion {
   readonly insumos: {
     readonly uma: UmaCentavos
     readonly umaVigenteDesde: string
+    readonly umaVigenteHasta: string | null
     readonly catalogoVersion: string
     readonly ventanaMeses: number
     readonly proximidadPct: number

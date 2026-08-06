@@ -94,3 +94,15 @@ export function umaACentavos(valorUmaTexto: string, uma: UmaCentavos): Centavos 
 export function porcentaje(monto: Centavos, pct: number): Centavos {
   return centavos(Math.ceil((monto * pct) / 100))
 }
+
+/**
+ * Centavos → el texto decimal que espera `numeric` en Postgres.
+ *
+ * Se construye con aritmética entera y `padStart`, no con `toFixed(2)`, que
+ * pasa por punto flotante y puede redondear mal en los bordes.
+ */
+export function centavosAPesosTexto(monto: Centavos | UmaCentavos): string {
+  const signo = monto < 0 ? '-' : ''
+  const abs = Math.abs(monto)
+  return `${signo}${Math.trunc(abs / 100)}.${String(abs % 100).padStart(2, '0')}`
+}

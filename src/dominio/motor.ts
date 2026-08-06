@@ -1,35 +1,231 @@
-import type { ConfigActividad, EntradaEvaluacion, Evaluacion } from './tipos.js'
+import type {
+  ConfigActividad,
+  EntradaEvaluacion,
+  Evaluacion,
+  Operacion,
+  Umbral,
+} from './tipos.js'
+import { centavos, formatearPesos, porcentaje, type Centavos } from './dinero.js'
 
 /**
- * EL MOTOR DE EVALUACIÓN — todavía no implementado.
+ * EL MOTOR DE EVALUACIÓN.
  *
- * Esto es deliberado y es el orden que manda docs/03_EJECUCION_CLAUDE_CODE.md:
- * la suite existe ANTES que el motor. No es dogma de TDD, es gestión de riesgo
- * penal — un umbral mal calculado no produce un bug, produce un aviso omitido,
- * que se sanciona con 10,000 a 65,000 UMA.
+ * Función PURA: no consulta la base, no lee la hora, no usa aleatoriedad,
+ * ningún LLM participa (restricción no negociable #4). La misma entrada da
+ * siempre la misma salida — que es lo que permite defender un cálculo tres
+ * años después ante una visita de verificación.
  *
- * Semana 2 (ahora): los 16 casos de docs/PRUEBAS.md corren y fallan aquí.
- * Semana 3: se implementa hasta que los individuales y de IVA pasen.
- * Semana 4: acumulación, hasta que la suite completa esté en verde.
+ * NO SABE QUÉ ES LA FRACCIÓN V BIS. Recibe una configuración y evalúa contra
+ * ella. Agregar la Fracción XV no toca este archivo: la prueba de diseño X-01
+ * lo verifica en la semana 11.
  *
- * FIRMA — no cambia al implementar:
- *   - Función PURA. No consulta la base, no lee la hora, no usa aleatoriedad.
- *     La misma entrada da siempre la misma salida, que es lo que permite
- *     defender un cálculo años después.
- *   - No sabe qué es la Fracción V Bis. Recibe `config` y evalúa. Agregar la
- *     Fracción XV no toca este archivo (prueba X-01, semana 11).
- *   - Ningún LLM participa aquí. Restricción no negociable #4.
+ * Estado: identificación, aviso individual, restricción de efectivo y alerta
+ * de proximidad implementados (semana 3). La acumulación de 6 meses llega en
+ * la semana 4; hasta entonces `sumaVentana` es null y los casos A-* de
+ * docs/PRUEBAS.md fallan a propósito.
  */
-export function evaluar(_entrada: EntradaEvaluacion, _config: ConfigActividad): Evaluacion {
-  throw new MotorNoImplementado()
-}
+export function evaluar(entrada: EntradaEvaluacion, config: ConfigActividad): Evaluacion {
+  const { operacion, cliente } = entrada
 
-export class MotorNoImplementado extends Error {
-  constructor() {
-    super(
-      'El motor de umbrales todavía no está implementado (semanas 3-4). ' +
-        'La suite de docs/PRUEBAS.md existe antes que el motor a propósito.',
-    )
-    this.name = 'MotorNoImplementado'
+  const uIdentificacion = umbralRequerido(config, 'identificacion')
+  const uAviso = umbralRequerido(config, 'aviso')
+  const uEfectivo = umbralRequerido(config, 'efectivo')
+
+  // ── 1. Identificación ──────────────────────────────────────────────────
+  // `siempre` es un dato del catálogo: en Fr. V Bis se integra expediente de
+  // cada aportante sin importar el monto.
+  const requiereIdentificacion = uIdentificacion.siempre
+    ? true
+    : montoContra(operacion, uIdentificacion) >= exigeMonto(uIdentificacion)
+
+  // ── 2. Aviso individual ────────────────────────────────────────────────
+  // La base (con o sin IVA) sale de la columna `base` del umbral. Es la
+  // diferencia entre el Art. 17 y el Art. 32, y es un DATO, no un `if`.
+  const montoParaAviso = montoContra(operacion, uAviso)
+  const umbralAviso = exigeMonto(uAviso)
+  const avisoIndividual = montoParaAviso >= umbralAviso
+
+  // ── 3. Acumulación ─────────────────────────────────────────────────────
+  // Semana 4. Ver el comentario al final de la función.
+  const sumaVentana: Centavos | null = null
+  const operacionesAcumuladas: readonly string[] = []
+  const avisoPorAcumulacion = false
+
+  // ── 4. Restricción de efectivo (Art. 32) ───────────────────────────────
+  // Solo aplica cuando el pago fue en efectivo, y se mide sobre el total
+  // CON IVA y accesorios.
+  const montoParaEfectivo = montoContra(operacion, uEfectivo)
+  const efectivoRestringido = operacion.esEfectivo && montoParaEfectivo >= exigeMonto(uEfectivo)
+
+  // ── 5. Alerta de proximidad ────────────────────────────────────────────
+  // Decisión de producto, no obligación legal: avisar cuando falta poco.
+  // No se levanta si ya hay aviso — sería ruido sobre una obligación firme.
+  const umbralProximidad = porcentaje(umbralAviso, config.proximidadPct)
+  const alertaProximidad =
+    !avisoIndividual && !avisoPorAcumulacion && montoParaAviso >= umbralProximidad
+
+  // ── 6. Identidad ───────────────────────────────────────────────────────
+  // Cuando la identidad no se resolvió por RFC ni CURP, el motor NO asume que
+  // se trata de otro cliente: acumula conservadoramente y escala a revisión
+  // humana. Un falso positivo cuesta minutos de revisión; un falso negativo
+  // es un aviso omitido.
+  const requiereRevisionIdentidad = cliente.resolucionIdentidad === 'identidad_alterna'
+
+  const resultadoAviso = avisoIndividual ? 'individual' : avisoPorAcumulacion ? 'acumulacion' : 'no'
+
+  return {
+    requiereIdentificacion,
+    resultadoAviso,
+    efectivoRestringido,
+    alertaProximidad,
+    requiereRevisionIdentidad,
+    sumaVentana,
+    operacionesAcumuladas,
+    motivo: redactarMotivo({
+      resultadoAviso,
+      requiereIdentificacion,
+      efectivoRestringido,
+      alertaProximidad,
+      montoParaAviso,
+      umbralAviso,
+      umbralProximidad,
+      identificacionSiempre: uIdentificacion.siempre,
+    }),
+    insumos: {
+      uma: config.uma,
+      umaVigenteDesde: config.umaVigenteDesde,
+      umaVigenteHasta: config.umaVigenteHasta,
+      catalogoVersion: config.catalogoVersion,
+      ventanaMeses: config.ventanaMeses,
+      proximidadPct: config.proximidadPct,
+      montoBaseConsiderado: operacion.montoBase,
+      montoTotalConsiderado: operacion.montoTotal,
+      umbralesAplicados: config.umbrales,
+    },
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Piezas internas
+// ─────────────────────────────────────────────────────────────────────────
+
+export class ConfiguracionInvalida extends Error {
+  constructor(mensaje: string) {
+    super(mensaje)
+    this.name = 'ConfiguracionInvalida'
+  }
+}
+
+/**
+ * Un umbral que falta es un catálogo incompleto, no un cero. El motor se
+ * detiene antes que calcular con un supuesto.
+ */
+function umbralRequerido(config: ConfigActividad, tipo: Umbral['tipo']): Umbral {
+  const u = config.umbrales.find((x) => x.tipo === tipo)
+  if (!u) {
+    throw new ConfiguracionInvalida(
+      `Falta el umbral "${tipo}" para ${config.fraccion} en el catálogo. ` +
+        'El motor no evalúa con umbrales asumidos.',
+    )
+  }
+  return u
+}
+
+function exigeMonto(u: Umbral): Centavos {
+  if (u.enCentavos === null) {
+    throw new ConfiguracionInvalida(
+      `El umbral "${u.tipo}" no tiene monto y no está marcado como "siempre".`,
+    )
+  }
+  return u.enCentavos
+}
+
+/**
+ * Qué monto de la operación se compara contra este umbral.
+ *
+ * Aquí vive la trampa que el mercado suele fallar: sobre el MISMO número hay
+ * tres reglas. El Art. 17 (identificación y aviso) mide sin IVA; el Art. 32
+ * (efectivo) mide con IVA y accesorios; y el aviso reporta el total. Las dos
+ * primeras las decide esta función leyendo `umbral.base`, que es un dato del
+ * catálogo: si la confirmación de POR CONFIRMAR-4 cambia la base del Art. 17,
+ * se actualiza el catálogo y este código no se toca.
+ */
+function montoContra(operacion: Operacion, umbral: Umbral): Centavos {
+  return umbral.base === 'con_iva' ? operacion.montoTotal : operacion.montoBase
+}
+
+interface DatosMotivo {
+  resultadoAviso: Evaluacion['resultadoAviso']
+  requiereIdentificacion: boolean
+  efectivoRestringido: boolean
+  alertaProximidad: boolean
+  montoParaAviso: Centavos
+  umbralAviso: Centavos
+  umbralProximidad: Centavos
+  identificacionSiempre: boolean
+}
+
+/**
+ * Explicación legible de por qué salió lo que salió. Va a la bitácora y a la
+ * pantalla: quien captura tiene que poder entender la obligación sin leer el
+ * código, y quien audita tiene que poder seguir el razonamiento.
+ */
+function redactarMotivo(d: DatosMotivo): string {
+  const partes: string[] = []
+
+  partes.push(
+    d.identificacionSiempre
+      ? 'Identificación obligatoria en esta actividad sin importar el monto.'
+      : d.requiereIdentificacion
+        ? 'El monto alcanza el umbral de identificación.'
+        : 'No alcanza el umbral de identificación.',
+  )
+
+  if (d.resultadoAviso === 'individual') {
+    partes.push(
+      `Aviso por operación individual: ${formatearPesos(d.montoParaAviso)} ` +
+        `alcanza el umbral de ${formatearPesos(d.umbralAviso)}.`,
+    )
+  } else if (d.resultadoAviso === 'acumulacion') {
+    partes.push('Aviso por acumulación en la ventana vigente.')
+  } else {
+    partes.push(
+      `Sin aviso: ${formatearPesos(d.montoParaAviso)} no alcanza ` +
+        `${formatearPesos(d.umbralAviso)}.`,
+    )
+  }
+
+  if (d.alertaProximidad) {
+    partes.push(
+      `Proximidad al umbral: alcanza o supera ${formatearPesos(d.umbralProximidad)}.`,
+    )
+  }
+
+  if (d.efectivoRestringido) {
+    partes.push('Pago en efectivo por encima del límite del Art. 32.')
+  }
+
+  return partes.join(' ')
+}
+
+/**
+ * ACUMULACIÓN — semana 4.
+ *
+ * Lo que falta implementar, con la regla ya escrita para no reinterpretarla:
+ *
+ *   1. Ventana de `config.ventanaMeses` meses contada hacia atrás desde
+ *      `fechaOperacion`. Deslizante, no periodos fijos.
+ *   2. Solo suman las operaciones que INDIVIDUALMENTE caen en el supuesto de
+ *      identificación (`caeEnIdentificacion`). En V Bis eso es todas, pero el
+ *      motor no puede darlo por hecho: en Fr. XV sí discrimina.
+ *   3. Se acumula por mismo cliente + misma actividad, cruzando sucursales.
+ *      Nunca entre fracciones distintas (caso A-04).
+ *   4. El aviso se dispara EN EL MOMENTO en que la suma alcanza el umbral,
+ *      no al cierre del periodo.
+ *
+ * El historial ya llega en `entrada.historial`; el motor no tiene que ir a
+ * buscarlo. Ver docs/PRUEBAS.md casos A-01 a A-06.
+ */
+export const PENDIENTE_ACUMULACION = 'semana 4' as const
+
+export { centavos }

@@ -56,9 +56,11 @@ export async function cargarConfigActividad(
     )
   }
 
-  const uma = await unaFila<{ valor: string | null; desde: string | null }>(
+  const uma = await unaFila<{ valor: string | null; desde: string | null; hasta: string | null }>(
     db,
-    `select u.valor_diario::text as valor, u.vigente_desde::text as desde
+    `select u.valor_diario::text as valor,
+            u.vigente_desde::text as desde,
+            u.vigente_hasta::text as hasta
        from uma_vigencias u
       where daterange(u.vigente_desde, u.vigente_hasta, '[]') @> $1::date`,
     [fechaOperacion],
@@ -106,6 +108,7 @@ export async function cargarConfigActividad(
     fraccion: actividad.fraccion,
     uma: umaEnCentavos,
     umaVigenteDesde: uma.desde,
+    umaVigenteHasta: uma.hasta,
     umbrales,
     ventanaMeses,
     proximidadPct,

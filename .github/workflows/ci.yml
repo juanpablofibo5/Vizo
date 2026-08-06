@@ -39,9 +39,19 @@ jobs:
         if: steps.check.outputs.hay == 'true'
         run: supabase db start
 
+      # Detecta el esquema tocado a mano que nadie migró: si la base local
+      # difiere de lo que producen las migraciones, producción y desarrollo ya
+      # divergieron y el siguiente push arrastra el hueco.
       - name: Verificar que no quedaron diffs sin migrar
         if: steps.check.outputs.hay == 'true'
-        run: supabase db diff --check
+        run: |
+          DIFF=$(supabase db diff --local 2>/dev/null | tail -1 | jq -r '.diff')
+          if [ -n "$DIFF" ]; then
+            echo "::error::Hay cambios de esquema sin migrar:"
+            echo "$DIFF"
+            exit 1
+          fi
+          echo "Sin diffs pendientes."
 
       # Aislamiento cross-tenant, append-only, encadenado de la bitácora y
       # separación de roles. Si algo de esto se rompe, no es un bug: es un

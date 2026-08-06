@@ -1,0 +1,3430 @@
+{
+ "_fuente": "DesarrollosInmobiliarios_v4_9.xlsm, hoja Combos, descargada del SPPLD el 2026-08-04",
+ "_nota": "Los codigos postales/colonias (columnas K-Q, 139k filas) NO se incluyen: se validan por patron.",
+ "tipo_operacion": [
+  {
+   "codigo": "1601",
+   "descripcion": "Aportación a Desarrollo(s) Inmobiliario(s)"
+  }
+ ],
+ "tipo_alerta": [
+  {
+   "codigo": "100",
+   "descripcion": "Sin alerta."
+  },
+  {
+   "codigo": "3901",
+   "descripcion": "La(s) persona(s) que participa(n) en la operación se rehúsa(n) a proporcionar documentos personales que lo(s) identifiquen."
+  },
+  {
+   "codigo": "3902",
+   "descripcion": "El pago en preventa por el inmueble es realizado por un tercero sin relación aparente con el cliente."
+  },
+  {
+   "codigo": "3903",
+   "descripcion": "La(s) persona(s) que participa(n) en la operación realiza(n) múltiples aportaciones en un periodo muy corto de tiempo sin razón aparente."
+  },
+  {
+   "codigo": "3904",
+   "descripcion": "El cliente de la preventa no muestra tener interés en las características de la propiedad objeto de la operación, o en el precio y condiciones de la transacción."
+  },
+  {
+   "codigo": "3905",
+   "descripcion": "De acuerdo con medios informativos u otras fuentes de información pública, se tiene conocimiento o sospecha de que el cliente, un familiar o persona relacionada, está vinculado con actividades ilícitas o se encuentra bajo proceso de investigación."
+  },
+  {
+   "codigo": "3906",
+   "descripcion": "La(s) persona(s) que participa(n) en la operación no quiere(n) ser relacionada(s) con el desarrollo del inmueble."
+  },
+  {
+   "codigo": "3907",
+   "descripcion": "La operación no es acorde con la actividad económica o giro mercantil declarado por la(s) persona(s) que participa(n) en la operación."
+  },
+  {
+   "codigo": "3908",
+   "descripcion": "Hay indicios, o certeza, que las partes no están actuando en nombre propio y están tratando de ocultar la identidad de quien aporta los recursos."
+  },
+  {
+   "codigo": "3909",
+   "descripcion": "Uso de divisas en efectivo sin justificación alguna."
+  },
+  {
+   "codigo": "3910",
+   "descripcion": "Se conoce que las aportaciones se realizan por medio de transferencia(s) proveniente(s) de un país extranjero."
+  },
+  {
+   "codigo": "3911",
+   "descripcion": "La(s) persona(s) que participa(n) en la operación insiste(n) en realizar sus aportaciones en efectivo por montos elevados."
+  },
+  {
+   "codigo": "3912",
+   "descripcion": "La información y documentación presentada por la(s) persona(s) que participa(n) en la operación es inconsistente o de difícil verificación por parte del Sujeto Obligado."
+  },
+  {
+   "codigo": "3913",
+   "descripcion": "La(s) persona(s) que participa(n) en la operación intenta(n) sobornar, extorsionar o amenaza(n) con el fin de realizar la operación fuera de los parámetros establecidos, o con la finalidad de evitar el envío del Aviso."
+  },
+  {
+   "codigo": "9999",
+   "descripcion": "Otra alerta."
+  }
+ ],
+ "pais": [
+  {
+   "codigo": "AF",
+   "descripcion": "AFGANISTAN"
+  },
+  {
+   "codigo": "AL",
+   "descripcion": "ALBANIA"
+  },
+  {
+   "codigo": "DE",
+   "descripcion": "ALEMANIA"
+  },
+  {
+   "codigo": "AD",
+   "descripcion": "ANDORRA"
+  },
+  {
+   "codigo": "AO",
+   "descripcion": "ANGOLA"
+  },
+  {
+   "codigo": "AI",
+   "descripcion": "ANGUILA"
+  },
+  {
+   "codigo": "AQ",
+   "descripcion": "ANTARTIDA"
+  },
+  {
+   "codigo": "AG",
+   "descripcion": "ANTIGUA Y BARBUDA"
+  },
+  {
+   "codigo": "AN",
+   "descripcion": "ANTILLAS NEERLANDESAS"
+  },
+  {
+   "codigo": "SA",
+   "descripcion": "ARABIA SAUDI"
+  },
+  {
+   "codigo": "DZ",
+   "descripcion": "ARGELIA"
+  },
+  {
+   "codigo": "AR",
+   "descripcion": "ARGENTINA"
+  },
+  {
+   "codigo": "AM",
+   "descripcion": "ARMENIA"
+  },
+  {
+   "codigo": "AW",
+   "descripcion": "ARUBA"
+  },
+  {
+   "codigo": "AU",
+   "descripcion": "AUSTRALIA"
+  },
+  {
+   "codigo": "AT",
+   "descripcion": "AUSTRIA"
+  },
+  {
+   "codigo": "AZ",
+   "descripcion": "AZERBAIYAN"
+  },
+  {
+   "codigo": "BS",
+   "descripcion": "BAHAMAS"
+  },
+  {
+   "codigo": "BH",
+   "descripcion": "BAHREIN"
+  },
+  {
+   "codigo": "BD",
+   "descripcion": "BANGLADESH"
+  },
+  {
+   "codigo": "BB",
+   "descripcion": "BARBADOS"
+  },
+  {
+   "codigo": "BY",
+   "descripcion": "BELARUS"
+  },
+  {
+   "codigo": "BE",
+   "descripcion": "BELGICA"
+  },
+  {
+   "codigo": "BZ",
+   "descripcion": "BELICE"
+  },
+  {
+   "codigo": "BJ",
+   "descripcion": "BENIN"
+  },
+  {
+   "codigo": "BM",
+   "descripcion": "BERMUDAS"
+  },
+  {
+   "codigo": "BT",
+   "descripcion": "BHUTAN"
+  },
+  {
+   "codigo": "BO",
+   "descripcion": "BOLIVIA"
+  },
+  {
+   "codigo": "BA",
+   "descripcion": "BOSNIA Y HERZEGOVINA"
+  },
+  {
+   "codigo": "BW",
+   "descripcion": "BOTSUANA"
+  },
+  {
+   "codigo": "BR",
+   "descripcion": "BRASIL"
+  },
+  {
+   "codigo": "BN",
+   "descripcion": "BRUNEI"
+  },
+  {
+   "codigo": "BG",
+   "descripcion": "BULGARIA"
+  },
+  {
+   "codigo": "BF",
+   "descripcion": "BURKINA FASO"
+  },
+  {
+   "codigo": "BI",
+   "descripcion": "BURUNDI"
+  },
+  {
+   "codigo": "CV",
+   "descripcion": "CABO VERDE"
+  },
+  {
+   "codigo": "KH",
+   "descripcion": "CAMBOYA"
+  },
+  {
+   "codigo": "CM",
+   "descripcion": "CAMERUN"
+  },
+  {
+   "codigo": "CA",
+   "descripcion": "CANADA"
+  },
+  {
+   "codigo": "TD",
+   "descripcion": "CHAD"
+  },
+  {
+   "codigo": "CZ",
+   "descripcion": "CHEQUIA"
+  },
+  {
+   "codigo": "CL",
+   "descripcion": "CHILE"
+  },
+  {
+   "codigo": "CN",
+   "descripcion": "CHINA"
+  },
+  {
+   "codigo": "CY",
+   "descripcion": "CHIPRE"
+  },
+  {
+   "codigo": "CP",
+   "descripcion": "CLIPPERTON"
+  },
+  {
+   "codigo": "CO",
+   "descripcion": "COLOMBIA"
+  },
+  {
+   "codigo": "KM",
+   "descripcion": "COMORAS"
+  },
+  {
+   "codigo": "CG",
+   "descripcion": "CONGO"
+  },
+  {
+   "codigo": "KP",
+   "descripcion": "COREA DEL NORTE"
+  },
+  {
+   "codigo": "KR",
+   "descripcion": "COREA DEL SUR"
+  },
+  {
+   "codigo": "CI",
+   "descripcion": "COSTA DE MARFIL"
+  },
+  {
+   "codigo": "CR",
+   "descripcion": "COSTA RICA"
+  },
+  {
+   "codigo": "HR",
+   "descripcion": "CROACIA"
+  },
+  {
+   "codigo": "CU",
+   "descripcion": "CUBA"
+  },
+  {
+   "codigo": "CW",
+   "descripcion": "CURAZAO"
+  },
+  {
+   "codigo": "DK",
+   "descripcion": "DINAMARCA"
+  },
+  {
+   "codigo": "DM",
+   "descripcion": "DOMINICA"
+  },
+  {
+   "codigo": "EC",
+   "descripcion": "ECUADOR"
+  },
+  {
+   "codigo": "EG",
+   "descripcion": "EGIPTO"
+  },
+  {
+   "codigo": "SV",
+   "descripcion": "EL SALVADOR"
+  },
+  {
+   "codigo": "AE",
+   "descripcion": "EMIRATOS ARABES UNIDOS"
+  },
+  {
+   "codigo": "ER",
+   "descripcion": "ERITREA"
+  },
+  {
+   "codigo": "SK",
+   "descripcion": "ESLOVAQUIA"
+  },
+  {
+   "codigo": "SI",
+   "descripcion": "ESLOVENIA"
+  },
+  {
+   "codigo": "ES",
+   "descripcion": "ESPAÑA"
+  },
+  {
+   "codigo": "US",
+   "descripcion": "ESTADOS UNIDOS"
+  },
+  {
+   "codigo": "EE",
+   "descripcion": "ESTONIA"
+  },
+  {
+   "codigo": "ET",
+   "descripcion": "ETIOPIA"
+  },
+  {
+   "codigo": "PH",
+   "descripcion": "FILIPINAS"
+  },
+  {
+   "codigo": "FI",
+   "descripcion": "FINLANDIA"
+  },
+  {
+   "codigo": "FJ",
+   "descripcion": "FIYI"
+  },
+  {
+   "codigo": "FR",
+   "descripcion": "FRANCIA"
+  },
+  {
+   "codigo": "GA",
+   "descripcion": "GABON"
+  },
+  {
+   "codigo": "GM",
+   "descripcion": "GAMBIA"
+  },
+  {
+   "codigo": "GE",
+   "descripcion": "GEORGIA"
+  },
+  {
+   "codigo": "GS",
+   "descripcion": "GEORGIA DEL SUR E ISLAS SANDWICH DEL SUR"
+  },
+  {
+   "codigo": "GH",
+   "descripcion": "GHANA"
+  },
+  {
+   "codigo": "GI",
+   "descripcion": "GIBRALTAR"
+  },
+  {
+   "codigo": "GD",
+   "descripcion": "GRANADA"
+  },
+  {
+   "codigo": "EL",
+   "descripcion": "GRECIA"
+  },
+  {
+   "codigo": "GL",
+   "descripcion": "GROENLANDIA"
+  },
+  {
+   "codigo": "GP",
+   "descripcion": "GUADALUPE"
+  },
+  {
+   "codigo": "GU",
+   "descripcion": "GUAM"
+  },
+  {
+   "codigo": "GT",
+   "descripcion": "GUATEMALA"
+  },
+  {
+   "codigo": "GF",
+   "descripcion": "GUAYANA FRANCESA"
+  },
+  {
+   "codigo": "GG",
+   "descripcion": "GUERNESEY"
+  },
+  {
+   "codigo": "GN",
+   "descripcion": "GUINEA"
+  },
+  {
+   "codigo": "GQ",
+   "descripcion": "GUINEA ECUATORIAL"
+  },
+  {
+   "codigo": "GW",
+   "descripcion": "GUINEA-BISSAU"
+  },
+  {
+   "codigo": "GY",
+   "descripcion": "GUYANA"
+  },
+  {
+   "codigo": "HT",
+   "descripcion": "HAITI"
+  },
+  {
+   "codigo": "HN",
+   "descripcion": "HONDURAS"
+  },
+  {
+   "codigo": "HK",
+   "descripcion": "HONG KONG"
+  },
+  {
+   "codigo": "HU",
+   "descripcion": "HUNGRIA"
+  },
+  {
+   "codigo": "IN",
+   "descripcion": "INDIA"
+  },
+  {
+   "codigo": "ID",
+   "descripcion": "INDONESIA"
+  },
+  {
+   "codigo": "IR",
+   "descripcion": "IRAN"
+  },
+  {
+   "codigo": "IQ",
+   "descripcion": "IRAQ"
+  },
+  {
+   "codigo": "IE",
+   "descripcion": "IRLANDA"
+  },
+  {
+   "codigo": "BV",
+   "descripcion": "ISLA BOUVET"
+  },
+  {
+   "codigo": "CX",
+   "descripcion": "ISLA CHRISTMAS"
+  },
+  {
+   "codigo": "IM",
+   "descripcion": "ISLA DE MAN"
+  },
+  {
+   "codigo": "NF",
+   "descripcion": "ISLA NORFOLK"
+  },
+  {
+   "codigo": "IS",
+   "descripcion": "ISLANDIA"
+  },
+  {
+   "codigo": "AX",
+   "descripcion": "ISLAS ÅLAND"
+  },
+  {
+   "codigo": "KY",
+   "descripcion": "ISLAS CAIMAN"
+  },
+  {
+   "codigo": "CC",
+   "descripcion": "ISLAS COCOS"
+  },
+  {
+   "codigo": "CK",
+   "descripcion": "ISLAS COOK"
+  },
+  {
+   "codigo": "FO",
+   "descripcion": "ISLAS FEROE"
+  },
+  {
+   "codigo": "HM",
+   "descripcion": "ISLAS HEARD Y MCDONALD"
+  },
+  {
+   "codigo": "FK",
+   "descripcion": "ISLAS MALVINAS"
+  },
+  {
+   "codigo": "MP",
+   "descripcion": "ISLAS MARIANAS DEL NORTE"
+  },
+  {
+   "codigo": "MH",
+   "descripcion": "ISLAS MARSHALL"
+  },
+  {
+   "codigo": "UM",
+   "descripcion": "ISLAS MENORES ALEJADAS DE LOS ESTADOS UNIDOS"
+  },
+  {
+   "codigo": "PN",
+   "descripcion": "ISLAS PITCAIRN"
+  },
+  {
+   "codigo": "SB",
+   "descripcion": "ISLAS SALOMON"
+  },
+  {
+   "codigo": "TC",
+   "descripcion": "ISLAS TURCAS Y CAICOS"
+  },
+  {
+   "codigo": "VG",
+   "descripcion": "ISLAS VIRGENES BRITANICAS"
+  },
+  {
+   "codigo": "VI",
+   "descripcion": "ISLAS VIRGENES DE LOS ESTADOS UNIDOS"
+  },
+  {
+   "codigo": "IL",
+   "descripcion": "ISRAEL"
+  },
+  {
+   "codigo": "IT",
+   "descripcion": "ITALIA"
+  },
+  {
+   "codigo": "JM",
+   "descripcion": "JAMAICA"
+  },
+  {
+   "codigo": "JP",
+   "descripcion": "JAPON"
+  },
+  {
+   "codigo": "JE",
+   "descripcion": "JERSEY"
+  },
+  {
+   "codigo": "JO",
+   "descripcion": "JORDANIA"
+  },
+  {
+   "codigo": "KZ",
+   "descripcion": "KAZAJSTAN"
+  },
+  {
+   "codigo": "KE",
+   "descripcion": "KENIA"
+  },
+  {
+   "codigo": "KG",
+   "descripcion": "KIRGUISTAN"
+  },
+  {
+   "codigo": "KI",
+   "descripcion": "KIRIBATI"
+  },
+  {
+   "codigo": "XK",
+   "descripcion": "KOSOVO"
+  },
+  {
+   "codigo": "KW",
+   "descripcion": "KUWAIT"
+  },
+  {
+   "codigo": "LA",
+   "descripcion": "LAOS"
+  },
+  {
+   "codigo": "LS",
+   "descripcion": "LESOTHO"
+  },
+  {
+   "codigo": "LV",
+   "descripcion": "LETONIA"
+  },
+  {
+   "codigo": "LB",
+   "descripcion": "LIBANO"
+  },
+  {
+   "codigo": "LR",
+   "descripcion": "LIBERIA"
+  },
+  {
+   "codigo": "LY",
+   "descripcion": "LIBIA"
+  },
+  {
+   "codigo": "LI",
+   "descripcion": "LIECHTENSTEIN"
+  },
+  {
+   "codigo": "LT",
+   "descripcion": "LITUANIA"
+  },
+  {
+   "codigo": "LU",
+   "descripcion": "LUXEMBURGO"
+  },
+  {
+   "codigo": "MO",
+   "descripcion": "MACAO"
+  },
+  {
+   "codigo": "MK",
+   "descripcion": "MACEDONIA"
+  },
+  {
+   "codigo": "MG",
+   "descripcion": "MADAGASCAR"
+  },
+  {
+   "codigo": "MY",
+   "descripcion": "MALASIA"
+  },
+  {
+   "codigo": "MW",
+   "descripcion": "MALAWI"
+  },
+  {
+   "codigo": "MV",
+   "descripcion": "MALDIVAS"
+  },
+  {
+   "codigo": "ML",
+   "descripcion": "MALI"
+  },
+  {
+   "codigo": "MT",
+   "descripcion": "MALTA"
+  },
+  {
+   "codigo": "MA",
+   "descripcion": "MARRUECOS"
+  },
+  {
+   "codigo": "MQ",
+   "descripcion": "MARTINICA"
+  },
+  {
+   "codigo": "MU",
+   "descripcion": "MAURICIO"
+  },
+  {
+   "codigo": "MR",
+   "descripcion": "MAURITANIA"
+  },
+  {
+   "codigo": "YT",
+   "descripcion": "MAYOTTE"
+  },
+  {
+   "codigo": "MX",
+   "descripcion": "MEXICO"
+  },
+  {
+   "codigo": "FM",
+   "descripcion": "MICRONESIA"
+  },
+  {
+   "codigo": "MD",
+   "descripcion": "MOLDOVA"
+  },
+  {
+   "codigo": "MC",
+   "descripcion": "MONACO"
+  },
+  {
+   "codigo": "MN",
+   "descripcion": "MONGOLIA"
+  },
+  {
+   "codigo": "ME",
+   "descripcion": "MONTENEGRO"
+  },
+  {
+   "codigo": "MS",
+   "descripcion": "MONTSERRAT"
+  },
+  {
+   "codigo": "MZ",
+   "descripcion": "MOZAMBIQUE"
+  },
+  {
+   "codigo": "MM",
+   "descripcion": "MYANMAR"
+  },
+  {
+   "codigo": "NA",
+   "descripcion": "NAMIBIA"
+  },
+  {
+   "codigo": "NR",
+   "descripcion": "NAURU"
+  },
+  {
+   "codigo": "NP",
+   "descripcion": "NEPAL"
+  },
+  {
+   "codigo": "NI",
+   "descripcion": "NICARAGUA"
+  },
+  {
+   "codigo": "NE",
+   "descripcion": "NIGER"
+  },
+  {
+   "codigo": "NG",
+   "descripcion": "NIGERIA"
+  },
+  {
+   "codigo": "NU",
+   "descripcion": "NIUE"
+  },
+  {
+   "codigo": "NO",
+   "descripcion": "NORUEGA"
+  },
+  {
+   "codigo": "NC",
+   "descripcion": "NUEVA CALEDONIA"
+  },
+  {
+   "codigo": "NZ",
+   "descripcion": "NUEVA ZELANDA"
+  },
+  {
+   "codigo": "OM",
+   "descripcion": "OMAN"
+  },
+  {
+   "codigo": "NL",
+   "descripcion": "PAISES BAJOS"
+  },
+  {
+   "codigo": "PK",
+   "descripcion": "PAKISTAN"
+  },
+  {
+   "codigo": "PW",
+   "descripcion": "PALAOS"
+  },
+  {
+   "codigo": "PA",
+   "descripcion": "PANAMA"
+  },
+  {
+   "codigo": "PG",
+   "descripcion": "PAPUA NUEVA GUINEA"
+  },
+  {
+   "codigo": "PY",
+   "descripcion": "PARAGUAY"
+  },
+  {
+   "codigo": "PE",
+   "descripcion": "PERU"
+  },
+  {
+   "codigo": "PF",
+   "descripcion": "POLINESIA FRANCESA"
+  },
+  {
+   "codigo": "PL",
+   "descripcion": "POLONIA"
+  },
+  {
+   "codigo": "PT",
+   "descripcion": "PORTUGAL"
+  },
+  {
+   "codigo": "PR",
+   "descripcion": "PUERTO RICO"
+  },
+  {
+   "codigo": "QA",
+   "descripcion": "QATAR"
+  },
+  {
+   "codigo": "UK",
+   "descripcion": "REINO UNIDO"
+  },
+  {
+   "codigo": "CF",
+   "descripcion": "REPUBLICA CENTROAFRICANA"
+  },
+  {
+   "codigo": "CD",
+   "descripcion": "REPUBLICA DEMOCRATICA DEL CONGO"
+  },
+  {
+   "codigo": "DO",
+   "descripcion": "REPUBLICA DOMINICANA"
+  },
+  {
+   "codigo": "RE",
+   "descripcion": "REUNION"
+  },
+  {
+   "codigo": "RW",
+   "descripcion": "RUANDA"
+  },
+  {
+   "codigo": "RO",
+   "descripcion": "RUMANIA"
+  },
+  {
+   "codigo": "RU",
+   "descripcion": "RUSIA"
+  },
+  {
+   "codigo": "EH",
+   "descripcion": "SAHARA OCCIDENTAL"
+  },
+  {
+   "codigo": "WS",
+   "descripcion": "SAMOA"
+  },
+  {
+   "codigo": "AS",
+   "descripcion": "SAMOA AMERICANA"
+  },
+  {
+   "codigo": "BL",
+   "descripcion": "SAN BARTOLOME"
+  },
+  {
+   "codigo": "KN",
+   "descripcion": "SAN CRISTOBAL Y NIEVES"
+  },
+  {
+   "codigo": "SM",
+   "descripcion": "SAN MARINO"
+  },
+  {
+   "codigo": "MF",
+   "descripcion": "SAN MARTIN"
+  },
+  {
+   "codigo": "PM",
+   "descripcion": "SAN PEDRO Y MIQUELON"
+  },
+  {
+   "codigo": "VC",
+   "descripcion": "SAN VICENTE Y LAS GRANADINAS"
+  },
+  {
+   "codigo": "SH",
+   "descripcion": "SANTA ELENA"
+  },
+  {
+   "codigo": "LC",
+   "descripcion": "SANTA LUCIA"
+  },
+  {
+   "codigo": "VA",
+   "descripcion": "SANTA SEDE / ESTADO DE LA CIUDAD DEL VATICANO"
+  },
+  {
+   "codigo": "ST",
+   "descripcion": "SANTO TOME Y PRINCIPE"
+  },
+  {
+   "codigo": "SN",
+   "descripcion": "SENEGAL"
+  },
+  {
+   "codigo": "RS",
+   "descripcion": "SERBIA"
+  },
+  {
+   "codigo": "SC",
+   "descripcion": "SEYCHELLES"
+  },
+  {
+   "codigo": "SL",
+   "descripcion": "SIERRA LEONA"
+  },
+  {
+   "codigo": "SG",
+   "descripcion": "SINGAPUR"
+  },
+  {
+   "codigo": "SY",
+   "descripcion": "SIRIA"
+  },
+  {
+   "codigo": "SO",
+   "descripcion": "SOMALIA"
+  },
+  {
+   "codigo": "LK",
+   "descripcion": "SRI LANKA"
+  },
+  {
+   "codigo": "SZ",
+   "descripcion": "SUAZILANDIA"
+  },
+  {
+   "codigo": "ZA",
+   "descripcion": "SUDAFRICA"
+  },
+  {
+   "codigo": "SD",
+   "descripcion": "SUDAN"
+  },
+  {
+   "codigo": "SE",
+   "descripcion": "SUECIA"
+  },
+  {
+   "codigo": "CH",
+   "descripcion": "SUIZA"
+  },
+  {
+   "codigo": "SR",
+   "descripcion": "SURINAM"
+  },
+  {
+   "codigo": "SJ",
+   "descripcion": "SVALBARD Y JAN MAYEN"
+  },
+  {
+   "codigo": "TH",
+   "descripcion": "TAILANDIA"
+  },
+  {
+   "codigo": "TW",
+   "descripcion": "TAIWAN"
+  },
+  {
+   "codigo": "TZ",
+   "descripcion": "TANZANIA"
+  },
+  {
+   "codigo": "TJ",
+   "descripcion": "TAYIKISTAN"
+  },
+  {
+   "codigo": "IO",
+   "descripcion": "TERRITORIO BRITANICO DEL OCEANO INDICO"
+  },
+  {
+   "codigo": "TF",
+   "descripcion": "TERRITORIOS AUSTRALES FRANCESES"
+  },
+  {
+   "codigo": "PS",
+   "descripcion": "TERRITORIOS PALESTINOS"
+  },
+  {
+   "codigo": "TL",
+   "descripcion": "TIMOR ORIENTAL"
+  },
+  {
+   "codigo": "TG",
+   "descripcion": "TOGO"
+  },
+  {
+   "codigo": "TK",
+   "descripcion": "TOKELAU"
+  },
+  {
+   "codigo": "TO",
+   "descripcion": "TONGA"
+  },
+  {
+   "codigo": "TT",
+   "descripcion": "TRINIDAD Y TOBAGO"
+  },
+  {
+   "codigo": "TN",
+   "descripcion": "TUNEZ"
+  },
+  {
+   "codigo": "TM",
+   "descripcion": "TURKMENISTAN"
+  },
+  {
+   "codigo": "TR",
+   "descripcion": "TURQUIA"
+  },
+  {
+   "codigo": "TV",
+   "descripcion": "TUVALU"
+  },
+  {
+   "codigo": "UA",
+   "descripcion": "UCRANIA"
+  },
+  {
+   "codigo": "UG",
+   "descripcion": "UGANDA"
+  },
+  {
+   "codigo": "UY",
+   "descripcion": "URUGUAY"
+  },
+  {
+   "codigo": "UZ",
+   "descripcion": "UZBEKISTAN"
+  },
+  {
+   "codigo": "VU",
+   "descripcion": "VANUATU"
+  },
+  {
+   "codigo": "VE",
+   "descripcion": "VENEZUELA"
+  },
+  {
+   "codigo": "VN",
+   "descripcion": "VIETNAM"
+  },
+  {
+   "codigo": "WF",
+   "descripcion": "WALLIS Y FUTUNA"
+  },
+  {
+   "codigo": "YE",
+   "descripcion": "YEMEN"
+  },
+  {
+   "codigo": "DJ",
+   "descripcion": "YIBUTI"
+  },
+  {
+   "codigo": "ZM",
+   "descripcion": "ZAMBIA"
+  },
+  {
+   "codigo": "ZW",
+   "descripcion": "ZIMBABUE"
+  }
+ ],
+ "entidad_federativa": [
+  {
+   "codigo": "1",
+   "descripcion": "AGUASCALIENTES"
+  },
+  {
+   "codigo": "2",
+   "descripcion": "BAJA CALIFORNIA"
+  },
+  {
+   "codigo": "3",
+   "descripcion": "BAJA CALIFORNIA SUR"
+  },
+  {
+   "codigo": "4",
+   "descripcion": "CAMPECHE"
+  },
+  {
+   "codigo": "5",
+   "descripcion": "COAHUILA DE ZARAGOZA"
+  },
+  {
+   "codigo": "6",
+   "descripcion": "COLIMA"
+  },
+  {
+   "codigo": "7",
+   "descripcion": "CHIAPAS"
+  },
+  {
+   "codigo": "8",
+   "descripcion": "CHIHUAHUA"
+  },
+  {
+   "codigo": "9",
+   "descripcion": "DISTRITO FEDERAL"
+  },
+  {
+   "codigo": "10",
+   "descripcion": "DURANGO"
+  },
+  {
+   "codigo": "11",
+   "descripcion": "GUANAJUATO"
+  },
+  {
+   "codigo": "12",
+   "descripcion": "GUERRERO"
+  },
+  {
+   "codigo": "13",
+   "descripcion": "HIDALGO"
+  },
+  {
+   "codigo": "14",
+   "descripcion": "JALISCO"
+  },
+  {
+   "codigo": "15",
+   "descripcion": "MÉXICO"
+  },
+  {
+   "codigo": "16",
+   "descripcion": "MICHOACÁN DE OCAMPO"
+  },
+  {
+   "codigo": "17",
+   "descripcion": "MORELOS"
+  },
+  {
+   "codigo": "18",
+   "descripcion": "NAYARIT"
+  },
+  {
+   "codigo": "19",
+   "descripcion": "NUEVO LEÓN"
+  },
+  {
+   "codigo": "20",
+   "descripcion": "OAXACA"
+  },
+  {
+   "codigo": "21",
+   "descripcion": "PUEBLA"
+  },
+  {
+   "codigo": "22",
+   "descripcion": "QUERÉTARO"
+  },
+  {
+   "codigo": "23",
+   "descripcion": "QUINTANA ROO"
+  },
+  {
+   "codigo": "24",
+   "descripcion": "SAN LUIS POTOSÍ"
+  },
+  {
+   "codigo": "25",
+   "descripcion": "SINALOA"
+  },
+  {
+   "codigo": "26",
+   "descripcion": "SONORA"
+  },
+  {
+   "codigo": "27",
+   "descripcion": "TABASCO"
+  },
+  {
+   "codigo": "28",
+   "descripcion": "TAMAULIPAS"
+  },
+  {
+   "codigo": "29",
+   "descripcion": "TLAXCALA"
+  },
+  {
+   "codigo": "30",
+   "descripcion": "VERACRUZ DE IGNACIO DE LA LLAVE"
+  },
+  {
+   "codigo": "31",
+   "descripcion": "YUCATÁN"
+  },
+  {
+   "codigo": "32",
+   "descripcion": "ZACATECAS"
+  }
+ ],
+ "actividad_economica": [
+  {
+   "codigo": "1000000",
+   "descripcion": "NO APLICA"
+  },
+  {
+   "codigo": "1110100",
+   "descripcion": "AGRICULTURA Y SILVICULTURA - ADMINISTRADORES O TRABAJADORES AGRICOLAS"
+  },
+  {
+   "codigo": "1110400",
+   "descripcion": "AGRICULTURA Y SILVICULTURA - ADMINISTRADORES O TRABAJADORES SILVICOLAS Y FORESTALES"
+  },
+  {
+   "codigo": "1220100",
+   "descripcion": "GANADERIA - APICULTORES"
+  },
+  {
+   "codigo": "1220200",
+   "descripcion": "GANADERIA - ADMINISTRADORES, CRIADORES O SUPERVISORES AVICOLAS Y GANADEROS"
+  },
+  {
+   "codigo": "1330200",
+   "descripcion": "PESCA Y ACUACULTURA - PESCADORES Y TRABAJADORES EN LA CRIA Y CULTIVO DE ESPECIES MARINAS"
+  },
+  {
+   "codigo": "2130100",
+   "descripcion": "MINERIA, EXTRACCION Y SUMINISTRO - TECNICOS GEOLOGICOS Y DE MINERALES"
+  },
+  {
+   "codigo": "2140100",
+   "descripcion": "MINERIA, EXTRACCION Y SUMINISTRO - INGENIEROS, OPERADORES O AYUDANTES EN LA EXTRACCION Y REFINACION MINERA"
+  },
+  {
+   "codigo": "2210100",
+   "descripcion": "MINERIA, EXTRACCION Y SUMINISTRO - AYUDANTES EN LA PERFORACION DE POZOS DE PETROLEO Y GAS NATURAL"
+  },
+  {
+   "codigo": "2240200",
+   "descripcion": "MINERIA, EXTRACCION Y SUMINISTRO - INGENIEROS PETROLEROS"
+  },
+  {
+   "codigo": "2420100",
+   "descripcion": "MINERIA, EXTRACCION Y SUMINISTRO - OPERADORES DE CENTRALES O SISTEMAS  DE ENERGIA ELECTRICAS"
+  },
+  {
+   "codigo": "2420200",
+   "descripcion": "MINERIA, EXTRACCION Y SUMINISTRO - OPERADORES DE MAQUINAS DE VAPOR"
+  },
+  {
+   "codigo": "2530100",
+   "descripcion": "MINERIA, EXTRACCION Y SUMINISTRO - GERENTE, SUPERVISOR U OPERADORES DE  TRATAMIENTO Y POTABILIZACION, ABASTECIMIENTO Y RECOLECCION DE AGUA"
+  },
+  {
+   "codigo": "3130100",
+   "descripcion": "CONSTRUCCION - DECORADORES DE INTERIORES"
+  },
+  {
+   "codigo": "3130300",
+   "descripcion": "CONSTRUCCION -  INGENIEROS, TECNICOS Y OPERADORES DE LA CONSTRUCCION"
+  },
+  {
+   "codigo": "3310300",
+   "descripcion": "CONSTRUCCION - COLOCADORES DE PRODUCTOS PREFABRICADOS EN INMUEBLES"
+  },
+  {
+   "codigo": "3310400",
+   "descripcion": "CONSTRUCCION - PINTORES"
+  },
+  {
+   "codigo": "3310600",
+   "descripcion": "CONSTRUCCION - VIDRIEROS"
+  },
+  {
+   "codigo": "3410200",
+   "descripcion": "CONSTRUCCION - REPARADORES DE VIAS DE COMUNICACION"
+  },
+  {
+   "codigo": "3420100",
+   "descripcion": "CONSTRUCCION - PLOMEROS E INSTALADORES DE TUBERIA"
+  },
+  {
+   "codigo": "3420200",
+   "descripcion": "CONSTRUCCION - ARQUITECTOS"
+  },
+  {
+   "codigo": "4130300",
+   "descripcion": "MECANICA - MECANICOS DE EQUIPO PESADO"
+  },
+  {
+   "codigo": "4130500",
+   "descripcion": "MECANICA - INGENIERO O MECANICOS INSTALADORES DE MAQUINARIA INDUSTRIAL"
+  },
+  {
+   "codigo": "4131000",
+   "descripcion": "MECANICA - INGENIERO O TECNICO EN MECANICA DE VEHICULOS TERRESTRES, AEREOS Y ACUATICOS"
+  },
+  {
+   "codigo": "4230200",
+   "descripcion": "ELECTRICIDAD - INGENIEROS O TECNICOS ELECTRICISTAS"
+  },
+  {
+   "codigo": "4230500",
+   "descripcion": "ELECTRICIDAD - TECNICOS EN REFRIGERACION, AIRE ACONDICIONADO Y CALEFACCION"
+  },
+  {
+   "codigo": "4330100",
+   "descripcion": "ELECTRONICA - MECANICOS DE INSTRUMENTOS INDUSTRIALES"
+  },
+  {
+   "codigo": "4330200",
+   "descripcion": "ELECTRONICA - INGENIERO O TECNICOS EN  ELECTRONICA"
+  },
+  {
+   "codigo": "4430200",
+   "descripcion": "INFORMATICA - INGENIERO O TECNICOS PROGRAMADORES EN INFORMATICA"
+  },
+  {
+   "codigo": "4440100",
+   "descripcion": "INFORMATICA - PROFESIONISTAS O TECNICOS DE SISTEMAS DE INFORMACION Y PROCESAMIENTO DE DATOS"
+  },
+  {
+   "codigo": "4530200",
+   "descripcion": "TELECOMUNICACIONES - INGENIERO, INSTALADORES Y REPARADORES DE EQUIPOS Y ACCESORIOS DE TELECOMUNICACIONES"
+  },
+  {
+   "codigo": "4530500",
+   "descripcion": "TELECOMUNICACIONES - TELEGRAFISTAS Y RADIO-OPERADORES"
+  },
+  {
+   "codigo": "4630100",
+   "descripcion": "PROCESOS INDUSTRIALES - INGENIERO O TECNICOS INDUSTRIAL Y DE PRODUCCION"
+  },
+  {
+   "codigo": "4640300",
+   "descripcion": "PROCESOS INDUSTRIALES - INGENIEROS METALURGICOS Y DE MATERIALES"
+  },
+  {
+   "codigo": "5110100",
+   "descripcion": "MINERALES NO METALICOS - OPERADORES O TRABAJADORES DE VIDRIO Y CONCRETO"
+  },
+  {
+   "codigo": "5121300",
+   "descripcion": "MINERALES NO METALICOS - OPERADORES DE MAQUINAS PROCESADORAS DE MINERALES NO METALICOS"
+  },
+  {
+   "codigo": "5210100",
+   "descripcion": "METALES - SUPERVISORES U OPERADORES DE PROCESAMIENTO Y FUNDICION DE METALES"
+  },
+  {
+   "codigo": "5310700",
+   "descripcion": "ALIMENTOS Y BEBIDAS - TRABAJADORES EN LA ELABORACION  Y PROCESAMIENTO DE ALIMENTOS, BEBIDAS Y TABACO"
+  },
+  {
+   "codigo": "5410100",
+   "descripcion": "TEXTILES Y PRENDAS DE VESTIR - TRABAJADORES EN LA PRODUCCION DE TEXTILES, PRENDAS DE VESTIR Y CALZADO"
+  },
+  {
+   "codigo": "5420700",
+   "descripcion": "TEXTILES Y PRENDAS DE VESTIR - TRABAJADORES DE REPARACION DE PRENDAS DE VESTIR Y CALZADO"
+  },
+  {
+   "codigo": "5510100",
+   "descripcion": "MADERA, PAPEL, Y PIEL - TRABAJADORES EN LA FABRICACION DE MUEBLES O PRODUCTOS DE MADERA Y/O PIEL"
+  },
+  {
+   "codigo": "5610200",
+   "descripcion": "PRODUCTOS QUIMICOS - TRABAJADORES EN EL PROCESAMIENTO Y FABRICACION DE PRODUCTOS QUIMICOS Y FARMACOQUIMICAS"
+  },
+  {
+   "codigo": "5710200",
+   "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - TRABAJADORES  EN LA FABRICACION DE PRODUCTOS METALICOS, DE HULE Y PLASTICOS"
+  },
+  {
+   "codigo": "5720800",
+   "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - ENSAMBLADORES Y ACABADORES DE PRODUCTOS DE PLASTICO"
+  },
+  {
+   "codigo": "5720900",
+   "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - FABRICANTES DE HERRAMIENTAS Y TROQUELES"
+  },
+  {
+   "codigo": "5721000",
+   "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - HERREROS Y FORJADORES"
+  },
+  {
+   "codigo": "5721100",
+   "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - JOYEROS Y ORFEBRES"
+  },
+  {
+   "codigo": "5722900",
+   "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - SOLDADORES Y OXICORTADORES"
+  },
+  {
+   "codigo": "5730600",
+   "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - TRABAJADORES EN EL ENSAMBLADO DE VEHICULOS, MOLDEADO, LAMINADO Y MONTAJE DE PIEZAS METALICAS, HULE O PLASTICO"
+  },
+  {
+   "codigo": "5731100",
+   "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - SUPERVISORES EN LA FABRICACION Y MONTAJE DE ARTICULOS DEPORTIVOS, DE JUGUETES Y SIMILARES"
+  },
+  {
+   "codigo": "5810200",
+   "descripcion": "PRODUCTOS ELECTRICOS Y ELECTRONICOS - TRABAJADORES EN LA FABRICACION DE PRODUCTOS ELECTRICOS Y ELECTRONICOS"
+  },
+  {
+   "codigo": "5910400",
+   "descripcion": "PRODUCTOS IMPRESOS - TRABAJADORES EN LA ELABORACION DE PRODUCTOS IMPRESOS"
+  },
+  {
+   "codigo": "6120100",
+   "descripcion": "TRANSPORTE FERROVIARIO - CONDUCTORES Y OPERADORES DE TREN SUBTERRANEO Y DE TREN LIGERO"
+  },
+  {
+   "codigo": "6120200",
+   "descripcion": "TRANSPORTE FERROVIARIO - TRABAJADORES DE FERROCARRILES"
+  },
+  {
+   "codigo": "6220100",
+   "descripcion": "TRANSPORTE TERRESTRE - CONDUCTORES DE VEHICULOS DE TRANSPORTE, SERVICIOS DE CARGA Y/O REPARTO"
+  },
+  {
+   "codigo": "6330100",
+   "descripcion": "TRANSPORTE AEREO - COORDINADORES Y SUPERVISORES EN SERVICIOS DE TRANSPORTE AEREO"
+  },
+  {
+   "codigo": "6330200",
+   "descripcion": "TRANSPORTE AEREO - DESPACHADORES DE VUELO Y ESPECIALISTAS EN SERVICIOS AEREOS"
+  },
+  {
+   "codigo": "6330400",
+   "descripcion": "TRANSPORTE AEREO - SUPERVISORES DE SISTEMAS DE COMUNICACION PARA LA AERONAVEGACION"
+  },
+  {
+   "codigo": "6330500",
+   "descripcion": "TRANSPORTE AEREO - PILOTOS DE AVIACION E INSTRUCTORES DE VUELO"
+  },
+  {
+   "codigo": "6330600",
+   "descripcion": "TRANSPORTE AEREO - SOBRECARGOS"
+  },
+  {
+   "codigo": "6420100",
+   "descripcion": "TRANSPORTE MARITIMO Y FLUVIAL - CONDUCTORES DE EMBARCACIONES"
+  },
+  {
+   "codigo": "6430100",
+   "descripcion": "TRANSPORTE MARITIMO Y FLUVIAL - JEFES Y CONTROLADORES DE TRAFICO MARITIMO"
+  },
+  {
+   "codigo": "6430300",
+   "descripcion": "TRANSPORTE MARITIMO Y FLUVIAL - PILOTOS, CAPITANES DE PUERTOS Y OFICIALES DE CUBIERTA"
+  },
+  {
+   "codigo": "7110200",
+   "descripcion": "COMERCIO - DESPACHADORES DE GASOLINERA"
+  },
+  {
+   "codigo": "7110300",
+   "descripcion": "COMERCIO - EMPACADORES DE MERCANCIAS"
+  },
+  {
+   "codigo": "7110500",
+   "descripcion": "COMERCIO - TAQUILLEROS"
+  },
+  {
+   "codigo": "7110600",
+   "descripcion": "COMERCIO - VENDEDORES AMBULANTES"
+  },
+  {
+   "codigo": "7120100",
+   "descripcion": "COMERCIO - CAJEROS REGISTRADORES"
+  },
+  {
+   "codigo": "7130200",
+   "descripcion": "COMERCIO - REPRESENTANTES DE VENTAS POR TELEFONO O POR TELEVISION"
+  },
+  {
+   "codigo": "7130400",
+   "descripcion": "COMERCIO - VENDEDORES ESPECIALIZADOS"
+  },
+  {
+   "codigo": "7140100",
+   "descripcion": "COMERCIO - GERENTES O SUPERVISOR DE ESTABLECIMIENTO COMERCIAL"
+  },
+  {
+   "codigo": "7140200",
+   "descripcion": "COMERCIO - GERENTES O EMPLEADOS DE VENTAS"
+  },
+  {
+   "codigo": "7210100",
+   "descripcion": "ALIMENTACION Y HOSPEDAJE - TRABAJADORES DE SERVICIO DE ALIMENTOS Y BEBIDAS"
+  },
+  {
+   "codigo": "7230200",
+   "descripcion": "ALIMENTACION Y HOSPEDAJE - JEFES DE COCINA, RESTAURANTE Y/O BAR"
+  },
+  {
+   "codigo": "7240200",
+   "descripcion": "ALIMENTACION Y HOSPEDAJE - TRABAJADORES DE SERVICIOS DE ALOJAMIENTO"
+  },
+  {
+   "codigo": "7330200",
+   "descripcion": "TURISMO - COORDINADORES DE OPERACIONES EN AGENCIAS DE VIAJES"
+  },
+  {
+   "codigo": "7330300",
+   "descripcion": "TURISMO - GUIAS DE EXCURSIONES O ECOTURISTICO"
+  },
+  {
+   "codigo": "7430100",
+   "descripcion": "DEPORTE Y ESPARCIMIENTO - ANIMADORES RECREATIVOS"
+  },
+  {
+   "codigo": "7430200",
+   "descripcion": "DEPORTE Y ESPARCIMIENTO - ATLETAS, ENTRENADORES O INSTRUCTORES EN DEPORTE Y RECREACION"
+  },
+  {
+   "codigo": "7430400",
+   "descripcion": "DEPORTE Y ESPARCIMIENTO - OFICIALES, JUECES Y ARBITROS DEPORTIVOS"
+  },
+  {
+   "codigo": "7530100",
+   "descripcion": "SERVICIOS PERSONALES - ESTILISTAS, ESTETICISTAS Y MASAJISTAS"
+  },
+  {
+   "codigo": "7540100",
+   "descripcion": "SERVICIOS PERSONALES - TRBAJADORES DE SERVICIOS FUNERARIOS O CEMENTERIOS"
+  },
+  {
+   "codigo": "7620100",
+   "descripcion": "REPARACION DE ARTICULOS DE USO DOMESTICO Y PERSONAL - CERRAJEROS"
+  },
+  {
+   "codigo": "7620200",
+   "descripcion": "REPARACION DE ARTICULOS DE USO DOMESTICO Y PERSONAL - REPARADORES DE ARTICULOS DE HULE"
+  },
+  {
+   "codigo": "7630100",
+   "descripcion": "REPARACION DE ARTICULOS DE USO DOMESTICO Y PERSONAL - RELOJEROS Y REPARADORES DE RELOJES"
+  },
+  {
+   "codigo": "7630200",
+   "descripcion": "REPARACION DE ARTICULOS DE USO DOMESTICO Y PERSONAL - REPARADORES DE APARATOS ELECTRICOS"
+  },
+  {
+   "codigo": "7720100",
+   "descripcion": "LIMPIEZA - SERVICIOS DE CAMARISTAS Y ASEADORES"
+  },
+  {
+   "codigo": "7720200",
+   "descripcion": "LIMPIEZA - TRABAJADORES DE TINTORERIA Y LAVANDERIA"
+  },
+  {
+   "codigo": "7720300",
+   "descripcion": "LIMPIEZA - FUMIGADORES DE PLAGAS"
+  },
+  {
+   "codigo": "7810200",
+   "descripcion": "SERVICIO POSTAL Y MENSAJERIA - EMPLEADOS DE SERVICIOS DE MENSAJERIA"
+  },
+  {
+   "codigo": "8120100",
+   "descripcion": "BOLSA, BANCA Y SEGUROS - GERENTES O TRABAJADORES DE SERVICIOS Y PRODUCTOS FINANCIEROS"
+  },
+  {
+   "codigo": "8130500",
+   "descripcion": "BOLSA, BANCA Y SEGUROS - VALUADORES"
+  },
+  {
+   "codigo": "8140100",
+   "descripcion": "BOLSA, BANCA Y SEGUROS - AGENTES DE VALORES, PROMOTORES Y CORREDORES DE INVERSION"
+  },
+  {
+   "codigo": "8210100",
+   "descripcion": "ADMINISTRACION - TRABAJADORES DE ARCHIVO, ALMACEN DE INVENTARIOS"
+  },
+  {
+   "codigo": "8220400",
+   "descripcion": "ADMINISTRACION - CAPTURISTA Y OPERADORES DE TELEFONO"
+  },
+  {
+   "codigo": "8220600",
+   "descripcion": "ADMINISTRACION - PAGADORES Y COBRADORES"
+  },
+  {
+   "codigo": "8230300",
+   "descripcion": "ADMINISTRACION - DIRECTORES, GERENTES  Y EMPLEADOS DE COMPRAS, FINANZAS, RECURSOS HUMANOS Y SERVICIOS ADMINISTRATIVOS"
+  },
+  {
+   "codigo": "8240100",
+   "descripcion": "ADMINISTRACION - ASISTENTES ADMINISTRATIVOS"
+  },
+  {
+   "codigo": "8240200",
+   "descripcion": "ADMINISTRACION - CONTADORES Y AUDITORES"
+  },
+  {
+   "codigo": "8240600",
+   "descripcion": "ADMINISTRACION - DIRECTORES, GERENTES Y EMPLEADOS DE PRODUCCION"
+  },
+  {
+   "codigo": "8240700",
+   "descripcion": "ADMINISTRACION - DIRECTORES, GERENTES Y EMPLEADOS DE SERVICIOS DE TRANSPORTE"
+  },
+  {
+   "codigo": "8250100",
+   "descripcion": "ADMINISTRACION - CONSULTORES"
+  },
+  {
+   "codigo": "8250200",
+   "descripcion": "ADMINISTRACION - DIRECTORES, GERENTES Y EMPLEADOS DE COMERCIALIZACION"
+  },
+  {
+   "codigo": "8250800",
+   "descripcion": "ADMINISTRACION - DIRECTORES, GERENTES Y EMPELADOS ADMINISTRATIVOS"
+  },
+  {
+   "codigo": "8340100",
+   "descripcion": "SERVICIOS LEGALES - ABOGADOS Y ASESORES LEGALES"
+  },
+  {
+   "codigo": "8340300",
+   "descripcion": "SERVICIOS LEGALES - NOTARIOS Y CORREDORES PUBLICOS"
+  },
+  {
+   "codigo": "9120700",
+   "descripcion": "SERVICIOS MEDICOS - ENFERMERAS Y/O PARAMEDICOS"
+  },
+  {
+   "codigo": "9130300",
+   "descripcion": "SERVICIOS MEDICOS - DIETISTAS Y NUTRIOLOGOS"
+  },
+  {
+   "codigo": "9131200",
+   "descripcion": "SERVICIOS MEDICOS - TECNICOS DE LABORATORIO MEDICO"
+  },
+  {
+   "codigo": "9140200",
+   "descripcion": "SERVICIOS MEDICOS - DIRECTORES DE INSTITUCIONES EN EL CUIDADO DE LA SALUD"
+  },
+  {
+   "codigo": "9140400",
+   "descripcion": "SERVICIOS MEDICOS - FARMACEUTICOS"
+  },
+  {
+   "codigo": "9140500",
+   "descripcion": "SERVICIOS MEDICOS - FISIOTERAPEUTAS Y QUIROPRACTICOS"
+  },
+  {
+   "codigo": "9140700",
+   "descripcion": "SERVICIOS MEDICOS - MEDICOS ESPECIALISTAS"
+  },
+  {
+   "codigo": "9140800",
+   "descripcion": "SERVICIOS MEDICOS - MEDICOS GENERALES Y FAMILIARES"
+  },
+  {
+   "codigo": "9230100",
+   "descripcion": "INSPECCION - INSPECTORES DE SALUD AMBIENTAL, SANIDAD Y DEL TRABAJO"
+  },
+  {
+   "codigo": "9230200",
+   "descripcion": "INSPECCION - INSPECTORES DE TRANSPORTE DE CARGA Y DE PASAJEROS"
+  },
+  {
+   "codigo": "9230300",
+   "descripcion": "INSPECCION - INSPECTORES FISCALES Y DE PRECIOS"
+  },
+  {
+   "codigo": "9230400",
+   "descripcion": "INSPECCION - INSPECTORES SANITARIOS Y DE CONTROL DE CALIDAD DE PRODUCTOS CARNICOS, PESQUEROS Y AGRICOLAS"
+  },
+  {
+   "codigo": "9330100",
+   "descripcion": "SEGURIDAD SOCIAL - CONSEJEROS DE EMPLEO"
+  },
+  {
+   "codigo": "9330300",
+   "descripcion": "SEGURIDAD SOCIAL - TRABAJADORES DE SERVICIO SOCIAL Y DE LA COMUNIDAD"
+  },
+  {
+   "codigo": "9420100",
+   "descripcion": "PROTECCION DE BIENES Y/O PERSONAS - BOMBEROS"
+  },
+  {
+   "codigo": "9420300",
+   "descripcion": "PROTECCION DE BIENES Y/O PERSONAS - GUARDIAS DE SEGURIDAD"
+  },
+  {
+   "codigo": "9430100",
+   "descripcion": "PROTECCION DE BIENES Y/O PERSONAS - DETECTIVES PRIVADOS"
+  },
+  {
+   "codigo": "1014010",
+   "descripcion": "RADIO, CINE, TELEVISION Y TEATRO - DISEÑADORES GRAFICOS"
+  },
+  {
+   "codigo": "1014030",
+   "descripcion": "RADIO, CINE, TELEVISION Y TEATRO - EDITORES, PERIODISTAS, REPORTEROS Y REDACTORES"
+  },
+  {
+   "codigo": "1023010",
+   "descripcion": "RADIO, CINE, TELEVISION Y TEATRO - ASISTENTES Y/U OPERADORES DE PRODUCCION DE CINE, RADIO Y TELEVISION"
+  },
+  {
+   "codigo": "1023070",
+   "descripcion": "RADIO, CINE, TELEVISION Y TEATRO - LOCUTORES, COMENTARISTAS Y CRONISTAS DE RADIO Y TELEVISION"
+  },
+  {
+   "codigo": "1024020",
+   "descripcion": "RADIO, CINE, TELEVISION Y TEATRO - PRODUCTORES Y DIRECTORES DE CINE, TELEVISION Y TEATRO"
+  },
+  {
+   "codigo": "1033010",
+   "descripcion": "INTERPRETACION ARTISTICA - ACTORES, BAILARINES, MUSICOS, ESCRITORES"
+  },
+  {
+   "codigo": "1033020",
+   "descripcion": "INTERPRETACION ARTISTICA - ARTESANOS"
+  },
+  {
+   "codigo": "1033040",
+   "descripcion": "INTERPRETACION ARTISTICA - FOTOGRAFOS"
+  },
+  {
+   "codigo": "1034010",
+   "descripcion": "INTERPRETACION ARTISTICA - ARTISTAS PLASTICOS"
+  },
+  {
+   "codigo": "1044010",
+   "descripcion": "TRADUCCION E INTERPRETACION LINGüISTICA - INTERPRETES Y/O TRADUCTORES"
+  },
+  {
+   "codigo": "1052010",
+   "descripcion": "PUBLICIDAD, PROPAGANDA Y RELACIONES PUBLICAS - MODELOS Y EDECANES"
+  },
+  {
+   "codigo": "1054010",
+   "descripcion": "PUBLICIDAD, PROPAGANDA Y RELACIONES PUBLICAS - DIRECTORES, GERENTES Y EMPLEADOS DE PUBLICIDAD"
+  },
+  {
+   "codigo": "1112010",
+   "descripcion": "INVESTIGACION - ENCUESTADORES Y CODIFICADORES"
+  },
+  {
+   "codigo": "1113010",
+   "descripcion": "INVESTIGACION - ASISTENTES DE INVESTIGADORES"
+  },
+  {
+   "codigo": "1113020",
+   "descripcion": "INVESTIGACION - QUIMICOS Y/O TECNICOS EN QUIMICA"
+  },
+  {
+   "codigo": "1114010",
+   "descripcion": "INVESTIGACION - BIOLOGOS Y CIENTIFICOS RELACIONADOS"
+  },
+  {
+   "codigo": "1114020",
+   "descripcion": "INVESTIGACION - ECONOMISTAS Y POLITOLOGOS (NO FUNCIONARIOS PUBLICOS)"
+  },
+  {
+   "codigo": "1114030",
+   "descripcion": "INVESTIGACION - FISICOS ASTRONOMOS"
+  },
+  {
+   "codigo": "1114040",
+   "descripcion": "INVESTIGACION - GEOLOGOS, GEOQUIMICOS, GEOFISICOS Y GEOGRAFOS"
+  },
+  {
+   "codigo": "1114050",
+   "descripcion": "INVESTIGACION - INVESTIGADORES Y CONSULTORES EN MERCADOTECNIA"
+  },
+  {
+   "codigo": "1114060",
+   "descripcion": "INVESTIGACION - MATEMATICOS, ESTADISTICOS Y ACTUARIOS"
+  },
+  {
+   "codigo": "1114070",
+   "descripcion": "INVESTIGACION - METEOROLOGOS"
+  },
+  {
+   "codigo": "1114090",
+   "descripcion": "INVESTIGACION - SOCIOLOGOS, ANTROPOLOGOS E HISTORIADORES"
+  },
+  {
+   "codigo": "1123020",
+   "descripcion": "ENSEÑANZA - CAPACITADORES E INSTRUCTORES"
+  },
+  {
+   "codigo": "1124070",
+   "descripcion": "ENSEÑANZA - PROFESORES O DOCENTES"
+  },
+  {
+   "codigo": "1125010",
+   "descripcion": "ENSEÑANZA - DIRECTORES GENERALES DE EDUCACION"
+  },
+  {
+   "codigo": "1133010",
+   "descripcion": "DIFUSION CULTURAL - PROMOTORES DE DIFUSION CULTURAL"
+  },
+  {
+   "codigo": "1134010",
+   "descripcion": "DIFUSION CULTURAL - TRABAJADORES DE BIBLIOTECA, ARCHIVO, MUSEO Y GALERIA DE ARTE"
+  },
+  {
+   "codigo": "1135010",
+   "descripcion": "OTRAS OCUPACIONES - ESTUDIANTE O MENOR DE EDAD SIN OCUPACION"
+  },
+  {
+   "codigo": "1135080",
+   "descripcion": "OTRAS OCUPACIONES - PROPIETARIO, ACCIONISTA O SOCIO"
+  },
+  {
+   "codigo": "1135020",
+   "descripcion": "OTRAS OCUPACIONES - DESEMPLEADO"
+  },
+  {
+   "codigo": "1135030",
+   "descripcion": "OTRAS OCUPACIONES - JUBILADO O PENSIONADO"
+  },
+  {
+   "codigo": "1135050",
+   "descripcion": "OTRAS OCUPACIONES - AMA DE CASA O QUEHACERES DEL HOGAR"
+  },
+  {
+   "codigo": "1135060",
+   "descripcion": "OTRAS OCUPACIONES - MINISTROS DE CULTO RELIGIOSO (SACERDOTE, PASTOR, MONJA, ETC)"
+  },
+  {
+   "codigo": "1135070",
+   "descripcion": "OTRAS OCUPACIONES - AGENTE ADUANAL"
+  },
+  {
+   "codigo": "1136010",
+   "descripcion": "SECTOR PUBLICO - EMPLEADO DEL PODER EJECUTIVO FEDERAL"
+  },
+  {
+   "codigo": "1136020",
+   "descripcion": "SECTOR PUBLICO - EMPLEADO PODER EJECUTIVO ESTATAL O DEL DISTRITO FEDERAL"
+  },
+  {
+   "codigo": "1136030",
+   "descripcion": "SECTOR PUBLICO - EMPLEADO DEL PODER EJECUTIVO MUNICIPAL O DELEGACIONAL"
+  },
+  {
+   "codigo": "1136040",
+   "descripcion": "SECTOR PUBLICO - EMPLEADO DEL PODER JUDICIAL FEDERAL"
+  },
+  {
+   "codigo": "1136070",
+   "descripcion": "SECTOR PUBLICO - EMPLEADO DEL PODER JUDICIAL ESTATAL O DEL DISTRITO FEDERAL"
+  },
+  {
+   "codigo": "1136050",
+   "descripcion": "SECTOR PUBLICO - EMPLEADO DEL PODER LEGISLATIVO FEDERAL"
+  },
+  {
+   "codigo": "1136060",
+   "descripcion": "SECTOR PUBLICO - EMPLEADO DEL PODER LEGISLATIVO ESTATAL O DEL DISTRITO FEDERAL"
+  },
+  {
+   "codigo": "1136090",
+   "descripcion": "SECTOR PUBLICO - EJERCITO, ARMADA Y FUERZA AEREA"
+  },
+  {
+   "codigo": "1136080",
+   "descripcion": "ORGANISMOS INTERNACIONALES Y EXTRATERRITORIALES - EMPLEADOS DE ORGANISMOS INTERNACIONALES Y EXTRATERRITORIALES"
+  }
+ ],
+ "giro_mercantil": [
+  {
+   "codigo": "1000000",
+   "descripcion": "NO APLICA"
+  },
+  {
+   "codigo": "1100001",
+   "descripcion": "SECTOR PRIMARIO - AGRICULTURA"
+  },
+  {
+   "codigo": "1200001",
+   "descripcion": "SECTOR PRIMARIO - GANADERIA"
+  },
+  {
+   "codigo": "1300001",
+   "descripcion": "SECTOR PRIMARIO - EXPLOTACION DE OTROS ANIMALES (AVICULTURA, APICULTURA, ETC.)"
+  },
+  {
+   "codigo": "1400002",
+   "descripcion": "SECTOR PRIMARIO - APROVECHAMIENTO FORESTAL"
+  },
+  {
+   "codigo": "1500001",
+   "descripcion": "SECTOR PRIMARIO - PESCA"
+  },
+  {
+   "codigo": "2100002",
+   "descripcion": "MINERIA - MINERIA DE OTROS RECURSOS"
+  },
+  {
+   "codigo": "2200002",
+   "descripcion": "MINERIA - ACTIVIDADES RELACIONADAS CON EL PETROLEO Y EL GAS"
+  },
+  {
+   "codigo": "2300003",
+   "descripcion": "MINERIA - ORO"
+  },
+  {
+   "codigo": "2400002",
+   "descripcion": "MINERIA - PLATA"
+  },
+  {
+   "codigo": "2500002",
+   "descripcion": "MINERIA - PIEDRAS PRECIOSAS"
+  },
+  {
+   "codigo": "2600003",
+   "descripcion": "GENERACION, TRANSMISION Y DISTRIBUCION DE ENERGIA ELECTRICA, SUMINISTRO DE AGUA Y DE GAS"
+  },
+  {
+   "codigo": "2710004",
+   "descripcion": "CONSTRUCCION - OTRAS ACTIVIDADES RELACIONADAS CON LA CONSTRUCCION"
+  },
+  {
+   "codigo": "2720004",
+   "descripcion": "CONSTRUCCION - EDIFICACION RESIDENCIAL Y NO RESIDENCIAL"
+  },
+  {
+   "codigo": "2730004",
+   "descripcion": "CONSTRUCCION - OBRAS DE INGENIERIA CIVIL"
+  },
+  {
+   "codigo": "2740004",
+   "descripcion": "CONSTRUCCION - TRABAJOS ESPECIALIZADOS PARA LA CONSTRUCCION"
+  },
+  {
+   "codigo": "2754004",
+   "descripcion": "CONSTRUCCION - SERVICIOS DE BLINDAJE PARCIAL O TOTAL DE INMUEBLES"
+  },
+  {
+   "codigo": "3110005",
+   "descripcion": "INDUSTRIA - ALIMENTARIA"
+  },
+  {
+   "codigo": "3120005",
+   "descripcion": "INDUSTRIA - BEBIDAS Y DEL TABACO"
+  },
+  {
+   "codigo": "3140005",
+   "descripcion": "INDUSTRIA - PRODUCTOS TEXTILES"
+  },
+  {
+   "codigo": "3150005",
+   "descripcion": "INDUSTRIA - PRENDAS DE VESTIR"
+  },
+  {
+   "codigo": "3210005",
+   "descripcion": "INDUSTRIA - MADERA"
+  },
+  {
+   "codigo": "3220005",
+   "descripcion": "INDUSTRIA - PAPEL"
+  },
+  {
+   "codigo": "3230005",
+   "descripcion": "INDUSTRIA - IMPRESION E INDUSTRIAS CONEXAS"
+  },
+  {
+   "codigo": "3240005",
+   "descripcion": "INDUSTRIA - PRODUCTOS DERIVADOS DEL PETROLEO Y DEL CARBON"
+  },
+  {
+   "codigo": "3250005",
+   "descripcion": "INDUSTRIA - QUIMICA"
+  },
+  {
+   "codigo": "3260005",
+   "descripcion": "INDUSTRIA - PLASTICO Y DEL HULE"
+  },
+  {
+   "codigo": "3270005",
+   "descripcion": "INDUSTRIA - PRODUCTOS A BASE DE MINERALES NO METALICOS (ALFARERIA, PORCELANA, LOZA, VIDRIO, CEMENTO)"
+  },
+  {
+   "codigo": "3310005",
+   "descripcion": "INDUSTRIA - METALICAS BASICAS"
+  },
+  {
+   "codigo": "3320005",
+   "descripcion": "INDUSTRIA - PRODUCTOS METALICOS (HERRAMIENTAS, UTENSILIOS, ESTRUCTURAS, PIEZAS)"
+  },
+  {
+   "codigo": "3330005",
+   "descripcion": "INDUSTRIA - MAQUINARIA Y EQUIPO"
+  },
+  {
+   "codigo": "3340005",
+   "descripcion": "INDUSTRIA - EQUIPO DE COMPUTACION, COMUNICACION, MEDICION Y DE OTROS EQUIPOS, COMPONENTES Y ACCESORIOS ELECTRONICOS"
+  },
+  {
+   "codigo": "3350005",
+   "descripcion": "INDUSTRIA - ACCESORIOS, APARATOS ELECTRICOS Y EQUIPO DE GENERACION DE ENERGIA ELECTRICA"
+  },
+  {
+   "codigo": "3360005",
+   "descripcion": "INDUSTRIA - EQUIPO DE TRANSPORTE SIN MOTOR"
+  },
+  {
+   "codigo": "3370005",
+   "descripcion": "INDUSTRIA - AUTOMOTRIZ"
+  },
+  {
+   "codigo": "3380005",
+   "descripcion": "INDUSTRIA - VEHICULOS BLINDADOS Y EQUIPO PARA EL BLINDAJE DE VEHICULOS"
+  },
+  {
+   "codigo": "3410005",
+   "descripcion": "INDUSTRIA - MUEBLES, COLCHONES Y PERSIANAS"
+  },
+  {
+   "codigo": "3420005",
+   "descripcion": "INDUSTRIA - OTRAS INDUSTRIAS MANUFACTURERAS"
+  },
+  {
+   "codigo": "3430005",
+   "descripcion": "INDUSTRIA - ORFEBRERIA Y JOYERIA DE METALES Y PIEDRAS PRECIOSOS"
+  },
+  {
+   "codigo": "3440005",
+   "descripcion": "INDUSTRIA - JOYERIA DE METALES Y PIEDRAS NO PRECIOSOS Y DE OTROS MATERIALES"
+  },
+  {
+   "codigo": "4310006",
+   "descripcion": "COMERCIO - ABARROTES, ALIMENTOS, BEBIDAS, HIELO Y TABACO"
+  },
+  {
+   "codigo": "4320006",
+   "descripcion": "COMERCIO - PRODUCTOS FARMACEUTICOS, DE PERFUMERIA, ARTICULOS PARA EL ESPARCIMIENTO, ELECTRODOMESTICOS Y APARATOS DE LINEA BLANCA"
+  },
+  {
+   "codigo": "4330006",
+   "descripcion": "COMERCIO - MATERIAS PRIMAS AGROPECUARIAS Y FORESTALES, PARA LA INDUSTRIA, Y MATERIALES DE DESECHO"
+  },
+  {
+   "codigo": "4340006",
+   "descripcion": "COMERCIO - MAQUINARIA, EQUIPO DE COMPUTO Y MOBILIARIO DE USO GENERAL"
+  },
+  {
+   "codigo": "4620006",
+   "descripcion": "COMERCIO - TIENDAS DE AUTOSERVICIO Y DEPARTAMENTALES"
+  },
+  {
+   "codigo": "4630006",
+   "descripcion": "COMERCIO - PRODUCTOS TEXTILES, BISUTERIA, ACCESORIOS DE VESTIR Y CALZADO"
+  },
+  {
+   "codigo": "4650006",
+   "descripcion": "COMERCIO - ARTICULOS DE PAPELERIA"
+  },
+  {
+   "codigo": "4660026",
+   "descripcion": "COMERCIO - ARTICULOS DE JOYERIA Y RELOJES"
+  },
+  {
+   "codigo": "4670006",
+   "descripcion": "COMERCIO - ARTICULOS PARA LA DECORACION DE INTERIORES"
+  },
+  {
+   "codigo": "4680006",
+   "descripcion": "COMERCIO - ANTIGÜEDADES Y OBRAS DE ARTE"
+  },
+  {
+   "codigo": "4710006",
+   "descripcion": "COMERCIO - ARTICULOS DE FERRETERIA, TLAPALERIA Y VIDRIOS"
+  },
+  {
+   "codigo": "4720006",
+   "descripcion": "COMERCIO - VEHICULOS NUEVOS"
+  },
+  {
+   "codigo": "4730006",
+   "descripcion": "COMERCIO - VEHICULOS USADOS"
+  },
+  {
+   "codigo": "4740006",
+   "descripcion": "COMERCIO - PARTES Y REFACCIONES PARA VEHICULOS"
+  },
+  {
+   "codigo": "4750006",
+   "descripcion": "COMERCIO - COMBUSTIBLES Y LUBRICANTES"
+  },
+  {
+   "codigo": "4760006",
+   "descripcion": "COMERCIO - A TRAVES DE INTERNET, Y CATALOGOS IMPRESOS, TELEVISION Y SIMILARES"
+  },
+  {
+   "codigo": "4810007",
+   "descripcion": "TRANSPORTE - AEREO"
+  },
+  {
+   "codigo": "4820007",
+   "descripcion": "TRANSPORTE - FERROVIARIO"
+  },
+  {
+   "codigo": "4830007",
+   "descripcion": "TRANSPORTE - MARITIMO Y FLUVIAL"
+  },
+  {
+   "codigo": "4850007",
+   "descripcion": "TRANSPORTE - TERRESTRE"
+  },
+  {
+   "codigo": "4860007",
+   "descripcion": "TRANSPORTE - TRANSPORTACION Y DISTRIBUCION POR DUCTOS"
+  },
+  {
+   "codigo": "4880007",
+   "descripcion": "TRANSPORTE - SERVICIOS RELACIONADOS CON EL TRANSPORTE"
+  },
+  {
+   "codigo": "4890007",
+   "descripcion": "TRANSPORTE - SERVICIOS DE AGENCIAS ADUANALES"
+  },
+  {
+   "codigo": "4840007",
+   "descripcion": "TRANSPORTE - SERVICIOS DE TRANSPORTE Y/O CUSTODIA DE VALORES"
+  },
+  {
+   "codigo": "4910008",
+   "descripcion": "SERVICIOS POSTALES"
+  },
+  {
+   "codigo": "4920009",
+   "descripcion": "SERVICIOS DE MENSAJERIA Y PAQUETERIA"
+  },
+  {
+   "codigo": "4930010",
+   "descripcion": "SERVICIOS DE ALMACENAMIENTO"
+  },
+  {
+   "codigo": "5100011",
+   "descripcion": "INFORMACION EN MEDIOS MASIVOS"
+  },
+  {
+   "codigo": "5180012",
+   "descripcion": "PROCESAMIENTO ELECTRONICO DE INFORMACION Y OTROS SERVICIOS WEB"
+  },
+  {
+   "codigo": "5210013",
+   "descripcion": "SERVICIOS FINANCIEROS - BANCA CENTRAL"
+  },
+  {
+   "codigo": "5220013",
+   "descripcion": "SERVICIOS FINANCIEROS - BANCA MULTIPLE"
+  },
+  {
+   "codigo": "5230013",
+   "descripcion": "SERVICIOS FINANCIEROS - BANCA DE DESARROLLO"
+  },
+  {
+   "codigo": "5240013",
+   "descripcion": "SERVICIOS FINANCIEROS - FONDOS Y FIDEICOMISOS FINANCIEROS"
+  },
+  {
+   "codigo": "5250013",
+   "descripcion": "SERVICIOS FINANCIEROS - UNIONES DE CREDITO"
+  },
+  {
+   "codigo": "5260013",
+   "descripcion": "SREVICIOS FINANCIEROS - CAJAS DE AHORRO POPULAR"
+  },
+  {
+   "codigo": "5270013",
+   "descripcion": "SERVICIOS FINANCIEROS - OTRAS INSTITUCIONES DE INTERMEDIACION CREDITICIA Y FINANCIERA NO BURSATIL (OPERACION Y PROMOCION DE TARJETAS DE CREDITO NO BANCARIAS,  FINANCIAMIENTO DE BIENES DURADEROS), SOCIEDADES FINANCIERAS DE OBJETO LIMITADO"
+  },
+  {
+   "codigo": "5280013",
+   "descripcion": "SERVICIOS FINANCIEROS - OTRAS INSTITUCIONES DE AHORRO Y PRESTAMO"
+  },
+  {
+   "codigo": "5290013",
+   "descripcion": "SERVICIOS FINANCIEROS - COMPAÑIAS DE AUTOFINANCIAMIENTO"
+  },
+  {
+   "codigo": "5310013",
+   "descripcion": "SERVICIOS FINANCIEROS - MONTEPIOS"
+  },
+  {
+   "codigo": "5320013",
+   "descripcion": "SERVICIOS FINANCIEROS - CASAS DE EMPEÑO"
+  },
+  {
+   "codigo": "5330013",
+   "descripcion": "SERVICIOS FINANCIEROS - SOCIEDADES FINANCIERAS DE OBJETO MULTIPLE"
+  },
+  {
+   "codigo": "5350013",
+   "descripcion": "SERVICIOS FINANCIEROS - CASAS DE BOLSA"
+  },
+  {
+   "codigo": "5360013",
+   "descripcion": "SERVICIOS FINANCIEROS - CASAS DE CAMBIO Y CENTROS CAMBIARIOS"
+  },
+  {
+   "codigo": "5370013",
+   "descripcion": "SERVICIOS FINANCIEROS - TRANSMISORES DE DINERO"
+  },
+  {
+   "codigo": "5390013",
+   "descripcion": "SERVICIOS FINANCIEROS - OTROS SERVICIOS RELACIONADOS CON LA INTERMEDIACION BURSATIL"
+  },
+  {
+   "codigo": "5410013",
+   "descripcion": "SERVICIOS FINANCIEROS - COMPAÑIAS DE SEGUROS"
+  },
+  {
+   "codigo": "5420013",
+   "descripcion": "SERVICIOS FINANCIEROS - COMPAÑIAS AFIANZADORAS"
+  },
+  {
+   "codigo": "5430013",
+   "descripcion": "SERVICIOS FINANCIEROS - AGENTES, AJUSTADORES Y GESTORES DE SEGUROS Y FIANZAS"
+  },
+  {
+   "codigo": "5440013",
+   "descripcion": "SERVICIOS FINANCIEROS - ADMINISTRACION DE FONDOS PARA EL RETIRO"
+  },
+  {
+   "codigo": "5450013",
+   "descripcion": "SERVICIOS FINANCIEROS - EMISORA Y/O COMERCIALIZACION DE CHEQUES DE VIAJERO"
+  },
+  {
+   "codigo": "5340013",
+   "descripcion": "OTRAS EMPRESAS DE INTERMEDIACION CREDITICIA NO FINANCIERAS"
+  },
+  {
+   "codigo": "5510014",
+   "descripcion": "SERVICIOS INMOBILIARIOS Y DE ALQUILER - ALQUILER SIN INTERMEDIACION DE BIENES RAICES"
+  },
+  {
+   "codigo": "5520014",
+   "descripcion": "SERVICIOS INMOBILIARIOS Y DE ALQUILER - INMOBILIARIAS Y CORREDORES DE BIENES RAICES"
+  },
+  {
+   "codigo": "5530014",
+   "descripcion": "SERVICIOS INMOBILIARIOS Y DE ALQUILER - SERVICIOS DE ALQUILER DE BIENES MUEBLES EXCEPTO VEHICULOS"
+  },
+  {
+   "codigo": "5540014",
+   "descripcion": "SERVICIOS INMOBILIARIOS Y DE ALQUILER - ALQUILER DE VEHICULOS"
+  },
+  {
+   "codigo": "5550014",
+   "descripcion": "SERVICIOS INMOBILIARIOS Y DE ALQUILER - SERVICIOS DE ALQUILER DE MARCAS REGISTRADAS, PATENTES Y FRANQUICIAS"
+  },
+  {
+   "codigo": "5610015",
+   "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - SERVICIOS JURIDICOS"
+  },
+  {
+   "codigo": "5620015",
+   "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - NOTARIA Y CORREDURIA PUBLICA"
+  },
+  {
+   "codigo": "5690015",
+   "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - CONTABILIDAD Y AUDITORIA"
+  },
+  {
+   "codigo": "5630015",
+   "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - ARQUITECTURA, INGENIERIA Y ACTIVIDADES RELACIONADAS"
+  },
+  {
+   "codigo": "5640015",
+   "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - DISEÑO DE SISTEMAS DE COMPUTO Y SERVICIOS RELACIONADOS"
+  },
+  {
+   "codigo": "5650015",
+   "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - CONSULTORIA ADMINISTRATIVA, CIENTIFICA Y TECNICA"
+  },
+  {
+   "codigo": "5660015",
+   "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - INVESTIGACION CIENTIFICA Y DESARROLLO"
+  },
+  {
+   "codigo": "5670015",
+   "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - PUBLICIDAD Y ACTIVIDADES RELACIONADAS"
+  },
+  {
+   "codigo": "5680015",
+   "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - OTROS SERVICIOS DE OUTSOURCING"
+  },
+  {
+   "codigo": "5710016",
+   "descripcion": "SERVICIOS DE APOYO A LOS NEGOCIOS - SERVICIOS DE ADMINISTRACION DE NEGOCIOS"
+  },
+  {
+   "codigo": "5720016",
+   "descripcion": "SERVICIOS DE APOYO A LOS NEGOCIOS - AGENCIAS DE COBRANZA, DESPACHOS DE INVESTIGACION"
+  },
+  {
+   "codigo": "5730016",
+   "descripcion": "SERVICIOS DE APOYO A LOS NEGOCIOS - SERVICIOS DE PROTECCION Y SEGURIDAD"
+  },
+  {
+   "codigo": "5740016",
+   "descripcion": "SERVICIOS DE APOYO A LOS NEGOCIOS - SERVICIOS DE LIMPIEZA Y MANTENIMIENTO"
+  },
+  {
+   "codigo": "5750016",
+   "descripcion": "SERVICIOS DE APOYO A LOS NEGOCIOS - OTROS SERVICIOS"
+  },
+  {
+   "codigo": "6100017",
+   "descripcion": "SERVICIOS EDUCATIVOS"
+  },
+  {
+   "codigo": "6200018",
+   "descripcion": "SERVICIOS DE SALUD Y DE ASISTENCIA SOCIAL"
+  },
+  {
+   "codigo": "7110019",
+   "descripcion": "SERVICIOS DE ESPARCIMIENTO CULTURALES Y DEPORTIVOS, Y OTROS SERVICIOS RECREATIVOS"
+  },
+  {
+   "codigo": "7120019",
+   "descripcion": "SERVICIOS DE ESPARCIMIENTO - MUSEOS, SITIOS HISTORICOS, ZOOLOGICOS Y SIMILARES"
+  },
+  {
+   "codigo": "7130019",
+   "descripcion": "SERVICIOS DE ESPARCIMIENTO - CASAS DE JUEGOS ELECTRONICOS"
+  },
+  {
+   "codigo": "7140019",
+   "descripcion": "SERVICIOS DE ESPARCIMIENTO - CASINOS O CENTROS DE APUESTA"
+  },
+  {
+   "codigo": "7150019",
+   "descripcion": "SERVICIOS DE ESPARCIMIENTO - VENTA DE BILLETES DE LOTERIA, PRONOSTICOS DEPORTIVOS U OTROS SORTEOS"
+  },
+  {
+   "codigo": "7200020",
+   "descripcion": "SERVICIOS DE ALOJAMIENTO TEMPORAL Y DE PREPARACION DE ALIMENTOS Y BEBIDAS"
+  },
+  {
+   "codigo": "8100021",
+   "descripcion": "SERVICIOS DE REPARACION Y MANTENIMIENTO - EQUIPO INDUSTRIAL, COMERCIAL, SERVICIOS Y AUTOMOTRIZ"
+  },
+  {
+   "codigo": "8200022",
+   "descripcion": "SERVICIOS PERSONALES - LAVANDERIAS, SERVICIOS FUNERARIOS, BAÑOS PUBLICOS, SERVICIOS DE ESTACIONAMIENTO, REVELADO E IMPRESION DE FOTOGRAFIAS"
+  },
+  {
+   "codigo": "8310023",
+   "descripcion": "ASOCIACIONES - ORGANIZACIONES Y CAMARAS DE PRODUCTORES, COMERCIANTES Y PRESTADORES DE SERVICIOS"
+  },
+  {
+   "codigo": "8320023",
+   "descripcion": "ASOCIACIONES - ORGANIZACIONES LABORALES Y SINDICALES"
+  },
+  {
+   "codigo": "8330023",
+   "descripcion": "ASOCIACIONES - ORGANIZACIONES DE PROFESIONISTAS"
+  },
+  {
+   "codigo": "8340023",
+   "descripcion": "ASOCIACIONES - ORGANIZACIONES DE ACTIVIDADES RECREATIVAS"
+  },
+  {
+   "codigo": "8350023",
+   "descripcion": "ASOCIACIONES - ORGANIZACIONES RELIGIOSAS"
+  },
+  {
+   "codigo": "8360023",
+   "descripcion": "ASOCIACIONES - ORGANIZACIONES POLITICAS"
+  },
+  {
+   "codigo": "8370023",
+   "descripcion": "ASOCIACIONES - ORGANIZACIONES CIVILES"
+  },
+  {
+   "codigo": "9100025",
+   "descripcion": "ORGANISMOS INTERNACIONALES Y EXTRATERRITORIALES"
+  },
+  {
+   "codigo": "9810024",
+   "descripcion": "SECTOR PUBLICO - PODER EJECUTIVO FEDERAL"
+  },
+  {
+   "codigo": "9820024",
+   "descripcion": "SECTOR PUBLICO - PODER EJECUTIVO ESTATAL Y DEL DISTRITO FEDERAL"
+  },
+  {
+   "codigo": "9830024",
+   "descripcion": "SECTOR PUBLICO - PODER EJECUTIVO MUNICIPAL Y DELEGACIONAL"
+  },
+  {
+   "codigo": "9840024",
+   "descripcion": "SECTOR PUBLICO - PODER JUDICIAL FEDERAL"
+  },
+  {
+   "codigo": "9850024",
+   "descripcion": "SECTOR PUBLICO - PODER JUDICIAL ESTATAL Y DEL DISTRITO FEDERAL"
+  },
+  {
+   "codigo": "9860024",
+   "descripcion": "SECTOR PUBLICO - PODER LEGISLATIVO FEDERAL"
+  },
+  {
+   "codigo": "9870024",
+   "descripcion": "SECTOR PUBLICO - PODER LEGISLATIVO ESTATAL Y DEL DISTRITO FEDERAL"
+  },
+  {
+   "codigo": "9880024",
+   "descripcion": "SECTOR PUBLICO - ORGANOS AUTONOMOS Y ENTIDADES PARAESTATALES"
+  }
+ ],
+ "tipo_desarrollo": [
+  {
+   "codigo": "1",
+   "descripcion": "Habitacional"
+  },
+  {
+   "codigo": "2",
+   "descripcion": "Comercial"
+  },
+  {
+   "codigo": "3",
+   "descripcion": "Oficinas"
+  },
+  {
+   "codigo": "4",
+   "descripcion": "Industrial"
+  },
+  {
+   "codigo": "5",
+   "descripcion": "Mixto (Habitacional y Comercial)"
+  },
+  {
+   "codigo": "99",
+   "descripcion": "Otro"
+  }
+ ],
+ "tipo_tercero": [
+  {
+   "codigo": "1",
+   "descripcion": "Proveedores"
+  },
+  {
+   "codigo": "2",
+   "descripcion": "Cliente(s) en Preventa"
+  },
+  {
+   "codigo": "99",
+   "descripcion": "Otro"
+  }
+ ],
+ "instrumento_monetario": [
+  {
+   "codigo": "1",
+   "descripcion": "Efectivo"
+  },
+  {
+   "codigo": "2",
+   "descripcion": "Tarjeta de Crédito"
+  },
+  {
+   "codigo": "3",
+   "descripcion": "Tarjeta de Debito"
+  },
+  {
+   "codigo": "4",
+   "descripcion": "Tarjeta de Prepago"
+  },
+  {
+   "codigo": "5",
+   "descripcion": "Cheque Nominativo"
+  },
+  {
+   "codigo": "6",
+   "descripcion": "Cheque de Caja"
+  },
+  {
+   "codigo": "7",
+   "descripcion": "Cheques de Viajero"
+  },
+  {
+   "codigo": "8",
+   "descripcion": "Transferencia Interbancaria"
+  },
+  {
+   "codigo": "9",
+   "descripcion": "Transferencia Misma Institución"
+  },
+  {
+   "codigo": "10",
+   "descripcion": "Transferencia Internacional"
+  },
+  {
+   "codigo": "11",
+   "descripcion": "Orden de Pago"
+  },
+  {
+   "codigo": "12",
+   "descripcion": "Giro"
+  },
+  {
+   "codigo": "13",
+   "descripcion": "Oro o Platino Amonedados"
+  },
+  {
+   "codigo": "14",
+   "descripcion": "Plata Amonedada"
+  },
+  {
+   "codigo": "15",
+   "descripcion": "Metales Preciosos"
+  }
+ ],
+ "tipo_institucion": [
+  {
+   "codigo": "4",
+   "descripcion": "Administradoras de Fondos para el Retiro"
+  },
+  {
+   "codigo": "7",
+   "descripcion": "Almacenes Generales de Deposito"
+  },
+  {
+   "codigo": "10",
+   "descripcion": "Arrendadoras Financieras"
+  },
+  {
+   "codigo": "13",
+   "descripcion": "Casas de Bolsa"
+  },
+  {
+   "codigo": "16",
+   "descripcion": "Casas de Cambio"
+  },
+  {
+   "codigo": "18",
+   "descripcion": "Sector Energía"
+  },
+  {
+   "codigo": "19",
+   "descripcion": "Empresas de Factoraje Financiero"
+  },
+  {
+   "codigo": "22",
+   "descripcion": "Instituciones de Seguros"
+  },
+  {
+   "codigo": "25",
+   "descripcion": "Empresas de Servicios a Intermediarios Bursátiles"
+  },
+  {
+   "codigo": "27",
+   "descripcion": "Sociedades Financieras Populares"
+  },
+  {
+   "codigo": "28",
+   "descripcion": "Servicios Complementarios"
+  },
+  {
+   "codigo": "29",
+   "descripcion": "Entidades de Ahorro y Crédito Popular"
+  },
+  {
+   "codigo": "30",
+   "descripcion": "Organismos de Integración"
+  },
+  {
+   "codigo": "31",
+   "descripcion": "Fondos y Fideicomisos de Fomento Económico"
+  },
+  {
+   "codigo": "32",
+   "descripcion": "Organismos de Servicio Social"
+  },
+  {
+   "codigo": "34",
+   "descripcion": "Inmobiliarias"
+  },
+  {
+   "codigo": "37",
+   "descripcion": "Banca de Desarrollo"
+  },
+  {
+   "codigo": "40",
+   "descripcion": "Banca Múltiple"
+  },
+  {
+   "codigo": "43",
+   "descripcion": "Instituciones de Fianzas"
+  },
+  {
+   "codigo": "46",
+   "descripcion": "Oficinas de Representación de Intermediarios Financieros del Exterior"
+  },
+  {
+   "codigo": "50",
+   "descripcion": "Financiera Rural"
+  },
+  {
+   "codigo": "52",
+   "descripcion": "Sociedades de Inversión"
+  },
+  {
+   "codigo": "55",
+   "descripcion": "Sociedades Controladoras"
+  },
+  {
+   "codigo": "61",
+   "descripcion": "Sociedades de Información Crediticia"
+  },
+  {
+   "codigo": "64",
+   "descripcion": "Sociedades de Inversión Especializadas de Fondos para el Retiro"
+  },
+  {
+   "codigo": "67",
+   "descripcion": "Sociedades Financieras de Objeto Limitado"
+  },
+  {
+   "codigo": "68",
+   "descripcion": "Sociedades Financieras de Objeto Múltiple"
+  },
+  {
+   "codigo": "69",
+   "descripcion": "Sociedades Financieras de Objeto Múltiple (Entidades No Reguladas)"
+  },
+  {
+   "codigo": "70",
+   "descripcion": "Sociedades Operadoras de Sociedades de Inversión"
+  },
+  {
+   "codigo": "71",
+   "descripcion": "Sociedades Distribuidoras de Acciones de Sociedades de Inversión"
+  },
+  {
+   "codigo": "72",
+   "descripcion": "Valuadoras de Acciones de Sociedades de Inversión"
+  },
+  {
+   "codigo": "79",
+   "descripcion": "Sucursales en el Extranjero"
+  },
+  {
+   "codigo": "85",
+   "descripcion": "Uniones de Crédito"
+  },
+  {
+   "codigo": "88",
+   "descripcion": "Transmisores de Dinero"
+  },
+  {
+   "codigo": "89",
+   "descripcion": "Centros Cambiarios"
+  },
+  {
+   "codigo": "90",
+   "descripcion": "Asesores en Inversiones"
+  },
+  {
+   "codigo": "99",
+   "descripcion": "Otros Organismos No Financieros"
+  }
+ ],
+ "moneda": [
+  {
+   "codigo": "1",
+   "descripcion": "Peso mexicano"
+  },
+  {
+   "codigo": "2",
+   "descripcion": "Dólar estadounidense"
+  },
+  {
+   "codigo": "3",
+   "descripcion": "Euro"
+  },
+  {
+   "codigo": "4",
+   "descripcion": "Dirham de los Emiratos Árabes Unidos"
+  },
+  {
+   "codigo": "5",
+   "descripcion": "Afgani afgano"
+  },
+  {
+   "codigo": "6",
+   "descripcion": "Lek albanés"
+  },
+  {
+   "codigo": "7",
+   "descripcion": "Dram armenio"
+  },
+  {
+   "codigo": "8",
+   "descripcion": "Florín antillano neerlandés"
+  },
+  {
+   "codigo": "9",
+   "descripcion": "Kwanza angoleño"
+  },
+  {
+   "codigo": "10",
+   "descripcion": "Peso argentino"
+  },
+  {
+   "codigo": "11",
+   "descripcion": "Dólar australiano"
+  },
+  {
+   "codigo": "12",
+   "descripcion": "Florín arubeño"
+  },
+  {
+   "codigo": "13",
+   "descripcion": "Manat azerbaiyano"
+  },
+  {
+   "codigo": "14",
+   "descripcion": "Manat azerbaiyano"
+  },
+  {
+   "codigo": "15",
+   "descripcion": "Marco convertible de Bosnia-Herzegovina"
+  },
+  {
+   "codigo": "16",
+   "descripcion": "Dólar de Barbados"
+  },
+  {
+   "codigo": "17",
+   "descripcion": "Taka de Bangladesh"
+  },
+  {
+   "codigo": "18",
+   "descripcion": "Lev búlgaro"
+  },
+  {
+   "codigo": "19",
+   "descripcion": "Dinar bahreiní"
+  },
+  {
+   "codigo": "20",
+   "descripcion": "Franco burundés"
+  },
+  {
+   "codigo": "21",
+   "descripcion": "Dólar de Bermuda"
+  },
+  {
+   "codigo": "22",
+   "descripcion": "Dólar de Brunéi"
+  },
+  {
+   "codigo": "23",
+   "descripcion": "Boliviano"
+  },
+  {
+   "codigo": "24",
+   "descripcion": "Real brasileño"
+  },
+  {
+   "codigo": "25",
+   "descripcion": "Dólar bahameño"
+  },
+  {
+   "codigo": "26",
+   "descripcion": "Ngultrum de Bután"
+  },
+  {
+   "codigo": "27",
+   "descripcion": "Pula de Botsuana"
+  },
+  {
+   "codigo": "28",
+   "descripcion": "Rublo bielorruso"
+  },
+  {
+   "codigo": "29",
+   "descripcion": "Dólar de Belice"
+  },
+  {
+   "codigo": "30",
+   "descripcion": "Dólar canadiense"
+  },
+  {
+   "codigo": "31",
+   "descripcion": "Franco congoleño, o congolés"
+  },
+  {
+   "codigo": "32",
+   "descripcion": "Franco suizo"
+  },
+  {
+   "codigo": "33",
+   "descripcion": "Peso chileno"
+  },
+  {
+   "codigo": "34",
+   "descripcion": "Yuan chino"
+  },
+  {
+   "codigo": "35",
+   "descripcion": "Peso colombiano"
+  },
+  {
+   "codigo": "36",
+   "descripcion": "Colón costarricense"
+  },
+  {
+   "codigo": "37",
+   "descripcion": "Dinar serbio"
+  },
+  {
+   "codigo": "38",
+   "descripcion": "Peso cubano convertible"
+  },
+  {
+   "codigo": "39",
+   "descripcion": "Peso cubano"
+  },
+  {
+   "codigo": "40",
+   "descripcion": "Escudo caboverdiano"
+  },
+  {
+   "codigo": "41",
+   "descripcion": "Koruna checa"
+  },
+  {
+   "codigo": "42",
+   "descripcion": "Franco yibutiano"
+  },
+  {
+   "codigo": "43",
+   "descripcion": "Corona danesa"
+  },
+  {
+   "codigo": "44",
+   "descripcion": "Peso dominicano"
+  },
+  {
+   "codigo": "45",
+   "descripcion": "Dinar algerino"
+  },
+  {
+   "codigo": "46",
+   "descripcion": "Libra egipcia"
+  },
+  {
+   "codigo": "47",
+   "descripcion": "Nakfa eritreo"
+  },
+  {
+   "codigo": "48",
+   "descripcion": "Birr etíope"
+  },
+  {
+   "codigo": "49",
+   "descripcion": "Dólar fiyiano"
+  },
+  {
+   "codigo": "50",
+   "descripcion": "Libra malvinense"
+  },
+  {
+   "codigo": "51",
+   "descripcion": "Libra esterlina (libra de Gran Bretaña)"
+  },
+  {
+   "codigo": "52",
+   "descripcion": "Lari georgiano"
+  },
+  {
+   "codigo": "53",
+   "descripcion": "Cedi ghanés"
+  },
+  {
+   "codigo": "54",
+   "descripcion": "Libra de Gibraltar"
+  },
+  {
+   "codigo": "55",
+   "descripcion": "Dalasi gambiano"
+  },
+  {
+   "codigo": "56",
+   "descripcion": "Franco guineano"
+  },
+  {
+   "codigo": "57",
+   "descripcion": "Quetzal guatemalteco"
+  },
+  {
+   "codigo": "58",
+   "descripcion": "Dólar guyanés"
+  },
+  {
+   "codigo": "59",
+   "descripcion": "Dólar de Hong Kong"
+  },
+  {
+   "codigo": "60",
+   "descripcion": "Lempira hondureño"
+  },
+  {
+   "codigo": "61",
+   "descripcion": "Kuna croata"
+  },
+  {
+   "codigo": "62",
+   "descripcion": "Gourde haitiano"
+  },
+  {
+   "codigo": "63",
+   "descripcion": "Forint húngaro"
+  },
+  {
+   "codigo": "64",
+   "descripcion": "Rupiah indonesia"
+  },
+  {
+   "codigo": "65",
+   "descripcion": "Nuevo shéquel israelí"
+  },
+  {
+   "codigo": "66",
+   "descripcion": "Rupia india"
+  },
+  {
+   "codigo": "67",
+   "descripcion": "Dinar iraquí"
+  },
+  {
+   "codigo": "68",
+   "descripcion": "Rial iraní"
+  },
+  {
+   "codigo": "69",
+   "descripcion": "Króna islandesa"
+  },
+  {
+   "codigo": "70",
+   "descripcion": "Dólar jamaicano"
+  },
+  {
+   "codigo": "71",
+   "descripcion": "Dinar jordano"
+  },
+  {
+   "codigo": "72",
+   "descripcion": "Yen japonés"
+  },
+  {
+   "codigo": "73",
+   "descripcion": "Chelín keniata"
+  },
+  {
+   "codigo": "74",
+   "descripcion": "Som kirguís (de Kirguistán)"
+  },
+  {
+   "codigo": "75",
+   "descripcion": "Riel camboyano"
+  },
+  {
+   "codigo": "76",
+   "descripcion": "Franco comoriano (de Comoras)"
+  },
+  {
+   "codigo": "77",
+   "descripcion": "Won norcoreano"
+  },
+  {
+   "codigo": "78",
+   "descripcion": "Won surcoreano"
+  },
+  {
+   "codigo": "79",
+   "descripcion": "Dinar kuwaití"
+  },
+  {
+   "codigo": "80",
+   "descripcion": "Dólar caimano (de Islas Caimán)"
+  },
+  {
+   "codigo": "81",
+   "descripcion": "Tenge kazajo"
+  },
+  {
+   "codigo": "82",
+   "descripcion": "Kip lao"
+  },
+  {
+   "codigo": "83",
+   "descripcion": "Libra libanesa"
+  },
+  {
+   "codigo": "84",
+   "descripcion": "Rupia de Sri Lanka"
+  },
+  {
+   "codigo": "85",
+   "descripcion": "Dólar liberiano"
+  },
+  {
+   "codigo": "86",
+   "descripcion": "Loti lesotense"
+  },
+  {
+   "codigo": "87",
+   "descripcion": "Litas lituano"
+  },
+  {
+   "codigo": "88",
+   "descripcion": "Lat letón"
+  },
+  {
+   "codigo": "89",
+   "descripcion": "Dinar libio"
+  },
+  {
+   "codigo": "90",
+   "descripcion": "Dirham marroquí"
+  },
+  {
+   "codigo": "91",
+   "descripcion": "Leu moldavo"
+  },
+  {
+   "codigo": "92",
+   "descripcion": "Ariary malgache"
+  },
+  {
+   "codigo": "93",
+   "descripcion": "Denar macedonio"
+  },
+  {
+   "codigo": "94",
+   "descripcion": "Kyat birmano"
+  },
+  {
+   "codigo": "95",
+   "descripcion": "Tughrik mongol"
+  },
+  {
+   "codigo": "96",
+   "descripcion": "Pataca de Macao"
+  },
+  {
+   "codigo": "97",
+   "descripcion": "Ouguiya mauritana"
+  },
+  {
+   "codigo": "98",
+   "descripcion": "Rupia mauricia"
+  },
+  {
+   "codigo": "99",
+   "descripcion": "Rufiyaa maldiva"
+  },
+  {
+   "codigo": "100",
+   "descripcion": "Kwacha malauí"
+  },
+  {
+   "codigo": "101",
+   "descripcion": "Ringgit malayo"
+  },
+  {
+   "codigo": "102",
+   "descripcion": "Metical mozambiqueño"
+  },
+  {
+   "codigo": "103",
+   "descripcion": "Dólar namibio"
+  },
+  {
+   "codigo": "104",
+   "descripcion": "Naira nigeriana"
+  },
+  {
+   "codigo": "105",
+   "descripcion": "Córdoba nicaragüense"
+  },
+  {
+   "codigo": "106",
+   "descripcion": "Corona noruega"
+  },
+  {
+   "codigo": "107",
+   "descripcion": "Rupia nepalesa"
+  },
+  {
+   "codigo": "108",
+   "descripcion": "Dólar neozelandés"
+  },
+  {
+   "codigo": "109",
+   "descripcion": "Rial omaní"
+  },
+  {
+   "codigo": "110",
+   "descripcion": "Balboa panameña"
+  },
+  {
+   "codigo": "111",
+   "descripcion": "Nuevo sol peruano"
+  },
+  {
+   "codigo": "112",
+   "descripcion": "Kina de Papúa Nueva Guinea"
+  },
+  {
+   "codigo": "113",
+   "descripcion": "Peso filipino"
+  },
+  {
+   "codigo": "114",
+   "descripcion": "Rupia pakistaní"
+  },
+  {
+   "codigo": "115",
+   "descripcion": "zloty polaco"
+  },
+  {
+   "codigo": "116",
+   "descripcion": "Guaraní paraguayo"
+  },
+  {
+   "codigo": "117",
+   "descripcion": "Rial qatarí"
+  },
+  {
+   "codigo": "118",
+   "descripcion": "Leu rumano"
+  },
+  {
+   "codigo": "119",
+   "descripcion": "Dinar serbio"
+  },
+  {
+   "codigo": "120",
+   "descripcion": "Rublo ruso"
+  },
+  {
+   "codigo": "121",
+   "descripcion": "Franco ruandés"
+  },
+  {
+   "codigo": "122",
+   "descripcion": "Riyal saudí"
+  },
+  {
+   "codigo": "123",
+   "descripcion": "Dólar de las Islas Salomón"
+  },
+  {
+   "codigo": "124",
+   "descripcion": "Rupia de Seychelles"
+  },
+  {
+   "codigo": "125",
+   "descripcion": "Dinar sudanés"
+  },
+  {
+   "codigo": "126",
+   "descripcion": "Corona sueca"
+  },
+  {
+   "codigo": "127",
+   "descripcion": "Dólar de Singapur"
+  },
+  {
+   "codigo": "128",
+   "descripcion": "Libra de Santa Helena"
+  },
+  {
+   "codigo": "129",
+   "descripcion": "Leone de Sierra Leona"
+  },
+  {
+   "codigo": "130",
+   "descripcion": "Chelín somalí"
+  },
+  {
+   "codigo": "131",
+   "descripcion": "Dólar surinamés"
+  },
+  {
+   "codigo": "132",
+   "descripcion": "Libra de Sudán del Sur"
+  },
+  {
+   "codigo": "133",
+   "descripcion": "Dobra de Santo Tomé y Príncipe"
+  },
+  {
+   "codigo": "134",
+   "descripcion": "Colón Salvadoreño"
+  },
+  {
+   "codigo": "135",
+   "descripcion": "Libra siria"
+  },
+  {
+   "codigo": "136",
+   "descripcion": "Lilangeni suazi"
+  },
+  {
+   "codigo": "137",
+   "descripcion": "Baht tailandés"
+  },
+  {
+   "codigo": "138",
+   "descripcion": "Somoni tayik (de Tayikistán)"
+  },
+  {
+   "codigo": "139",
+   "descripcion": "Manat turcomano"
+  },
+  {
+   "codigo": "140",
+   "descripcion": "Dinar tunecino"
+  },
+  {
+   "codigo": "141",
+   "descripcion": "Pa'anga tongano"
+  },
+  {
+   "codigo": "142",
+   "descripcion": "Lira turca"
+  },
+  {
+   "codigo": "143",
+   "descripcion": "Dólar de Trinidad y Tobago"
+  },
+  {
+   "codigo": "144",
+   "descripcion": "Dólar taiwanés"
+  },
+  {
+   "codigo": "145",
+   "descripcion": "Chelín tanzano"
+  },
+  {
+   "codigo": "146",
+   "descripcion": "Grivna ucraniana"
+  },
+  {
+   "codigo": "147",
+   "descripcion": "Chelín ugandés"
+  },
+  {
+   "codigo": "148",
+   "descripcion": "Peso uruguayo"
+  },
+  {
+   "codigo": "149",
+   "descripcion": "Som uzbeko"
+  },
+  {
+   "codigo": "150",
+   "descripcion": "Bolívar fuerte venezolano"
+  },
+  {
+   "codigo": "151",
+   "descripcion": "Dong vietnamita"
+  },
+  {
+   "codigo": "152",
+   "descripcion": "Vatu vanuatense"
+  },
+  {
+   "codigo": "153",
+   "descripcion": "Tala samoana"
+  },
+  {
+   "codigo": "154",
+   "descripcion": "Rial yemení (de Yemen)"
+  },
+  {
+   "codigo": "155",
+   "descripcion": "Rand sudafricano"
+  },
+  {
+   "codigo": "156",
+   "descripcion": "Kwacha zambiano"
+  },
+  {
+   "codigo": "157",
+   "descripcion": "Kwacha zambiano"
+  },
+  {
+   "codigo": "158",
+   "descripcion": "Dólar zimbabuense"
+  },
+  {
+   "codigo": "159",
+   "descripcion": "CENTENARIO"
+  },
+  {
+   "codigo": "160",
+   "descripcion": "AZTECA"
+  },
+  {
+   "codigo": "161",
+   "descripcion": "HIDALGO"
+  },
+  {
+   "codigo": "162",
+   "descripcion": "1/2 HIDALGO"
+  },
+  {
+   "codigo": "163",
+   "descripcion": "1/4 HIDALGO"
+  },
+  {
+   "codigo": "164",
+   "descripcion": "1/5 HIDALGO"
+  },
+  {
+   "codigo": "165",
+   "descripcion": "1 OZ LIBERTAD DE ORO"
+  },
+  {
+   "codigo": "166",
+   "descripcion": "1/2 OZ LIBERTAD DE ORO"
+  },
+  {
+   "codigo": "167",
+   "descripcion": "1/4 OZ LIBERTAD DE ORO"
+  },
+  {
+   "codigo": "168",
+   "descripcion": "1/10 OZ LIBERTAD DE ORO"
+  },
+  {
+   "codigo": "169",
+   "descripcion": "1/20 OZ LIBERTAD DE ORO"
+  },
+  {
+   "codigo": "170",
+   "descripcion": "1 OZ LIBERTAD DE PLATA"
+  },
+  {
+   "codigo": "171",
+   "descripcion": "1/2 OZ LIBERTAD DE PLATA"
+  },
+  {
+   "codigo": "172",
+   "descripcion": "1/4 OZ LIBERTAD DE PLATA"
+  },
+  {
+   "codigo": "173",
+   "descripcion": "1/10 OZ LIBERTAD DE PLATA"
+  },
+  {
+   "codigo": "174",
+   "descripcion": "1/20 OZ LIBERTAD DE PLATA"
+  },
+  {
+   "codigo": "175",
+   "descripcion": "Onza de plata"
+  },
+  {
+   "codigo": "176",
+   "descripcion": "Onza de oro"
+  },
+  {
+   "codigo": "177",
+   "descripcion": "Franco de oro (Special settlement currency)"
+  },
+  {
+   "codigo": "178",
+   "descripcion": "Onza de paladio"
+  },
+  {
+   "codigo": "179",
+   "descripcion": "Onza de platino"
+  },
+  {
+   "codigo": "180",
+   "descripcion": "Franco CFA de África Central"
+  },
+  {
+   "codigo": "181",
+   "descripcion": "Dólar del Caribe Oriental"
+  },
+  {
+   "codigo": "182",
+   "descripcion": "Franco UIC (Special settlement currency)"
+  },
+  {
+   "codigo": "183",
+   "descripcion": "Franco CFA de África Occidental"
+  },
+  {
+   "codigo": "184",
+   "descripcion": "Franco CFP"
+  }
+ ],
+ "tipo_credito": [
+  {
+   "codigo": "1",
+   "descripcion": "Crédito Corporativo"
+  },
+  {
+   "codigo": "2",
+   "descripcion": "Crédito Puente"
+  },
+  {
+   "codigo": "3",
+   "descripcion": "Crédito Hipotecario"
+  }
+ ],
+ "prioridad": [
+  {
+   "codigo": "1",
+   "descripcion": "NORMAL"
+  },
+  {
+   "codigo": "2",
+   "descripcion": "24 HORAS CON OPERACIONES"
+  }
+ ]
+}

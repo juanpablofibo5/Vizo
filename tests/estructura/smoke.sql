@@ -174,6 +174,25 @@ begin
   end if;
   raise notice '✓ 8-ter. Ventana de 6 meses y día 17 son filas de parametros_motor, no constantes';
 
+  -- 8-quater. Catálogos de valores del SAT -----------------------------------
+  -- El XSD no tiene ninguna enumeration: valida forma, no valores. Sin estos
+  -- catálogos, un aviso puede validar contra el XSD y traer códigos que no
+  -- existen.
+  if not app.codigo_valido('tipo_tercero', '2', '2026-02-15') then
+    raise exception 'FALLA 8i: falta el tercero tipo 2 (Cliente en Preventa), que es el caso de uso central';
+  end if;
+  if not app.codigo_valido('tipo_operacion', '1601', '2026-02-15') then
+    raise exception 'FALLA 8j: falta el tipo de operación 1601 de la fracción';
+  end if;
+  if app.codigo_valido('tipo_desarrollo', '7', '2026-02-15') then
+    raise exception 'FALLA 8k: se aceptó un tipo de desarrollo inexistente (7)';
+  end if;
+  select count(*) into v_n from catalogos_sat;
+  if v_n < 800 then
+    raise exception 'FALLA 8l: se esperaban ~850 valores de catálogo, hay %', v_n;
+  end if;
+  raise notice '✓ 8-quater. Catálogos del SAT cargados y rechazando códigos inexistentes';
+
   -- 9. Normalización de nombres ----------------------------------------------
   if app.normalizar_nombre('  José   Ramírez  Ñuño ') <> 'JOSE RAMIREZ NUNO' then
     raise exception 'FALLA 9: normalización incorrecta: %', app.normalizar_nombre('  José   Ramírez  Ñuño ');

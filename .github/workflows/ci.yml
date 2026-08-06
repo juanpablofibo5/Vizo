@@ -10,40 +10,46 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  VIZO_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+
 jobs:
-  # Valida que las migraciones apliquen en una base LIMPIA, siempre.
-  # Es el check que impide que una migración rota llegue a producción:
-  # las migraciones no se editan una vez aplicadas, así que lo único que
-  # protege es que nunca se aplique una rota.
-  migraciones:
-    name: Migraciones aplican en limpio
+  # Un solo job: los tests de la Capa 0 y el smoke test estructural necesitan
+  # la base levantada, así que separarlos duplicaría el arranque del stack.
+  verificacion:
+    name: Migraciones, estructura y suite
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      - name: ¿Hay migraciones que validar?
-        id: check
-        run: |
-          if [ -n "$(ls -A supabase/migrations/*.sql 2>/dev/null)" ]; then
-            echo "hay=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "hay=false" >> "$GITHUB_OUTPUT"
-            echo "Sin migraciones todavía (semana 1). Nada que validar."
-          fi
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
 
-      - name: Levantar Postgres y aplicar migraciones + seed
-        if: steps.check.outputs.hay == 'true'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Levanta Postgres y aplica migraciones + seed desde cero. Las
+      # aserciones estructurales de la migración 001 corren aquí: si alguna
+      # regla dura se viola, la migración falla y el job se pone rojo.
+      - name: Migraciones en base limpia
         run: supabase db start
 
-      # Detecta el esquema tocado a mano que nadie migró: si la base local
-      # difiere de lo que producen las migraciones, producción y desarrollo ya
-      # divergieron y el siguiente push arrastra el hueco.
-      - name: Verificar que no quedaron diffs sin migrar
-        if: steps.check.outputs.hay == 'true'
+      # Detecta esquema tocado a mano que nadie migró: si la base difiere de
+      # lo que producen las migraciones, desarrollo y producción divergieron.
+      - name: Sin diffs de esquema pendientes
         run: |
           DIFF=$(supabase db diff --local 2>/dev/null | tail -1 | jq -r '.diff')
           if [ -n "$DIFF" ]; then
@@ -53,52 +59,19 @@ jobs:
           fi
           echo "Sin diffs pendientes."
 
-      # Aislamiento cross-tenant, append-only, encadenado de la bitácora y
-      # separación de roles. Si algo de esto se rompe, no es un bug: es un
-      # incidente de seguridad o un historial impugnable.
+      # Aislamiento cross-tenant, append-only, encadenado de la bitácora,
+      # separación de roles y los tres ataques que la auditoría de la semana 1
+      # reprodujo. Si algo de esto se rompe no es un bug: es un incidente.
       - name: Smoke test estructural
-        if: steps.check.outputs.hay == 'true'
+        run: psql "$VIZO_DB_URL" -v ON_ERROR_STOP=1 -f tests/estructura/smoke.sql
+
+      # La suite completa. Incluye la del motor de umbrales, que es el criterio
+      # de aceptación real del proyecto (docs/PRUEBAS.md).
+      - name: Suite de pruebas
+        run: pnpm test
+
+      - name: Casos del motor aún pendientes
+        if: always()
         run: |
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
-            -v ON_ERROR_STOP=1 -f tests/estructura/smoke.sql
-
-  # Suite del motor de umbrales: el criterio de aceptación real del proyecto
-  # (docs/PRUEBAS.md). Se activa en la semana 2, cuando exista package.json.
-  pruebas:
-    name: Suite de umbrales + typecheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: ¿Ya hay app?
-        id: check
-        run: |
-          if [ -f package.json ]; then
-            echo "hay=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "hay=false" >> "$GITHUB_OUTPUT"
-            echo "Sin package.json todavía (semana 1). Nada que probar."
-          fi
-
-      - uses: pnpm/action-setup@v4
-        if: steps.check.outputs.hay == 'true'
-        with:
-          version: 11
-
-      - uses: actions/setup-node@v4
-        if: steps.check.outputs.hay == 'true'
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Instalar dependencias
-        if: steps.check.outputs.hay == 'true'
-        run: pnpm install --frozen-lockfile
-
-      - name: Typecheck
-        if: steps.check.outputs.hay == 'true'
-        run: pnpm typecheck
-
-      - name: Suite de umbrales
-        if: steps.check.outputs.hay == 'true'
-        run: pnpm test:umbrales
+          PEND=$(pnpm test:umbrales 2>&1 | grep -oE '[0-9]+ todo' | head -1 || echo "0 todo")
+          echo "::notice::Motor de umbrales — $PEND (ver docs/PRUEBAS.md)"

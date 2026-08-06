@@ -1,0 +1,7 @@
+# pnpm 11 dejó de leer la configuración desde el campo "pnpm" de package.json.
+#
+# esbuild (que vitest usa para transpilar) necesita su script de instalación
+# para colocar el binario nativo. pnpm bloquea los build scripts por defecto,
+# que es la postura correcta: se aprueban uno por uno y queda escrito por qué.
+allowBuilds:
+  esbuild: true

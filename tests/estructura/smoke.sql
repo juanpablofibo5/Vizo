@@ -13,6 +13,22 @@
 \pset pager off
 
 -- ---------------------------------------------------------------------------
+-- Guarda: este script NO es idempotente
+-- ---------------------------------------------------------------------------
+-- No puede serlo: la bitácora es append-only, así que no hay forma de limpiar
+-- lo que escribe una corrida anterior. Sin esta guarda, la segunda corrida
+-- falla con "duplicate key on tenants_rfc_key", que no le dice a nadie qué
+-- hacer.
+do $$
+begin
+  if exists (select 1 from tenants) then
+    raise exception
+      'El smoke test necesita una base recién reseteada (la bitácora es append-only). Corre: pnpm db:reset';
+  end if;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- Datos mínimos: dos tenants, un cliente cada uno
 -- ---------------------------------------------------------------------------
 insert into tenants (rfc, razon_social) values

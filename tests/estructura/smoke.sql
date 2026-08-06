@@ -24,6 +24,28 @@ insert into clientes_finales (tenant_id, tipo_persona, rfc, nombre_o_razon_socia
   ((select id from tenants where rfc='DPE010101AAA'), 'fisica', 'XAXX010101000', 'Cliente del tenant A'),
   ((select id from tenants where rfc='OTR020202BBB'), 'moral',  'OTR020202BBB',  'Cliente del tenant B');
 
+-- Un usuario REAL del tenant A. Hace falta para las pruebas de ataque: sin él,
+-- la FK de actor_id bloquea por accidente y la prueba pasa sin probar nada.
+insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
+values ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000',
+        'authenticated', 'authenticated', 'capturista@tenant-a.mx', 'x', now(), now());
+insert into usuarios (id, tenant_id, rol, nombre, email)
+select '11111111-1111-1111-1111-111111111111', id, 'capturista', 'Capturista A', 'capturista@tenant-a.mx'
+from tenants where rfc='DPE010101AAA';
+
+insert into sucursales (tenant_id, nombre, clave)
+select id, 'Norte', 'NTE' from tenants where rfc='DPE010101AAA';
+
+-- Los UUID quedan en variables de sesión: el bloque de ataque (§12) corre
+-- dentro de la sesión del atacante, donde RLS ya no deja leerlos.
+select set_config('vizo.tenant_a',  (select id::text from tenants where rfc='DPE010101AAA'), false),
+       set_config('vizo.tenant_b',  (select id::text from tenants where rfc='OTR020202BBB'), false),
+       set_config('vizo.cliente_b', (select id::text from clientes_finales
+                                      where nombre_o_razon_social like '%tenant B%'), false),
+       set_config('vizo.sucursal_a',(select id::text from sucursales limit 1), false),
+       set_config('vizo.actividad', (select id::text from actividades_vulnerables
+                                      where fraccion='V_BIS'), false);
+
 -- ---------------------------------------------------------------------------
 do $$
 declare
@@ -235,6 +257,68 @@ begin;
     end;
 
     raise notice '✓ 10. Aislamiento cross-tenant + catálogo global + capturista no aprueba';
+  end;
+  $$;
+rollback;
+
+-- ---------------------------------------------------------------------------
+-- 12. Pruebas de ATAQUE cross-tenant
+-- ---------------------------------------------------------------------------
+-- Las tres se reprodujeron con éxito en la auditoría de la semana 1 y se
+-- cerraron en la migración 20260806201936. Quedan aquí como pruebas
+-- permanentes: si alguna vuelve a pasar, es un incidente de seguridad.
+begin;
+  select set_config('request.jwt.claims', json_build_object(
+    'sub', '11111111-1111-1111-1111-111111111111',
+    'app_metadata', json_build_object(
+      'tenant_id', (select id from tenants where rfc='DPE010101AAA'),
+      'rol', 'capturista'))::text, true);
+  set local role authenticated;
+
+  do $$
+  declare
+    v_b   uuid;
+    v_bc  uuid;
+    v_a   uuid;
+    v_suc uuid;
+    v_act uuid;
+  begin
+    -- El atacante conoce los UUID del otro tenant: es el escenario realista
+    -- (circulan en URLs, exports y tickets de soporte). Se leen como el rol
+    -- que corre el test, no dentro de la sesión atacante.
+    select current_setting('vizo.tenant_b')::uuid into v_b;
+    select current_setting('vizo.cliente_b')::uuid into v_bc;
+    select current_setting('vizo.tenant_a')::uuid into v_a;
+    select current_setting('vizo.sucursal_a')::uuid into v_suc;
+    select current_setting('vizo.actividad')::uuid into v_act;
+
+    -- ATAQUE 1: escribir en la bitácora de otro tenant
+    begin
+      perform app.bitacora_registrar(v_b, 'evento.falsificado', 'cliente');
+      raise exception 'FALLA 12a: FUGA — se escribió en la bitácora de otro tenant';
+    exception when insufficient_privilege then null;
+    end;
+
+    -- ATAQUE 2: verificar la bitácora de otro tenant (devolvía "íntegra")
+    begin
+      perform * from app.bitacora_verificar(v_b);
+      raise exception 'FALLA 12b: se pudo verificar la bitácora de otro tenant';
+    exception when insufficient_privilege then null;
+    end;
+
+    -- ATAQUE 3: operación propia que apunta a un cliente de otro tenant
+    begin
+      insert into operaciones (tenant_id, sucursal_id, cliente_id, actividad_id,
+                               fecha_operacion, monto_base, iva, monto_total, forma_pago)
+      values (v_a, v_suc, v_bc, v_act, '2026-03-15', 500000, 0, 500000, '03');
+      raise exception 'FALLA 12c: FUGA — una operación referenció a un cliente de otro tenant';
+    exception when foreign_key_violation then null;
+    end;
+
+    -- CONTROL: el mismo usuario en su propio tenant sigue trabajando
+    perform app.bitacora_registrar(v_a, 'cliente.alta', 'cliente');
+
+    raise notice '✓ 12. Ataques cross-tenant bloqueados (bitácora, verificador, FK) y el caso legítimo intacto';
   end;
   $$;
 rollback;

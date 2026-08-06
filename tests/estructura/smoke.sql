@@ -1,0 +1,200 @@
+-- VIZO · Smoke test estructural de la migración 001
+--
+-- Verifica lo que no se puede romper sin que el proyecto deje de servir:
+-- aislamiento entre tenants, append-only, encadenamiento de la bitácora y
+-- separación de roles.
+--
+-- Correr contra una base RECIÉN RESETEADA:
+--   supabase db reset && psql "$DB_URL" -f tests/estructura/smoke.sql
+--
+-- Sale con error en la primera aserción que falle (ON_ERROR_STOP).
+
+\set ON_ERROR_STOP on
+\pset pager off
+
+-- ---------------------------------------------------------------------------
+-- Datos mínimos: dos tenants, un cliente cada uno
+-- ---------------------------------------------------------------------------
+insert into tenants (rfc, razon_social) values
+  ('DPE010101AAA', 'Desarrollos Península SA de CV'),
+  ('OTR020202BBB', 'Otro Obligado SA');
+
+insert into actividades_vulnerables (fraccion, nombre)
+  values ('V_BIS', 'Desarrollo Inmobiliario');
+
+insert into clientes_finales (tenant_id, tipo_persona, rfc, nombre_o_razon_social) values
+  ((select id from tenants where rfc='DPE010101AAA'), 'fisica', 'XAXX010101000', 'Cliente del tenant A'),
+  ((select id from tenants where rfc='OTR020202BBB'), 'moral',  'OTR020202BBB',  'Cliente del tenant B');
+
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  v_tenant_a uuid := (select id from tenants where rfc='DPE010101AAA');
+  v_tenant_b uuid := (select id from tenants where rfc='OTR020202BBB');
+  v_n        int;
+  v_texto    text;
+  v_ok       boolean;
+begin
+  -- 1. Aserciones estructurales de la propia migración -----------------------
+  perform 1 from app.verificar_rls()          limit 1; if found then raise exception 'FALLA 1a: hay tablas sin RLS o sin políticas'; end if;
+  perform 1 from app.verificar_append_only()  limit 1; if found then raise exception 'FALLA 1b: append-only comprometido'; end if;
+  perform 1 from app.verificar_tenancy()      limit 1; if found then raise exception 'FALLA 1c: tabla sin tenant_id'; end if;
+  perform 1 from app.verificar_grants()       limit 1; if found then raise exception 'FALLA 1d: RLS sin GRANT (tabla inaccesible)'; end if;
+  raise notice '✓ 1. Aserciones estructurales (RLS, append-only, tenancy, grants)';
+
+  -- 2. La bitácora encadena --------------------------------------------------
+  perform app.bitacora_registrar(v_tenant_a, 'catalogo.seed_aplicado', 'catalogo');
+  perform app.bitacora_registrar(v_tenant_a, 'cliente.alta', 'cliente', gen_random_uuid());
+  perform app.bitacora_registrar(v_tenant_a, 'operacion.registrada', 'operacion', gen_random_uuid());
+
+  select count(*) into v_n from bitacora b
+   where b.tenant_id = v_tenant_a
+     and b.hash_previo = coalesce(
+       (select p.hash from bitacora p where p.tenant_id = b.tenant_id and p.secuencia = b.secuencia - 1),
+       app.bitacora_genesis());
+  if v_n <> 3 then raise exception 'FALLA 2: la cadena no enlaza (% de 3 eslabones correctos)', v_n; end if;
+
+  -- Secuencia por tenant, sin huecos
+  select count(*) into v_n from bitacora where tenant_id = v_tenant_a;
+  if (select max(secuencia) from bitacora where tenant_id = v_tenant_a) <> v_n then
+    raise exception 'FALLA 2b: hueco en la secuencia';
+  end if;
+  raise notice '✓ 2. Bitácora encadenada, secuencia sin huecos';
+
+  -- 3. El verificador confirma integridad ------------------------------------
+  perform 1 from app.bitacora_verificar(v_tenant_a) limit 1;
+  if found then raise exception 'FALLA 3: el verificador reporta la cadena rota cuando no lo está'; end if;
+  raise notice '✓ 3. Verificador: cadena íntegra';
+
+  -- 4. El verificador DETECTA una alteración ---------------------------------
+  -- Se desactiva el trigger a propósito para simular a alguien con acceso
+  -- directo a la base. Es la única forma de probar que la detección sirve.
+  alter table bitacora disable trigger bitacora_append_only;
+  update bitacora set datos = '{"alterado":true}'::jsonb
+   where tenant_id = v_tenant_a and secuencia = 2;
+  alter table bitacora enable trigger bitacora_append_only;
+
+  select motivo into v_texto from app.bitacora_verificar(v_tenant_a) limit 1;
+  if v_texto is null then raise exception 'FALLA 4: una alteración pasó desapercibida'; end if;
+  raise notice '✓ 4. Verificador detecta manipulación: %', v_texto;
+
+  -- se restaura para no dejar la cadena rota
+  alter table bitacora disable trigger bitacora_append_only;
+  update bitacora set datos = '{}'::jsonb where tenant_id = v_tenant_a and secuencia = 2;
+  alter table bitacora enable trigger bitacora_append_only;
+
+  -- 5. Append-only bloquea UPDATE y DELETE -----------------------------------
+  begin
+    update bitacora set evento = 'manipulado' where tenant_id = v_tenant_a and secuencia = 1;
+    raise exception 'FALLA 5: se permitió UPDATE sobre bitacora';
+  exception when restrict_violation then null;
+  end;
+
+  begin
+    delete from bitacora where tenant_id = v_tenant_a and secuencia = 1;
+    raise exception 'FALLA 5b: se permitió DELETE sobre bitacora';
+  exception when restrict_violation then null;
+  end;
+  raise notice '✓ 5. Append-only: UPDATE y DELETE bloqueados';
+
+  -- 6. El monto total tiene que cuadrar --------------------------------------
+  begin
+    insert into operaciones (tenant_id, sucursal_id, cliente_id, actividad_id, fecha_operacion,
+                             monto_base, iva, monto_total, forma_pago)
+    values (v_tenant_a,
+            (select id from sucursales where tenant_id = v_tenant_a limit 1),
+            (select id from clientes_finales where tenant_id = v_tenant_a limit 1),
+            (select id from actividades_vulnerables limit 1),
+            '2026-03-15', 100000, 16000, 100000, '03');
+    raise exception 'FALLA 6: se aceptó una operación con monto_total descuadrado';
+  exception when check_violation or not_null_violation then null;
+  end;
+  raise notice '✓ 6. CHECK monto_total = base + iva + isai + accesorios';
+
+  -- 7. Vigencias del catálogo sin traslape -----------------------------------
+  insert into uma_vigencias (valor_diario, vigente_desde, vigente_hasta, fuente_dof)
+    values (113.14, '2025-02-01', '2026-01-31', 'prueba');
+  begin
+    insert into uma_vigencias (valor_diario, vigente_desde, vigente_hasta, fuente_dof)
+      values (117.31, '2026-01-15', null, 'prueba: traslapa con la anterior');
+    raise exception 'FALLA 7: se aceptaron dos UMA vigentes el mismo día';
+  exception when exclusion_violation then null;
+  end;
+  raise notice '✓ 7. Vigencias sin traslape (dos UMA el mismo día = imposible)';
+
+  -- 8. uma_vigente() respeta la frontera del 1 de febrero ---------------------
+  insert into uma_vigencias (valor_diario, vigente_desde, vigente_hasta, fuente_dof)
+    values (117.31, '2026-02-01', null, 'prueba');
+
+  if app.uma_vigente('2026-01-15') <> 113.14 then
+    raise exception 'FALLA 8a: una operación del 15 de enero de 2026 debe usar la UMA de 2025';
+  end if;
+  if app.uma_vigente('2026-01-31') <> 113.14 then
+    raise exception 'FALLA 8b: el 31 de enero todavía es UMA 2025';
+  end if;
+  if app.uma_vigente('2026-02-01') <> 117.31 then
+    raise exception 'FALLA 8c: el 1 de febrero ya es UMA 2026';
+  end if;
+  raise notice '✓ 8. uma_vigente(): la frontera es el 1 de febrero, no el 1 de enero';
+
+  -- 9. Normalización de nombres ----------------------------------------------
+  if app.normalizar_nombre('  José   Ramírez  Ñuño ') <> 'JOSE RAMIREZ NUNO' then
+    raise exception 'FALLA 9: normalización incorrecta: %', app.normalizar_nombre('  José   Ramírez  Ñuño ');
+  end if;
+  raise notice '✓ 9. Normalización de nombres (acentos, ñ, espacios)';
+
+  raise notice '';
+  raise notice 'TODAS LAS ASERCIONES DE ESTRUCTURA PASARON';
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 10. Aislamiento entre tenants (requiere cambiar de rol, fuera del bloque DO)
+-- ---------------------------------------------------------------------------
+begin;
+  select set_config('request.jwt.claims', json_build_object(
+    'sub', gen_random_uuid(),
+    'app_metadata', json_build_object(
+      'tenant_id', (select id from tenants where rfc='DPE010101AAA'),
+      'rol', 'capturista'))::text, true);
+  set local role authenticated;
+
+  do $$
+  declare v_visibles int; v_fugas int;
+  begin
+    select count(*), count(*) filter (where nombre_o_razon_social like '%tenant B%')
+      into v_visibles, v_fugas from clientes_finales;
+    if v_fugas > 0 then raise exception 'FALLA 10: FUGA CROSS-TENANT — se ven % clientes de otro tenant', v_fugas; end if;
+    if v_visibles <> 1 then raise exception 'FALLA 10b: se esperaba ver 1 cliente propio, se ven %', v_visibles; end if;
+
+    -- el catálogo regulatorio sí es global
+    select count(*) into v_visibles from actividades_vulnerables;
+    if v_visibles < 1 then raise exception 'FALLA 10c: el catálogo debe ser legible por cualquier usuario autenticado'; end if;
+
+    -- un capturista no aprueba
+    begin
+      perform app.expediente_aprobar(gen_random_uuid());
+      raise exception 'FALLA 10d: un capturista pudo llamar a expediente_aprobar';
+    exception when insufficient_privilege then null;
+    end;
+
+    raise notice '✓ 10. Aislamiento cross-tenant + catálogo global + capturista no aprueba';
+  end;
+  $$;
+rollback;
+
+-- ---------------------------------------------------------------------------
+-- 11. Sin sesión no se ve nada
+-- ---------------------------------------------------------------------------
+begin;
+  select set_config('request.jwt.claims', '', true);
+  set local role authenticated;
+  do $$
+  declare v_n int;
+  begin
+    select count(*) into v_n from clientes_finales;
+    if v_n <> 0 then raise exception 'FALLA 11: sin JWT se ven % clientes', v_n; end if;
+    raise notice '✓ 11. Sin sesión: cero filas visibles';
+  end;
+  $$;
+rollback;

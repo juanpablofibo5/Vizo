@@ -42,6 +42,15 @@ jobs:
         if: steps.check.outputs.hay == 'true'
         run: supabase db diff --check
 
+      # Aislamiento cross-tenant, append-only, encadenado de la bitácora y
+      # separación de roles. Si algo de esto se rompe, no es un bug: es un
+      # incidente de seguridad o un historial impugnable.
+      - name: Smoke test estructural
+        if: steps.check.outputs.hay == 'true'
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 -f tests/estructura/smoke.sql
+
   # Suite del motor de umbrales: el criterio de aceptación real del proyecto
   # (docs/PRUEBAS.md). Se activa en la semana 2, cuando exista package.json.
   pruebas:

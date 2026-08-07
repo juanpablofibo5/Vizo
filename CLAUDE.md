@@ -34,6 +34,10 @@ Ninguna lanzó una excepción. Todas devolvieron un número plausible.
 2. **Que lo impida la base.** Un `CHECK`, una FK compuesta `(tenant_id, id)`, una exclusion constraint. No dependen de que alguien llame a la función correcta. Las aserciones de la migración 001 (`app.verificar_*`) son de este tipo.
 3. **Que lo detecte una precondición.** Al inicio de la función, con un mensaje que diga qué hacer. Es el último recurso, no el primero.
 
+**El nivel 2 solo existe si la aplicación no es superusuario.** La auditoría de la semana 5 encontró que las escrituras corrían como `postgres`, que tiene `rolbypassrls = true`: RLS no se evaluaba, y la validación de tenant de la bitácora —que depende de `app.tenant_id()`— se saltaba sola por falta de JWT. Toda escritura pasa por `enTransaccionDeSesion`, que baja el rol a `authenticated` y planta los claims. Si escribes una función de persistencia nueva y no la usas, la base no te está protegiendo aunque el esquema diga que sí (ADR-16).
+
+**Cuidado con lo que la base concede sin que nadie lo pida.** Supabase otorga TRUNCATE, TRIGGER, REFERENCES y MAINTAIN a `anon` y `authenticated` sobre **toda tabla nueva** de `public`, por *default privileges*. No aparece en ninguna migración, así que no se ve leyendo el código: `truncate bitacora` funcionaba para cualquier usuario con sesión y borraba el historial de todos los obligados. `app.verificar_privilegios_por_omision()` lo revisa en cada migración y en cada corrida del smoke test (ADR-17).
+
 **Fronteras donde aplica con más fuerza:** entrada humana (formularios), archivos externos (CFDI, XSD), y todo lo que produzca el XML del aviso.
 
 ## Comandos

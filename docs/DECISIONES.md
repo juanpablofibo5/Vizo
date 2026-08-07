@@ -109,6 +109,40 @@ Las decisiones heredadas del paquete de referencia (`00_PLAN_MAESTRO.md`, `01_AR
 
 ---
 
+## ADR-16 · La aplicación escribe como el usuario, no como el dueño de la base — 2026-08-07
+
+**Contexto:** la auditoría de la semana 5 encontró que las **lecturas** de la UI iban por supabase-js con la sesión del usuario (RLS aplicada) pero las **escrituras** iban por `pg` contra `VIZO_DB_URL`, que apunta al rol `postgres`. Ese rol tiene `rolbypassrls = true`: las políticas no se evalúan. Comprobado con el mismo INSERT en un obligado ajeno — como `postgres` escribió; como `authenticated` con el JWT del usuario, `new row violates row-level security policy`.
+
+El efecto de segundo orden era peor que el primero: `app.bitacora_registrar` valida el tenant con `if app.tenant_id() is not null and ...`, y sin JWT `app.tenant_id()` es NULL, así que **la corrección de la auditoría de la semana 1 se saltaba sola** en el único camino de escritura que la aplicación usa. Estaba viva en el smoke test y muerta en producción.
+
+Nada de esto era explotable desde fuera: `tenant_id` sale de `app_metadata` de un JWT verificado por el servidor. Lo que faltaba era la segunda línea de defensa — el nivel 2 del orden de preferencia de CLAUDE.md ("que lo impida la base") era estructuralmente inalcanzable mientras la app fuera superusuario.
+
+**Decisión:** toda escritura pasa por `enTransaccionDeSesion` (`src/persistencia/transaccion.ts`), que dentro de la transacción planta los claims del usuario y ejecuta `set local role authenticated`. A partir de ahí RLS decide y la bitácora valida el tenant, exactamente igual que en `tests/estructura/smoke.sql`.
+
+Además, `altaCliente` dejó de recibir `tenantId` y `actorId` sueltos: los toma de `sesion`. El alta en el obligado equivocado dejó de ser expresable (nivel 1) *y* la base la rechaza (nivel 2).
+
+**Alternativas descartadas:** (a) escribir por PostgREST como las lecturas — no hay transacciones de varios pasos, habría que mover el alta completa a una función SQL y con ella las reglas de validación que hoy viven en TypeScript con sus 21 tests; (b) confiar en que el código siempre pase el `tenant_id` correcto — es el patrón exacto de la regla dura 6.
+
+**Costo:** ~1.5 h dentro de la auditoría. **Deuda que abre:** el rol de la aplicación sigue siendo `postgres` con el privilegio de bajarse a `authenticated`. En producción corresponde un rol propio `vizo_app` sin superusuario y sin BYPASSRLS, para que olvidar el cambio de rol no sea posible en vez de ser detectable. Anotado en `INFRA.md` y en el issue de la semana 7.
+
+**Lo que lo dejó pasar:** `tests/soporte/db.ts` documentaba con toda claridad que los tests corren como `postgres` y que el aislamiento se prueba aparte, en el smoke test. El razonamiento era correcto y cubría los tests. Nadie notó que la aplicación se conectaba igual.
+
+---
+
+## ADR-17 · Los privilegios que Supabase concede por omisión se revocan y se vigilan — 2026-08-07
+
+**Contexto:** la misma auditoría encontró que `truncate bitacora` **funcionaba** para cualquier usuario con sesión, y borraba la bitácora de **todos** los obligados. `DELETE` y `UPDATE` estaban correctamente denegados desde la migración 008; `TRUNCATE` no, porque nunca se concedió en ninguna migración: llega solo. Supabase instala `alter default privileges ... grant D,x,t,m on tables to anon, authenticated, service_role` en el esquema `public` — TRUNCATE, REFERENCES, TRIGGER y MAINTAIN sobre toda tabla nueva, antes de que el proyecto conceda nada. Eran 248 concesiones vivas sobre 31 tablas.
+
+RLS no filtra TRUNCATE y los triggers `for each row` no lo ven, así que las dos defensas del proyecto miraban hacia otro lado. El comentario de la migración 004 —"aplica incluso a service_role y al owner: no existe ruta administrativa que reescriba el historial"— era falso.
+
+**Alcance real:** PostgREST no expone TRUNCATE, así que no se alcanzaba desde la API pública con la llave publicable. Se alcanzaba desde cualquier ruta que ejecutara SQL bajo esos roles. No era una puerta a la calle; era una puerta sin cerradura dentro de la casa, en el cuarto donde se guarda lo único que se defiende ante la autoridad.
+
+**Decisión:** tres capas, en el orden de preferencia de CLAUDE.md — revocar el privilegio de las tablas existentes; revocarlo de los *default privileges* para las que aún no existen; y un trigger `before truncate` en las seis tablas append-only, que aplica también a `postgres` y a `service_role`. Más `app.verificar_privilegios_por_omision()`, que revienta la migración y el smoke test si algo de esto se desanda.
+
+**Por qué la aserción es la parte importante:** el privilegio por omisión vuelve con **cada tabla nueva**. Sin la aserción, la tabla de documentos de la semana 6 nacería otra vez con TRUNCATE para cualquiera con sesión, y nadie lo vería leyendo las migraciones — que es justo lo que pasó aquí.
+
+---
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 1. **Sellado del manifiesto** (ADR-10): ¿una constancia NOM-151 sobre el manifiesto con los hashes de todos los documentos satisface la exigencia de fecha cierta, o la autoridad espera constancia por documento?

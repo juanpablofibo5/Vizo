@@ -1,4 +1,5 @@
 import type { EjecutorSql } from '../catalogo/cargador'
+import { enTransaccionDeSesion, type ContextoSesion } from './transaccion'
 import {
   prepararAltaCliente,
   prepararBeneficiario,
@@ -25,12 +26,21 @@ export interface EjecutorTransaccional extends EjecutorSql {
 }
 
 export interface AltaClienteParams {
-  tenantId: string
+  /**
+   * Quién da de alta. De aquí salen el tenant y el actor: NO se reciben
+   * sueltos.
+   *
+   * Auditoría de la semana 5: mientras `tenantId` era un parámetro aparte,
+   * nada impedía dar de alta un cliente en el obligado equivocado, y como la
+   * app escribía con un rol que salta RLS, la base tampoco lo impedía. Con la
+   * sesión como único origen, el error deja de ser expresable —preferencia 1
+   * de CLAUDE.md— y además la base lo rechaza, porque la transacción corre
+   * como `authenticated` con estos claims.
+   */
+  sesion: ContextoSesion
   datos: DatosAltaCliente
   /** Obligatorio para personas morales y fideicomisos. */
   beneficiarios?: DatosBeneficiario[] | undefined
-  /** Usuario que captura. NULL solo en seeds. */
-  actorId?: string | undefined
 }
 
 export interface ResultadoAlta {
@@ -62,8 +72,7 @@ export async function altaCliente(
     throw new FaltaBeneficiario(cliente.tipoPersona)
   }
 
-  await db.query('begin')
-  try {
+  return enTransaccionDeSesion(db, p.sesion, async () => {
     const { rows } = await db.query(
       `insert into clientes_finales (
          tenant_id, tipo_persona, rfc, curp, nombre_o_razon_social,
@@ -73,7 +82,7 @@ export async function altaCliente(
        ) values ($1,$2::tipo_persona,$3,$4,$5,$6,$7,$8,$9::date,$10,$11::jsonb,$12,$13)
        returning id`,
       [
-        p.tenantId,
+        p.sesion.tenantId,
         cliente.tipoPersona,
         cliente.rfc ?? null,
         cliente.curp ?? null,
@@ -85,7 +94,7 @@ export async function altaCliente(
         cliente.nacionalidad ?? null,
         cliente.identidadAlterna === undefined ? null : JSON.stringify(cliente.identidadAlterna),
         cliente.requiereRevisionIdentidad,
-        p.actorId ?? null,
+        p.sesion.usuarioId,
       ],
     )
     const clienteId = (rows[0] as { id: string }).id
@@ -113,7 +122,7 @@ export async function altaCliente(
          ) values ($1,$2,$3,$4,$5,$6::numeric,$7::control_beneficiario,$8)
          returning id`,
         [
-          p.tenantId,
+          p.sesion.tenantId,
           clienteId,
           b.nombre,
           b.rfc ?? null,
@@ -133,16 +142,12 @@ export async function altaCliente(
       })
     }
 
-    await db.query('commit')
     return {
       clienteId,
       beneficiarioIds,
       requiereRevisionIdentidad: cliente.requiereRevisionIdentidad,
     }
-  } catch (error) {
-    await db.query('rollback')
-    throw error
-  }
+  })
 }
 
 async function registrarEvento(
@@ -153,11 +158,11 @@ async function registrarEvento(
   datos: Record<string, unknown>,
 ): Promise<void> {
   await db.query('select app.bitacora_registrar($1,$2,$3,$4,$5::jsonb,$6)', [
-    p.tenantId,
+    p.sesion.tenantId,
     evento,
     evento.split('.')[0],
     objetoId,
     JSON.stringify(datos),
-    p.actorId ?? null,
+    p.sesion.usuarioId,
   ])
 }

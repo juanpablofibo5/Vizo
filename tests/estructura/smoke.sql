@@ -79,7 +79,13 @@ begin
   perform 1 from app.verificar_append_only()  limit 1; if found then raise exception 'FALLA 1b: append-only comprometido'; end if;
   perform 1 from app.verificar_tenancy()      limit 1; if found then raise exception 'FALLA 1c: tabla sin tenant_id'; end if;
   perform 1 from app.verificar_grants()       limit 1; if found then raise exception 'FALLA 1d: RLS sin GRANT (tabla inaccesible)'; end if;
-  raise notice '✓ 1. Aserciones estructurales (RLS, append-only, tenancy, grants)';
+  -- 1e vigila lo que Supabase concede SIN que ninguna migración lo pida:
+  -- TRUNCATE, TRIGGER, REFERENCES y MAINTAIN sobre toda tabla nueva de public.
+  -- La auditoría de la semana 5 encontró 248 de esas concesiones vivas, y una
+  -- de ellas permitía vaciar la bitácora de todos los obligados. Se revisa en
+  -- cada corrida porque el privilegio por omisión vuelve con cada tabla nueva.
+  perform 1 from app.verificar_privilegios_por_omision() limit 1; if found then raise exception 'FALLA 1e: privilegios concedidos por omisión (TRUNCATE y compañía)'; end if;
+  raise notice '✓ 1. Aserciones estructurales (RLS, append-only, tenancy, grants, privilegios por omisión)';
 
   -- 2. La bitácora encadena --------------------------------------------------
   perform app.bitacora_registrar(v_tenant_a, 'catalogo.seed_aplicado', 'catalogo');
@@ -353,6 +359,55 @@ begin;
     select count(*) into v_n from clientes_finales;
     if v_n <> 0 then raise exception 'FALLA 11: sin JWT se ven % clientes', v_n; end if;
     raise notice '✓ 11. Sin sesión: cero filas visibles';
+  end;
+  $$;
+rollback;
+
+-- ---------------------------------------------------------------------------
+-- 13. La bitácora no se puede vaciar
+-- ---------------------------------------------------------------------------
+-- HALLAZGO DE LA AUDITORÍA DE LA SEMANA 5. DELETE y UPDATE estaban revocados
+-- desde la migración 008, pero TRUNCATE llegaba gratis por los privilegios por
+-- omisión de Supabase, no lo veía ningún trigger `for each row` y no lo filtra
+-- RLS. Un capturista podía vaciar la bitácora de TODOS los obligados.
+--
+-- Se prueba con el rol y el JWT reales, no como postgres: probarlo como
+-- postgres habría dado verde desde antes del arreglo.
+begin;
+  select set_config('request.jwt.claims', json_build_object(
+    'sub', (select id::text from usuarios where email='smoke-capturista@ejemplo.mx'),
+    'role', 'authenticated',
+    'app_metadata', json_build_object(
+      'tenant_id', (select id::text from tenants where rfc='SMK010101AAA'),
+      'rol', 'capturista')
+  )::text, true);
+  set local role authenticated;
+
+  do $$
+  declare v_paso boolean := false;
+  begin
+    begin
+      execute 'truncate bitacora';
+      v_paso := true;
+    exception when others then
+      null;  -- lo esperado
+    end;
+    if v_paso then
+      raise exception 'FALLA 13: un capturista vació la bitácora con TRUNCATE';
+    end if;
+
+    -- Y lo mismo para el resto de las append-only.
+    begin
+      execute 'truncate operaciones cascade';
+      v_paso := true;
+    exception when others then
+      null;
+    end;
+    if v_paso then
+      raise exception 'FALLA 13: un capturista vació operaciones con TRUNCATE';
+    end if;
+
+    raise notice '✓ 13. TRUNCATE bloqueado en las tablas append-only';
   end;
   $$;
 rollback;

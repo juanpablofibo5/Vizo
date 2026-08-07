@@ -1,12 +1,21 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { Client } from 'pg'
-import { conectar } from '../soporte/db'
+import { conectar, crearTenantConUsuario } from '../soporte/db'
 import { FaltaBeneficiario, altaCliente } from '../../src/persistencia/clientes'
 import { DatosDeClienteInvalidos } from '../../src/dominio/clientes'
+import { enTransaccionDeSesion, type ContextoSesion } from '../../src/persistencia/transaccion'
 
+/**
+ * El alta contra la base real, corriendo COMO EL USUARIO.
+ *
+ * Desde la auditoría de la semana 5, `altaCliente` baja el rol a
+ * `authenticated` dentro de la transacción. Estos tests dejaron de probar solo
+ * "el SQL es correcto" y ahora prueban también "RLS deja pasar lo legítimo y
+ * detiene lo demás", que es como corre en producción.
+ */
 describe('Alta de clientes contra la base', () => {
   let db: Client
-  let tenantId: string
+  let sesion: ContextoSesion
   let marca: string
 
   beforeAll(async () => {
@@ -20,11 +29,7 @@ describe('Alta de clientes contra la base', () => {
   beforeEach(async () => {
     // RFC moral válido: 3 letras + 6 dígitos + 3 alfanuméricos (patrón del XSD).
     marca = String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 900) + 100)
-    const t = await db.query(
-      `insert into tenants (rfc, razon_social) values ($1,'Alta SA') returning id`,
-      [`ALT${marca}`],
-    )
-    tenantId = (t.rows[0] as { id: string }).id
+    sesion = await crearTenantConUsuario(db, marca)
   })
 
   const pm = () => ({
@@ -36,7 +41,7 @@ describe('Alta de clientes contra la base', () => {
 
   it('da de alta una persona moral con su beneficiario controlador', async () => {
     const r = await altaCliente(db, {
-      tenantId,
+      sesion,
       datos: pm(),
       beneficiarios: [
         {
@@ -67,25 +72,25 @@ describe('Alta de clientes contra la base', () => {
   })
 
   it('el alta queda en la bitácora, encadenada', async () => {
-    const r = await altaCliente(db, { tenantId, datos: pm(), beneficiarios: [decl()] })
+    const r = await altaCliente(db, { sesion, datos: pm(), beneficiarios: [decl()] })
 
     const { rows } = await db.query(
       `select evento, objeto_tipo, objeto_id, datos, secuencia
          from bitacora where tenant_id = $1 order by secuencia`,
-      [tenantId],
+      [sesion.tenantId],
     )
     const eventos = rows as Array<Record<string, unknown>>
     expect(eventos.map((e) => e['evento'])).toEqual(['cliente.alta', 'beneficiario.alta'])
     expect(eventos[0]?.['objeto_id']).toBe(r.clienteId)
 
     // La cadena tiene que estar íntegra después de escribir.
-    const v = await db.query(`select * from app.bitacora_verificar($1)`, [tenantId])
+    const v = await db.query(`select * from app.bitacora_verificar($1)`, [sesion.tenantId])
     expect(v.rows).toHaveLength(0)
   })
 
   it('REGLA 3: la bitácora no guarda datos personales', async () => {
     const r = await altaCliente(db, {
-      tenantId,
+      sesion,
       datos: pm(),
       beneficiarios: [
         { nombre: 'María Fernández Solís', controlPor: 'control_efectivo', esDeclaracion: false },
@@ -94,7 +99,7 @@ describe('Alta de clientes contra la base', () => {
 
     const { rows } = await db.query(
       `select datos::text as d from bitacora where tenant_id = $1`,
-      [tenantId],
+      [sesion.tenantId],
     )
     const todo = rows.map((x) => (x as { d: string }).d).join(' ')
 
@@ -108,14 +113,14 @@ describe('Alta de clientes contra la base', () => {
   })
 
   it('una persona moral SIN beneficiario no se da de alta', async () => {
-    await expect(altaCliente(db, { tenantId, datos: pm(), beneficiarios: [] })).rejects.toThrow(
+    await expect(altaCliente(db, { sesion, datos: pm(), beneficiarios: [] })).rejects.toThrow(
       FaltaBeneficiario,
     )
 
     // Y no dejó basura: la transacción no llegó a abrirse.
     const { rows } = await db.query(
       `select count(*)::int as n from clientes_finales where tenant_id = $1`,
-      [tenantId],
+      [sesion.tenantId],
     )
     expect((rows[0] as { n: number }).n).toBe(0)
   })
@@ -123,7 +128,7 @@ describe('Alta de clientes contra la base', () => {
   it('un RFC inválido no toca la base', async () => {
     await expect(
       altaCliente(db, {
-        tenantId,
+        sesion,
         datos: { ...pm(), rfc: 'ESTO-NO-ES-UN-RFC' },
         beneficiarios: [decl()],
       }),
@@ -131,7 +136,7 @@ describe('Alta de clientes contra la base', () => {
 
     const { rows } = await db.query(
       `select count(*)::int as n from bitacora where tenant_id = $1`,
-      [tenantId],
+      [sesion.tenantId],
     )
     expect((rows[0] as { n: number }).n).toBe(0)
   })
@@ -143,14 +148,14 @@ describe('Alta de clientes contra la base', () => {
       db.query(
         `insert into beneficiarios_controladores (tenant_id, cliente_id, nombre, participacion_pct, control_por, es_declaracion)
          values ($1, gen_random_uuid(), 'X', 500, 'participacion', false)`,
-        [tenantId],
+        [sesion.tenantId],
       ),
     ).rejects.toThrow()
 
     const { rows } = await db.query(
       `select (select count(*) from clientes_finales where tenant_id=$1)::int as c,
               (select count(*) from bitacora where tenant_id=$1)::int as b`,
-      [tenantId],
+      [sesion.tenantId],
     )
     const f = rows[0] as { c: number; b: number }
     expect(f.c).toBe(0)
@@ -159,7 +164,7 @@ describe('Alta de clientes contra la base', () => {
 
   it('el extranjero sin RFC queda marcado y con su evento propio', async () => {
     const r = await altaCliente(db, {
-      tenantId,
+      sesion,
       datos: {
         tipoPersona: 'fisica',
         nombreORazonSocial: 'John Smith',
@@ -174,13 +179,75 @@ describe('Alta de clientes contra la base', () => {
 
     const { rows } = await db.query(
       `select evento, datos::text as d from bitacora where tenant_id=$1 order by secuencia`,
-      [tenantId],
+      [sesion.tenantId],
     )
     const eventos = rows as Array<{ evento: string; d: string }>
     expect(eventos.map((e) => e.evento)).toContain('cliente.identidad_marcada')
     // El tipo de documento sí es útil para auditar; el NÚMERO es dato personal.
     expect(eventos.some((e) => e.d.includes('pasaporte'))).toBe(true)
     expect(eventos.some((e) => e.d.includes('US987654321'))).toBe(false)
+  })
+
+  /**
+   * REGRESIÓN DE LA AUDITORÍA DE LA SEMANA 5.
+   *
+   * Estos dos no prueban el alta: prueban que la transacción trae puestas las
+   * dos mitades del arreglo, y cada uno vigila una.
+   *
+   *   - El de RLS falla si se quita el `set local role authenticated`: sin
+   *     bajar el rol, `postgres` salta las políticas.
+   *   - El de la bitácora falla si se quitan los claims: esa guardia se apoya
+   *     en `app.tenant_id()`, que sale del JWT y no del rol. Verificado
+   *     saboteando cada línea por separado — con el rol comentado este test
+   *     sigue pasando, así que no cubre lo mismo que el otro.
+   *
+   * Se ataca DENTRO de una sesión legítima, que es la forma realista: los
+   * claims salen del JWT verificado y no se pueden falsificar, pero un bug en
+   * el código de la aplicación sí puede armar un INSERT con el tenant
+   * equivocado. Antes eso se escribía en silencio.
+   */
+  describe('la sesión corre con RLS puesta', () => {
+    let ajena: ContextoSesion
+
+    beforeEach(async () => {
+      ajena = await crearTenantConUsuario(
+        db,
+        String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 900) + 100),
+      )
+    })
+
+    it('RLS impide escribir un cliente en otro obligado', async () => {
+      await expect(
+        enTransaccionDeSesion(db, sesion, async () => {
+          await db.query(
+            `insert into clientes_finales (tenant_id, tipo_persona, rfc, nombre_o_razon_social)
+             values ($1,'moral',$2,'Cliente del obligado ajeno')`,
+            [ajena.tenantId, `AJE${marca}`],
+          )
+        }),
+      ).rejects.toThrow(/row-level security/i)
+
+      const { rows } = await db.query(
+        `select count(*)::int as n from clientes_finales where tenant_id = $1`,
+        [ajena.tenantId],
+      )
+      expect((rows[0] as { n: number }).n).toBe(0)
+    })
+
+    it('la bitácora de otro obligado sigue fuera de alcance', async () => {
+      // Esta validación existe desde la auditoría de la semana 1, pero solo se
+      // dispara si `app.tenant_id()` no es NULL — o sea, solo si hay claims.
+      // Sin el cambio de rol estaba viva en el smoke test y muerta en la app.
+      await expect(
+        enTransaccionDeSesion(db, sesion, async () => {
+          await db.query('select app.bitacora_registrar($1,$2,$3)', [
+            ajena.tenantId,
+            'cliente.alta',
+            'cliente',
+          ])
+        }),
+      ).rejects.toThrow(/bitácora de otro tenant/i)
+    })
   })
 
   const decl = () => ({

@@ -83,8 +83,13 @@ export async function crearCliente(
   await db.connect()
   try {
     await altaCliente(db, {
-      tenantId: sesion.tenantId,
-      actorId: sesion.usuarioId,
+      // La sesión completa, no un tenantId suelto: la transacción corre con
+      // estos claims y RLS decide, en vez de confiar en que la app acertó.
+      sesion: {
+        usuarioId: sesion.usuarioId,
+        tenantId: sesion.tenantId,
+        rol: sesion.rol,
+      },
       datos: {
         tipoPersona,
         nombreORazonSocial: texto('nombreORazonSocial') ?? '',

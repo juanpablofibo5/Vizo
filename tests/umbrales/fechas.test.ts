@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dentroDeVentana, inicioVentana, restarMeses, ultimoDiaDelMes } from '../../src/dominio/fechas.js'
+import { dentroDeVentana, inicioVentana, restarMeses, ultimoDiaDelMes } from '../../src/dominio/fechas'
 
 /**
  * La ventana de acumulación se calcula con estas funciones. Un error de un día

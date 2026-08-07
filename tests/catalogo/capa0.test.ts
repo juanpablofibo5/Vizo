@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Client } from 'pg'
-import { conectar, consultar, consultarUna } from '../soporte/db.js'
+import { conectar, consultar, consultarUna } from '../soporte/db'
 
 /**
  * La Capa 0 vista desde TypeScript.

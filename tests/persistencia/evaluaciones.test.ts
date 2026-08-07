@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { Client } from 'pg'
-import { conectar } from '../soporte/db.js'
-import { cargarConfigActividad } from '../../src/catalogo/cargador.js'
-import { evaluar } from '../../src/dominio/motor.js'
-import { registrarEvaluacion } from '../../src/persistencia/evaluaciones.js'
-import { casoPara } from '../soporte/fixtures.js'
+import { conectar } from '../soporte/db'
+import { cargarConfigActividad } from '../../src/catalogo/cargador'
+import { evaluar } from '../../src/dominio/motor'
+import { registrarEvaluacion } from '../../src/persistencia/evaluaciones'
+import { casoPara } from '../soporte/fixtures'
 
 /**
  * El registro de la evaluación es lo que se defiende en una visita.

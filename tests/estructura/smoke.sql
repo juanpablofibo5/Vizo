@@ -16,12 +16,14 @@
 -- Guarda: este script NO es idempotente
 -- ---------------------------------------------------------------------------
 -- No puede serlo: la bitácora es append-only, así que no hay forma de limpiar
--- lo que escribe una corrida anterior. Sin esta guarda, la segunda corrida
--- falla con "duplicate key on tenants_rfc_key", que no le dice a nadie qué
--- hacer.
+-- lo que escribe una corrida anterior.
+--
+-- Se comprueba la ausencia de SUS PROPIOS tenants, no que la base esté vacía:
+-- el seed demo (supabase/seed.sql) crea sus datos para la UI y no debe
+-- estorbar aquí. Por eso los RFC de este script llevan el prefijo SMK.
 do $$
 begin
-  if exists (select 1 from tenants) then
+  if exists (select 1 from tenants where rfc like 'SMK%') then
     raise exception
       'El smoke test necesita una base recién reseteada (la bitácora es append-only). Corre: pnpm db:reset';
   end if;
@@ -32,30 +34,30 @@ $$;
 -- Datos mínimos: dos tenants, un cliente cada uno
 -- ---------------------------------------------------------------------------
 insert into tenants (rfc, razon_social) values
-  ('DPE010101AAA', 'Desarrollos Península SA de CV'),
-  ('OTR020202BBB', 'Otro Obligado SA');
+  ('SMK010101AAA', 'Smoke Tenant A'),
+  ('SMK020202BBB', 'Smoke Tenant B');
 
 
 insert into clientes_finales (tenant_id, tipo_persona, rfc, nombre_o_razon_social) values
-  ((select id from tenants where rfc='DPE010101AAA'), 'fisica', 'XAXX010101000', 'Cliente del tenant A'),
-  ((select id from tenants where rfc='OTR020202BBB'), 'moral',  'OTR020202BBB',  'Cliente del tenant B');
+  ((select id from tenants where rfc='SMK010101AAA'), 'fisica', 'SMKX010101000', 'Cliente del tenant A'),
+  ((select id from tenants where rfc='SMK020202BBB'), 'moral',  'SMKB020202BBB', 'Cliente del tenant B');
 
 -- Un usuario REAL del tenant A. Hace falta para las pruebas de ataque: sin él,
 -- la FK de actor_id bloquea por accidente y la prueba pasa sin probar nada.
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000',
-        'authenticated', 'authenticated', 'capturista@tenant-a.mx', 'x', now(), now());
+        'authenticated', 'authenticated', 'smoke-capturista@ejemplo.mx', 'x', now(), now());
 insert into usuarios (id, tenant_id, rol, nombre, email)
-select '11111111-1111-1111-1111-111111111111', id, 'capturista', 'Capturista A', 'capturista@tenant-a.mx'
-from tenants where rfc='DPE010101AAA';
+select '11111111-1111-1111-1111-111111111111', id, 'capturista', 'Capturista A', 'smoke-capturista@ejemplo.mx'
+from tenants where rfc='SMK010101AAA';
 
 insert into sucursales (tenant_id, nombre, clave)
-select id, 'Norte', 'NTE' from tenants where rfc='DPE010101AAA';
+select id, 'Norte', 'NTE' from tenants where rfc='SMK010101AAA';
 
 -- Los UUID quedan en variables de sesión: el bloque de ataque (§12) corre
 -- dentro de la sesión del atacante, donde RLS ya no deja leerlos.
-select set_config('vizo.tenant_a',  (select id::text from tenants where rfc='DPE010101AAA'), false),
-       set_config('vizo.tenant_b',  (select id::text from tenants where rfc='OTR020202BBB'), false),
+select set_config('vizo.tenant_a',  (select id::text from tenants where rfc='SMK010101AAA'), false),
+       set_config('vizo.tenant_b',  (select id::text from tenants where rfc='SMK020202BBB'), false),
        set_config('vizo.cliente_b', (select id::text from clientes_finales
                                       where nombre_o_razon_social like '%tenant B%'), false),
        set_config('vizo.sucursal_a',(select id::text from sucursales limit 1), false),
@@ -65,8 +67,8 @@ select set_config('vizo.tenant_a',  (select id::text from tenants where rfc='DPE
 -- ---------------------------------------------------------------------------
 do $$
 declare
-  v_tenant_a uuid := (select id from tenants where rfc='DPE010101AAA');
-  v_tenant_b uuid := (select id from tenants where rfc='OTR020202BBB');
+  v_tenant_a uuid := (select id from tenants where rfc='SMK010101AAA');
+  v_tenant_b uuid := (select id from tenants where rfc='SMK020202BBB');
   v_n        int;
   v_texto    text;
   v_ok       boolean;
@@ -249,7 +251,7 @@ begin;
   select set_config('request.jwt.claims', json_build_object(
     'sub', gen_random_uuid(),
     'app_metadata', json_build_object(
-      'tenant_id', (select id from tenants where rfc='DPE010101AAA'),
+      'tenant_id', (select id from tenants where rfc='SMK010101AAA'),
       'rol', 'capturista'))::text, true);
   set local role authenticated;
 
@@ -287,7 +289,7 @@ begin;
   select set_config('request.jwt.claims', json_build_object(
     'sub', '11111111-1111-1111-1111-111111111111',
     'app_metadata', json_build_object(
-      'tenant_id', (select id from tenants where rfc='DPE010101AAA'),
+      'tenant_id', (select id from tenants where rfc='SMK010101AAA'),
       'rol', 'capturista'))::text, true);
   set local role authenticated;
 

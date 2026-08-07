@@ -1,4 +1,4 @@
-import type { Centavos, UmaCentavos } from './dinero.js'
+import type { Centavos, UmaCentavos } from './dinero'
 
 /**
  * Los tipos del motor de evaluación.

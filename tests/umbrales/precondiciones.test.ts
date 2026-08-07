@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Client } from 'pg'
-import { conectar } from '../soporte/db.js'
-import { cargarConfigActividad } from '../../src/catalogo/cargador.js'
-import { EntradaInvalida, evaluar } from '../../src/dominio/motor.js'
-import { centavos } from '../../src/dominio/dinero.js'
-import { CLIENTE_A, casoPara, entrada, mxn, operacion, previa } from '../soporte/fixtures.js'
+import { conectar } from '../soporte/db'
+import { cargarConfigActividad } from '../../src/catalogo/cargador'
+import { EntradaInvalida, evaluar } from '../../src/dominio/motor'
+import { centavos } from '../../src/dominio/dinero'
+import { CLIENTE_A, casoPara, entrada, mxn, operacion, previa } from '../soporte/fixtures'
 
 /**
  * PRECONDICIONES DEL MOTOR.

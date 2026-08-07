@@ -1,15 +1,25 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["node", "vitest/globals"],
-    "jsx": "preserve",
+    "types": [
+      "node",
+      "vitest/globals"
+    ],
+    "jsx": "react-jsx",
     "allowJs": true,
     "incremental": true,
-    "plugins": [{ "name": "next" }],
-
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     // TypeScript estricto, sin excepciones. En este proyecto un `any` que se
     // cuela a un cálculo de umbral no produce un bug: produce un aviso mal
     // presentado.
@@ -23,18 +33,30 @@
     "noUnusedParameters": true,
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
-
     "noEmit": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
-
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "app/**/*.ts", "app/**/*.tsx", "tests/**/*.ts", "vitest.config.ts", "next-env.d.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "tests/**/*.ts",
+    "vitest.config.ts",
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

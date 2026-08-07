@@ -1,5 +1,5 @@
-import type { ConfigActividad, Umbral } from '../dominio/tipos.js'
-import { pesosTextoACentavos, umaACentavos, umaCentavos } from '../dominio/dinero.js'
+import type { ConfigActividad, Umbral } from '../dominio/tipos'
+import { pesosTextoACentavos, umaACentavos, umaCentavos } from '../dominio/dinero'
 
 /**
  * El cargador de la Capa 0.

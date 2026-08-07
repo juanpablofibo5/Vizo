@@ -1,7 +1,7 @@
-import type { EjecutorSql } from '../catalogo/cargador.js'
-import { pesosTextoACentavos } from '../dominio/dinero.js'
-import { inicioVentana } from '../dominio/fechas.js'
-import type { OperacionPrevia, ResolucionIdentidad } from '../dominio/tipos.js'
+import type { EjecutorSql } from '../catalogo/cargador'
+import { pesosTextoACentavos } from '../dominio/dinero'
+import { inicioVentana } from '../dominio/fechas'
+import type { OperacionPrevia, ResolucionIdentidad } from '../dominio/tipos'
 
 /**
  * El historial que alimenta la acumulación.

@@ -1,6 +1,6 @@
-import type { EjecutorSql } from '../catalogo/cargador.js'
-import { centavosAPesosTexto } from '../dominio/dinero.js'
-import type { ConfigActividad, Evaluacion } from '../dominio/tipos.js'
+import type { EjecutorSql } from '../catalogo/cargador'
+import { centavosAPesosTexto } from '../dominio/dinero'
+import type { ConfigActividad, Evaluacion } from '../dominio/tipos'
 
 /**
  * Registro de evaluaciones.

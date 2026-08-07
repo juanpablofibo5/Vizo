@@ -1,15 +1,15 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { Client } from 'pg'
-import { conectar } from '../soporte/db.js'
+import { conectar } from '../soporte/db'
 import {
   IdentidadIndeterminada,
   historialParaAcumulacion,
   normalizarClave,
   resolverIdentidad,
-} from '../../src/persistencia/historial.js'
-import { cargarConfigActividad } from '../../src/catalogo/cargador.js'
-import { evaluar } from '../../src/dominio/motor.js'
-import { pesos } from '../../src/dominio/dinero.js'
+} from '../../src/persistencia/historial'
+import { cargarConfigActividad } from '../../src/catalogo/cargador'
+import { evaluar } from '../../src/dominio/motor'
+import { pesos } from '../../src/dominio/dinero'
 
 /**
  * El historial contra la base real.

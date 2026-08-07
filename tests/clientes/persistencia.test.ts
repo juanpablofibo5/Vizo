@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { Client } from 'pg'
-import { conectar } from '../soporte/db.js'
-import { FaltaBeneficiario, altaCliente } from '../../src/persistencia/clientes.js'
-import { DatosDeClienteInvalidos } from '../../src/dominio/clientes.js'
+import { conectar } from '../soporte/db'
+import { FaltaBeneficiario, altaCliente } from '../../src/persistencia/clientes'
+import { DatosDeClienteInvalidos } from '../../src/dominio/clientes'
 
 describe('Alta de clientes contra la base', () => {
   let db: Client

@@ -5,9 +5,9 @@ import type {
   Operacion,
   OperacionPrevia,
   Umbral,
-} from './tipos.js'
-import { centavos, formatearPesos, porcentaje, sumar, type Centavos } from './dinero.js'
-import { dentroDeVentana, inicioVentana } from './fechas.js'
+} from './tipos'
+import { centavos, formatearPesos, porcentaje, sumar, type Centavos } from './dinero'
+import { dentroDeVentana, inicioVentana } from './fechas'
 
 /**
  * EL MOTOR DE EVALUACIÓN.

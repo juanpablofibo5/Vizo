@@ -1,0 +1,49 @@
+/* UI utilitaria a propósito: el criterio de calidad del MVP es que el ciclo
+   regulatorio cierre, no que la pantalla se vea bonita. Tablas y formularios. */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #1a1a1a;
+  background: #f7f7f8;
+}
+a { color: #0b5cad; }
+main { max-width: 62rem; margin: 0 auto; padding: 1.5rem; }
+h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
+h2 { font-size: 1.1rem; margin: 1.75rem 0 .5rem; }
+.sub { color: #666; margin: 0 0 1.5rem; }
+
+header.barra {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: .75rem 1.5rem; background: #fff; border-bottom: 1px solid #e3e3e6;
+}
+header.barra strong { letter-spacing: .12em; }
+.chip {
+  font-size: .78rem; padding: .15rem .5rem; border-radius: 999px;
+  background: #eef2f7; color: #33506e; margin-left: .5rem;
+}
+
+.tarjeta { background: #fff; border: 1px solid #e3e3e6; border-radius: 8px; padding: 1.25rem; }
+fieldset { border: 1px solid #e3e3e6; border-radius: 6px; padding: 1rem; margin: 0 0 1rem; }
+legend { font-weight: 600; padding: 0 .4rem; }
+label { display: block; margin-bottom: .75rem; }
+label span { display: block; font-size: .85rem; color: #444; margin-bottom: .2rem; }
+label .pista { color: #777; font-weight: 400; }
+input, select { width: 100%; padding: .45rem .55rem; border: 1px solid #c9ccd1; border-radius: 5px; font: inherit; background: #fff; }
+input:focus, select:focus { outline: 2px solid #0b5cad; outline-offset: 1px; }
+.fila { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0 1rem; }
+
+button {
+  font: inherit; padding: .5rem 1rem; border-radius: 5px; cursor: pointer;
+  border: 1px solid #0b5cad; background: #0b5cad; color: #fff;
+}
+button.secundario { background: #fff; color: #0b5cad; }
+
+.error { background: #fdeaea; border: 1px solid #e5a3a3; color: #8a1f1f; padding: .75rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+.error ul { margin: .4rem 0 0; padding-left: 1.2rem; }
+.aviso { background: #fff8e6; border: 1px solid #e8d08a; color: #6b5312; padding: .6rem .9rem; border-radius: 6px; }
+
+table { width: 100%; border-collapse: collapse; background: #fff; }
+th, td { text-align: left; padding: .55rem .7rem; border-bottom: 1px solid #ececed; }
+th { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #666; }
+td.vacia { color: #777; padding: 2rem; text-align: center; }

@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Client } from 'pg'
-import { conectar } from '../soporte/db.js'
-import { CatalogoIncompleto, cargarConfigActividad, umbralDe } from '../../src/catalogo/cargador.js'
-import { mxn } from '../soporte/fixtures.js'
+import { conectar } from '../soporte/db'
+import { CatalogoIncompleto, cargarConfigActividad, umbralDe } from '../../src/catalogo/cargador'
+import { mxn } from '../soporte/fixtures'
 
 /**
  * El cargador de la Capa 0.

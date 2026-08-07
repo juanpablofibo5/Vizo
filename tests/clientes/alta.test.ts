@@ -9,7 +9,7 @@ import {
   prepararAltaCliente,
   prepararBeneficiario,
   requiereBeneficiario,
-} from '../../src/dominio/clientes.js'
+} from '../../src/dominio/clientes'
 
 /**
  * El alta de clientes: la primera frontera de entrada humana del sistema.

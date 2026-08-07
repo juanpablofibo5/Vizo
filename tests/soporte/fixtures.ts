@@ -1,11 +1,11 @@
-import { centavos, pesos, type Centavos } from '../../src/dominio/dinero.js'
+import { centavos, pesos, type Centavos } from '../../src/dominio/dinero'
 import type {
   Cliente,
   EntradaEvaluacion,
   Operacion,
   OperacionPrevia,
   ResolucionIdentidad,
-} from '../../src/dominio/tipos.js'
+} from '../../src/dominio/tipos'
 
 /**
  * Constructores de casos para la suite del motor.

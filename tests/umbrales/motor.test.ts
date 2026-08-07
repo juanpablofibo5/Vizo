@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Client } from 'pg'
-import { conectar } from '../soporte/db.js'
-import { cargarConfigActividad, umbralDe } from '../../src/catalogo/cargador.js'
-import { evaluar } from '../../src/dominio/motor.js'
-import type { ConfigActividad } from '../../src/dominio/tipos.js'
+import { conectar } from '../soporte/db'
+import { cargarConfigActividad, umbralDe } from '../../src/catalogo/cargador'
+import { evaluar } from '../../src/dominio/motor'
+import type { ConfigActividad } from '../../src/dominio/tipos'
 import {
   CLIENTE_EXT,
   SUCURSAL_CENTRO,
@@ -11,7 +11,7 @@ import {
   cliente,
   mxn,
   previa,
-} from '../soporte/fixtures.js'
+} from '../soporte/fixtures'
 
 /**
  * SUITE DEL MOTOR DE UMBRALES — el criterio de aceptación real del proyecto.

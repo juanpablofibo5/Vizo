@@ -7,9 +7,89 @@
 -- sin él el motor no puede evaluar nada, así que tiene que existir en el
 -- proyecto remoto, no solo en la máquina de quien desarrolla.
 --
--- Este archivo es para los datos demo que ejercitan los casos de
--- docs/PRUEBAS.md: un tenant ficticio con sus sucursales, usuarios y clientes.
--- Nunca datos de un cliente real.
+-- Aquí van los datos demo para trabajar con la UI. Nunca datos de un cliente
+-- real.
+
+-- ---------------------------------------------------------------------------
+-- Tenant demo y sus sucursales
+-- ---------------------------------------------------------------------------
+insert into tenants (id, rfc, razon_social, domicilio) values (
+  '00000000-0000-4000-8000-000000000001',
+  'DPE010101AAA',
+  'Desarrollos Península SA de CV',
+  '{"calle":"Prolongación Montejo","numero":"120","colonia":"Campestre","cp":"97120","municipio":"Mérida","estado":"Yucatán"}'::jsonb
+);
+
+insert into sucursales (tenant_id, nombre, clave) values
+  ('00000000-0000-4000-8000-000000000001', 'Matriz Mérida', 'MID'),
+  ('00000000-0000-4000-8000-000000000001', 'Playa del Carmen', 'PDC');
+
+-- El tenant realiza Fr. V Bis.
+insert into actividades_tenant (tenant_id, actividad_id)
+select '00000000-0000-4000-8000-000000000001', id
+from actividades_vulnerables where fraccion = 'V_BIS';
+
+-- ---------------------------------------------------------------------------
+-- Usuarios demo: uno de cada rol
+-- ---------------------------------------------------------------------------
+-- Dos roles para poder demostrar la separación captura/aprobación, que es lo
+-- regulatoriamente relevante. `tenant_id` y `rol` van en app_metadata: es lo
+-- que lee RLS, y solo el servicio de Auth puede escribirlo. Ponerlos en
+-- user_metadata los haría auto-asignables y por tanto inservibles.
 --
--- Vacío hasta la semana 5, cuando exista el alta de clientes en la UI. Por
--- ahora tests/estructura/smoke.sql crea los suyos y los deja limpios.
+-- Contraseña de ambos: vizo-demo-2026
+--
+-- OJO con las columnas de token: GoTrue las lee como texto y falla con
+-- "Database error querying schema" si vienen en NULL. Por eso van en cadena
+-- vacía y no se omiten. Es el tropiezo clásico de sembrar usuarios directo en
+-- auth.users en vez de darlos de alta por la API.
+insert into auth.users (
+  id, instance_id, aud, role, email, encrypted_password,
+  email_confirmed_at, created_at, updated_at,
+  raw_app_meta_data, raw_user_meta_data,
+  confirmation_token, recovery_token, email_change_token_new, email_change,
+  email_change_token_current, phone_change, phone_change_token, reauthentication_token
+) values
+  (
+    '00000000-0000-4000-8000-00000000000a',
+    '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+    'admin@vizo.mx', crypt('vizo-demo-2026', gen_salt('bf')),
+    now(), now(), now(),
+    '{"provider":"email","providers":["email"],"tenant_id":"00000000-0000-4000-8000-000000000001","rol":"admin"}'::jsonb,
+    '{}'::jsonb,
+    '', '', '', '', '', '', '', ''
+  ),
+  (
+    '00000000-0000-4000-8000-00000000000b',
+    '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+    'capturista@vizo.mx', crypt('vizo-demo-2026', gen_salt('bf')),
+    now(), now(), now(),
+    '{"provider":"email","providers":["email"],"tenant_id":"00000000-0000-4000-8000-000000000001","rol":"capturista"}'::jsonb,
+    '{}'::jsonb,
+    '', '', '', '', '', '', '', ''
+  );
+
+insert into auth.identities (id, user_id, provider_id, provider, identity_data, created_at, updated_at)
+values
+  (gen_random_uuid(), '00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-00000000000a',
+   'email', '{"sub":"00000000-0000-4000-8000-00000000000a","email":"admin@vizo.mx","email_verified":true}'::jsonb, now(), now()),
+  (gen_random_uuid(), '00000000-0000-4000-8000-00000000000b', '00000000-0000-4000-8000-00000000000b',
+   'email', '{"sub":"00000000-0000-4000-8000-00000000000b","email":"capturista@vizo.mx","email_verified":true}'::jsonb, now(), now());
+
+insert into usuarios (id, tenant_id, rol, nombre, email) values
+  ('00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-000000000001', 'admin', 'Ana Rivera', 'admin@vizo.mx'),
+  ('00000000-0000-4000-8000-00000000000b', '00000000-0000-4000-8000-000000000001', 'capturista', 'Carlos Pech', 'capturista@vizo.mx');
+
+-- ---------------------------------------------------------------------------
+-- Segundo tenant: existe para que el aislamiento sea demostrable
+-- ---------------------------------------------------------------------------
+-- Sin un segundo obligado con datos propios, "RLS funciona" es una afirmación
+-- sin forma de comprobarse desde la UI.
+insert into tenants (id, rfc, razon_social) values
+  ('00000000-0000-4000-8000-000000000002', 'OTR020202BBB', 'Otro Desarrollador SA de CV');
+
+insert into clientes_finales (tenant_id, tipo_persona, rfc, nombre_o_razon_social, nacionalidad)
+values (
+  '00000000-0000-4000-8000-000000000002', 'moral', 'CLB030303CCC',
+  'Cliente Privado del Otro Tenant SA', 'MX'
+);

@@ -1,4 +1,4 @@
-import { normalizarClave } from '../persistencia/historial.js'
+import { normalizarClave } from '../persistencia/historial'
 
 /**
  * Reglas del alta de clientes.

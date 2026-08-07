@@ -7,7 +7,7 @@ import {
   porcentaje,
   umaACentavos,
   umaCentavos,
-} from '../../src/dominio/dinero.js'
+} from '../../src/dominio/dinero'
 
 /**
  * Aritmética de dinero: la capa donde un error no se ve pero se paga.

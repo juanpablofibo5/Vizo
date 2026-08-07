@@ -1,11 +1,11 @@
-import type { EjecutorSql } from '../catalogo/cargador.js'
+import type { EjecutorSql } from '../catalogo/cargador'
 import {
   prepararAltaCliente,
   prepararBeneficiario,
   requiereBeneficiario,
   type DatosAltaCliente,
   type DatosBeneficiario,
-} from '../dominio/clientes.js'
+} from '../dominio/clientes'
 
 /**
  * Alta de clientes.

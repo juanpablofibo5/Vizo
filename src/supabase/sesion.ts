@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { clienteServidor } from './servidor.js'
+import { clienteServidor } from './servidor'
 
 export interface Sesion {
   usuarioId: string

@@ -3,9 +3,11 @@ import type {
   EntradaEvaluacion,
   Evaluacion,
   Operacion,
+  OperacionPrevia,
   Umbral,
 } from './tipos.js'
-import { centavos, formatearPesos, porcentaje, type Centavos } from './dinero.js'
+import { centavos, formatearPesos, porcentaje, sumar, type Centavos } from './dinero.js'
+import { dentroDeVentana, inicioVentana } from './fechas.js'
 
 /**
  * EL MOTOR DE EVALUACIÓN.
@@ -19,10 +21,8 @@ import { centavos, formatearPesos, porcentaje, type Centavos } from './dinero.js
  * ella. Agregar la Fracción XV no toca este archivo: la prueba de diseño X-01
  * lo verifica en la semana 11.
  *
- * Estado: identificación, aviso individual, restricción de efectivo y alerta
- * de proximidad implementados (semana 3). La acumulación de 6 meses llega en
- * la semana 4; hasta entonces `sumaVentana` es null y los casos A-* de
- * docs/PRUEBAS.md fallan a propósito.
+ * Cubre identificación, aviso individual, acumulación en ventana deslizante,
+ * restricción de efectivo del Art. 32 y alerta de proximidad.
  */
 export function evaluar(entrada: EntradaEvaluacion, config: ConfigActividad): Evaluacion {
   const { operacion, cliente } = entrada
@@ -47,11 +47,33 @@ export function evaluar(entrada: EntradaEvaluacion, config: ConfigActividad): Ev
   const umbralAviso = exigeMonto(uAviso)
   const avisoIndividual = montoParaAviso >= umbralAviso
 
-  // ── 3. Acumulación ─────────────────────────────────────────────────────
-  // Semana 4. Ver el comentario al final de la función.
-  const sumaVentana: Centavos | null = null
-  const operacionesAcumuladas: readonly string[] = []
-  const avisoPorAcumulacion = false
+  // ── 3. Acumulación en ventana deslizante ───────────────────────────────
+  // Confirmado por el SAT en el webinar del 20/06/2026:
+  //   · Ventana de N meses (dato del catálogo) hacia atrás desde ESTA
+  //     operación. Deslizante, no periodos fijos de calendario.
+  //   · Solo suman las operaciones que INDIVIDUALMENTE caen en el supuesto de
+  //     identificación. En V Bis eso es todas, pero el motor no lo da por
+  //     hecho: en Fr. XV hay umbral de identificación y ahí sí discrimina.
+  //   · Se acumula por mismo cliente y misma actividad, CRUZANDO SUCURSALES.
+  //     Es lo que un Excel por sucursal no puede ver.
+  //   · El aviso se dispara EN EL MOMENTO en que la suma alcanza el umbral,
+  //     no al cierre del periodo.
+  const inicio = inicioVentana(operacion.fechaOperacion, config.ventanaMeses)
+  const enVentana = entrada.historial.filter(
+    (h) => h.caeEnIdentificacion && dentroDeVentana(h.fechaOperacion, inicio, operacion.fechaOperacion),
+  )
+  // Se suma el mismo tipo de monto contra el que se compara el umbral de
+  // aviso, para que la comparación sea homogénea. Si POR CONFIRMAR-4 mueve el
+  // Art. 17 a "con impuestos", el historial ya trae `montoTotal`.
+  const sumaVentana = sumar(
+    montoParaAviso,
+    ...enVentana.map((h) => montoDePrevia(h, uAviso)),
+  )
+  const operacionesAcumuladas: readonly string[] = enVentana.map((h) => h.id)
+
+  // Si la operación por sí sola ya obliga a avisar, el aviso es individual: no
+  // se reporta dos veces la misma obligación.
+  const avisoPorAcumulacion = !avisoIndividual && sumaVentana >= umbralAviso
 
   // ── 4. Restricción de efectivo (Art. 32) ───────────────────────────────
   // Solo aplica cuando el pago fue en efectivo, y se mide sobre el total
@@ -63,8 +85,10 @@ export function evaluar(entrada: EntradaEvaluacion, config: ConfigActividad): Ev
   // Decisión de producto, no obligación legal: avisar cuando falta poco.
   // No se levanta si ya hay aviso — sería ruido sobre una obligación firme.
   const umbralProximidad = porcentaje(umbralAviso, config.proximidadPct)
+  // Se mide sobre la SUMA de la ventana, no solo sobre esta operación: dos
+  // pagos que juntos rozan el umbral son la señal que importa (caso A-06).
   const alertaProximidad =
-    !avisoIndividual && !avisoPorAcumulacion && montoParaAviso >= umbralProximidad
+    !avisoIndividual && !avisoPorAcumulacion && sumaVentana >= umbralProximidad
 
   // ── 6. Identidad ───────────────────────────────────────────────────────
   // Cuando la identidad no se resolvió por RFC ni CURP, el motor NO asume que
@@ -92,6 +116,10 @@ export function evaluar(entrada: EntradaEvaluacion, config: ConfigActividad): Ev
       umbralAviso,
       umbralProximidad,
       identificacionSiempre: uIdentificacion.siempre,
+      sumaVentana,
+      operacionesEnVentana: enVentana.length,
+      ventanaMeses: config.ventanaMeses,
+      inicioVentana: inicio,
     }),
     insumos: {
       uma: config.uma,
@@ -241,6 +269,21 @@ function montoContra(operacion: Operacion, umbral: Umbral): Centavos {
   return umbral.base === 'con_iva' ? operacion.montoTotal : operacion.montoBase
 }
 
+/**
+ * El monto de una operación del historial, en la misma base que el umbral.
+ *
+ * Si el umbral es `con_iva` y la operación previa no trae total, se usa la
+ * base: sumar de menos podría omitir un aviso, pero inventar un IVA sería
+ * peor. El cargador del historial siempre trae ambos montos, así que este
+ * fallback no se ejercita en producción.
+ */
+function montoDePrevia(previa: OperacionPrevia, umbral: Umbral): Centavos {
+  if (umbral.base === 'con_iva' && previa.montoTotal !== undefined) {
+    return previa.montoTotal
+  }
+  return previa.montoBase
+}
+
 interface DatosMotivo {
   resultadoAviso: Evaluacion['resultadoAviso']
   requiereIdentificacion: boolean
@@ -250,6 +293,10 @@ interface DatosMotivo {
   umbralAviso: Centavos
   umbralProximidad: Centavos
   identificacionSiempre: boolean
+  sumaVentana: Centavos
+  operacionesEnVentana: number
+  ventanaMeses: number
+  inicioVentana: string
 }
 
 /**
@@ -274,7 +321,12 @@ function redactarMotivo(d: DatosMotivo): string {
         `alcanza el umbral de ${formatearPesos(d.umbralAviso)}.`,
     )
   } else if (d.resultadoAviso === 'acumulacion') {
-    partes.push('Aviso por acumulación en la ventana vigente.')
+    partes.push(
+      `Aviso por acumulación: ${formatearPesos(d.sumaVentana)} sumados con ` +
+        `${d.operacionesEnVentana} operación(es) previa(s) desde el ${d.inicioVentana} ` +
+        `(ventana de ${d.ventanaMeses} meses) alcanzan el umbral de ` +
+        `${formatearPesos(d.umbralAviso)}.`,
+    )
   } else {
     partes.push(
       `Sin aviso: ${formatearPesos(d.montoParaAviso)} no alcanza ` +

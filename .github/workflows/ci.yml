@@ -81,26 +81,14 @@ jobs:
             tests/umbrales/precondiciones.test.ts
 
       # ─────────────────────────────────────────────────────────────────────
-      # ROJO CONTROLADO — se retira al cerrar la semana 4 (6 de septiembre)
+      # BLOQUEANTE desde la semana 4
       # ─────────────────────────────────────────────────────────────────────
-      # La suite del motor existe ANTES que el motor, a propósito
-      # (docs/PLAN.md semanas 2-4). Hoy pasan individual, IVA y vigencia;
-      # fallan los 7 casos de acumulación, que son la semana 4.
+      # El `continue-on-error` que permitió tener la suite en rojo mientras se
+      # escribía antes que el motor se retiró al cerrar la semana 4, en la
+      # fecha que decía su propio comentario.
       #
-      # `continue-on-error` es una excepción con fecha de caducidad, no una
-      # costumbre: en cuanto el motor esté implementado se borra esta línea y
-      # la suite pasa a ser bloqueante. Si sigue aquí después del checkpoint
-      # de la semana 4, es deuda, no diseño.
-      - name: Suite del motor de umbrales (en rojo hasta la semana 4)
-        id: motor
-        continue-on-error: true
+      # Esta suite es el criterio de aceptación real del proyecto
+      # (docs/PRUEBAS.md): un umbral mal calculado no produce un bug, produce
+      # un aviso omitido. Si se pone roja, no se despliega.
+      - name: Suite del motor de umbrales
         run: pnpm test:umbrales
-
-      - name: Estado de la suite del motor
-        if: always()
-        run: |
-          if [ "${{ steps.motor.outcome }}" = "success" ]; then
-            echo "::notice::El motor de umbrales pasa la suite. Quita continue-on-error del workflow."
-          else
-            echo "::warning::Suite del motor en rojo — esperado hasta la semana 4 (docs/PRUEBAS.md)."
-          fi

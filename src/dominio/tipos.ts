@@ -60,6 +60,12 @@ export interface OperacionPrevia {
   readonly id: string
   readonly fechaOperacion: string
   readonly montoBase: Centavos
+  /**
+   * Total con IVA y accesorios. Opcional porque solo se usa si el umbral de
+   * aviso llegara a evaluarse `con_iva` (POR CONFIRMAR-4): así el cambio de
+   * base no obliga a rehacer el historial.
+   */
+  readonly montoTotal?: Centavos | undefined
   /** Si la operación cae por sí sola en el supuesto de identificación. */
   readonly caeEnIdentificacion: boolean
   /**

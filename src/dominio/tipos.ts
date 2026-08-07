@@ -116,6 +116,17 @@ export interface EntradaEvaluacion {
  * calculó no se puede defender tres años después.
  */
 export interface Evaluacion {
+  /**
+   * A qué operación pertenece este resultado.
+   *
+   * Va DENTRO de la evaluación, no como parámetro suelto al guardarla: así no
+   * existe la posibilidad de registrar el cálculo de una operación contra el
+   * id de otra. La auditoría de la semana 4 demostró que con el id suelto se
+   * podía guardar un registro que decía que una operación de $100,000 generó
+   * aviso individual con un monto considerado de $950,000 — y eso vive en el
+   * objeto que se defiende ante la autoridad.
+   */
+  readonly operacionId: string
   readonly requiereIdentificacion: boolean
   readonly resultadoAviso: ResultadoAviso
   readonly efectivoRestringido: boolean

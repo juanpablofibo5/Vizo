@@ -112,6 +112,7 @@ export function evaluar(entrada: EntradaEvaluacion, config: ConfigActividad): Ev
   const resultadoAviso = avisoIndividual ? 'individual' : avisoPorAcumulacion ? 'acumulacion' : 'no'
 
   return {
+    operacionId: operacion.id,
     requiereIdentificacion,
     resultadoAviso,
     efectivoRestringido,

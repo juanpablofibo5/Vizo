@@ -15,6 +15,27 @@ Multi-tenant. Los clientes son sujetos obligados; VIZO es su **encargado** bajo 
 
 **5. VIZO nunca envía el aviso al SPPLD ni descarta una coincidencia de screening.** Ambas cosas requieren acción humana registrada. Si una tarea implica automatizar cualquiera de las dos, para y pregunta.
 
+**6. Nada calcula en silencio con datos que no cuadran.** Ante un dato faltante o incoherente, detente con un error accionable. Nunca asumas un valor por defecto, nunca uses un fallback "razonable".
+
+Esta regla existe porque el modo de falla de este proyecto **no es el crash**: es el cálculo mal hecho que nadie nota. Las tres auditorías encontraron el mismo patrón, siempre distinto por fuera:
+
+| Qué pasó | Consecuencia |
+|---|---|
+| El motor aceptó una configuración de otra fecha | Se evaluó con la UMA equivocada → **aviso omitido** |
+| La operación evaluada venía en su propio historial | Se contó dos veces → **aviso falso** |
+| Con umbral `con_iva`, una previa sin total sumaba solo su base | Suma de menos → **aviso omitido** |
+| `registrarEvaluacion` aceptaba un `operacionId` suelto | Registro incoherente en **el objeto que se defiende ante la autoridad** |
+
+Ninguna lanzó una excepción. Todas devolvieron un número plausible.
+
+**Prefiere hacer el error imposible antes que detectarlo.** En orden de preferencia:
+
+1. **Que no se pueda expresar.** `registrarEvaluacion` dejó de recibir un id suelto: lo toma de `evaluacion.operacionId`, que el motor sella. Ya no hay forma de guardar el cálculo de una operación contra otra.
+2. **Que lo impida la base.** Un `CHECK`, una FK compuesta `(tenant_id, id)`, una exclusion constraint. No dependen de que alguien llame a la función correcta. Las aserciones de la migración 001 (`app.verificar_*`) son de este tipo.
+3. **Que lo detecte una precondición.** Al inicio de la función, con un mensaje que diga qué hacer. Es el último recurso, no el primero.
+
+**Fronteras donde aplica con más fuerza:** entrada humana (formularios), archivos externos (CFDI, XSD), y todo lo que produzca el XML del aviso.
+
 ## Comandos
 
 ```bash

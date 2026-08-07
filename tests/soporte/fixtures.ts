@@ -27,6 +27,8 @@ function siguienteId(): string {
 }
 
 export interface OpcionesOperacion {
+  /** Id real de la operación cuando el test la insertó en la base. */
+  id?: string
   fecha: string
   /** Monto sin IVA ni accesorios: la base del Art. 17. */
   base: number
@@ -46,7 +48,7 @@ export function operacion(o: OpcionesOperacion): Operacion {
   const accesorios = pesos(o.accesorios ?? 0)
   const total = centavos(base + iva + isai + accesorios)
   return {
-    id: siguienteId(),
+    id: o.id ?? siguienteId(),
     clienteId: o.clienteId ?? CLIENTE_A,
     sucursalId: o.sucursalId ?? SUCURSAL_NORTE,
     actividadId: o.actividadId ?? 'act-v-bis',

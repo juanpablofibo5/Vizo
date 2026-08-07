@@ -17,7 +17,14 @@ import type { ConfigActividad, Evaluacion } from '../dominio/tipos.js'
 
 export interface DatosRegistro {
   tenantId: string
-  operacionId: string
+  /**
+   * La operación NO se pasa por separado: se toma de `evaluacion.operacionId`.
+   *
+   * Antes esta interfaz recibía un `operacionId` suelto y nada impedía guardar
+   * el cálculo de una operación apuntando a otra. El registro quedaba
+   * incoherente en la tabla que se defiende ante la autoridad. Quitar el
+   * parámetro elimina la clase de error en vez de vigilarla.
+   */
   evaluacion: Evaluacion
   config: ConfigActividad
 }
@@ -25,9 +32,10 @@ export interface DatosRegistro {
 /** Devuelve el id de la evaluación registrada. */
 export async function registrarEvaluacion(
   db: EjecutorSql,
-  { tenantId, operacionId, evaluacion: ev, config }: DatosRegistro,
+  { tenantId, evaluacion: ev, config }: DatosRegistro,
 ): Promise<string> {
   const { insumos } = ev
+  const operacionId = ev.operacionId
 
   // Los montos se pasan como texto decimal y Postgres los convierte a
   // `numeric`. Nunca como número de JavaScript: ese viaje pasa por punto

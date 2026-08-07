@@ -62,6 +62,11 @@ export interface OperacionPrevia {
   readonly montoBase: Centavos
   /** Si la operación cae por sí sola en el supuesto de identificación. */
   readonly caeEnIdentificacion: boolean
+  /**
+   * Opcional. Cuando viene, el motor verifica que el historial sea del mismo
+   * cliente: acumular operaciones de otra persona dispararía un aviso falso.
+   */
+  readonly clienteId?: string | undefined
 }
 
 export interface Operacion {

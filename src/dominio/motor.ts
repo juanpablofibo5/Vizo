@@ -27,6 +27,8 @@ import { centavos, formatearPesos, porcentaje, type Centavos } from './dinero.js
 export function evaluar(entrada: EntradaEvaluacion, config: ConfigActividad): Evaluacion {
   const { operacion, cliente } = entrada
 
+  verificarPrecondiciones(entrada, config)
+
   const uIdentificacion = umbralRequerido(config, 'identificacion')
   const uAviso = umbralRequerido(config, 'aviso')
   const uEfectivo = umbralRequerido(config, 'efectivo')
@@ -114,6 +116,91 @@ export class ConfiguracionInvalida extends Error {
     super(mensaje)
     this.name = 'ConfiguracionInvalida'
   }
+}
+
+/**
+ * La entrada no es coherente con la configuración recibida.
+ *
+ * Encontrado en la auditoría de la semana 3: el motor obedecía en silencio una
+ * configuración que no correspondía a la operación. Evaluar una operación del
+ * 15 de enero con la configuración de febrero usa la UMA equivocada y produce
+ * un AVISO OMITIDO — el error más caro del dominio.
+ *
+ * Una función pura que decide obligaciones regulatorias no puede confiar en su
+ * entrada. Prefiere detenerse a calcular con datos incoherentes.
+ */
+export class EntradaInvalida extends Error {
+  constructor(mensaje: string) {
+    super(mensaje)
+    this.name = 'EntradaInvalida'
+  }
+}
+
+function verificarPrecondiciones(entrada: EntradaEvaluacion, config: ConfigActividad): void {
+  const { operacion, cliente, historial } = entrada
+
+  // 1. La configuración tiene que ser la de ESTA fecha.
+  //    El riesgo real: cargar la config una vez y reutilizarla para operaciones
+  //    de fechas distintas — exactamente lo que hará el batch mensual y la
+  //    acumulación de la semana 4, donde el historial cruza meses.
+  if (!fechaDentroDeVigencia(operacion.fechaOperacion, config)) {
+    throw new EntradaInvalida(
+      `La operación es del ${operacion.fechaOperacion} pero la configuración corresponde a la ` +
+        `UMA vigente desde ${config.umaVigenteDesde}` +
+        (config.umaVigenteHasta ? ` hasta ${config.umaVigenteHasta}` : '') +
+        '. Carga la configuración con la fecha de la operación: usar otra UMA omite avisos.',
+    )
+  }
+
+  // 2. La operación tiene que ser de esta actividad.
+  //    Los umbrales y los acumulados NUNCA se cruzan entre fracciones (A-04).
+  if (operacion.actividadId !== config.actividadId) {
+    throw new EntradaInvalida(
+      `La operación pertenece a la actividad ${operacion.actividadId} y la configuración es de ` +
+        `${config.actividadId} (${config.fraccion}). Los umbrales no se cruzan entre fracciones.`,
+    )
+  }
+
+  // 3. Los montos tienen que cuadrar.
+  //    La base de datos lo garantiza con un CHECK, pero el motor también
+  //    recibe operaciones armadas en memoria (parser CFDI, tests, importación).
+  //    Un total falseado evalúa mal el Art. 32.
+  const suma = operacion.montoBase + operacion.iva + operacion.isai + operacion.otrosAccesorios
+  if (operacion.montoTotal !== suma) {
+    throw new EntradaInvalida(
+      `El monto total (${formatearPesos(operacion.montoTotal)}) no cuadra con la suma de sus ` +
+        `componentes (${formatearPesos(centavos(suma))}).`,
+    )
+  }
+
+  // 4. El historial tiene que ser del mismo cliente.
+  //    Sin esto, la acumulación de la semana 4 podría sumar operaciones de
+  //    otra persona y disparar un aviso falso.
+  const ajena = historial.find((h) => h.clienteId !== undefined && h.clienteId !== cliente.id)
+  if (ajena) {
+    throw new EntradaInvalida(
+      `El historial trae la operación ${ajena.id}, que es de otro cliente. ` +
+        'La acumulación es por mismo cliente y misma actividad.',
+    )
+  }
+
+  // 5. Ninguna operación del historial puede ser posterior a la evaluada.
+  //    La ventana se cuenta hacia atrás; una operación futura en el historial
+  //    es un error de quien consulta, no un caso a resolver.
+  const futura = historial.find((h) => h.fechaOperacion > operacion.fechaOperacion)
+  if (futura) {
+    throw new EntradaInvalida(
+      `El historial trae la operación ${futura.id} del ${futura.fechaOperacion}, posterior a la ` +
+        `operación evaluada (${operacion.fechaOperacion}).`,
+    )
+  }
+}
+
+/** ¿La fecha cae dentro de la vigencia de la UMA con la que se armó la config? */
+function fechaDentroDeVigencia(fecha: string, config: ConfigActividad): boolean {
+  if (fecha < config.umaVigenteDesde) return false
+  if (config.umaVigenteHasta !== null && fecha > config.umaVigenteHasta) return false
+  return true
 }
 
 /**
@@ -226,6 +313,3 @@ function redactarMotivo(d: DatosMotivo): string {
  * El historial ya llega en `entrada.historial`; el motor no tiene que ir a
  * buscarlo. Ver docs/PRUEBAS.md casos A-01 a A-06.
  */
-export const PENDIENTE_ACUMULACION = 'semana 4' as const
-
-export { centavos }

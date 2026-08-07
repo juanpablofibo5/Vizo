@@ -92,6 +92,24 @@ export function entrada(
   return { operacion: op, cliente: cli, historial }
 }
 
+/**
+ * Arma la entrada tomando la actividad de la configuración.
+ *
+ * El motor verifica que la operación pertenezca a la actividad de la config
+ * (los umbrales nunca se cruzan entre fracciones). Este helper evita repetir
+ * `actividadId: config.actividadId` en cada caso, y evita el error contrario:
+ * un test que pasa porque el fixture inventó un id que nadie compara.
+ */
+export function casoPara(
+  config: { actividadId: string },
+  opciones: Omit<OpcionesOperacion, 'actividadId'>,
+  historial: OperacionPrevia[] = [],
+  cli?: Cliente,
+): EntradaEvaluacion {
+  const op = operacion({ ...opciones, actividadId: config.actividadId })
+  return entrada(op, historial, cli ?? cliente(op.clienteId))
+}
+
 /** Para escribir expectativas legibles: `expect(x).toBe(mxn(941_412.75))`. */
 export function mxn(valor: number): Centavos {
   return pesos(valor)

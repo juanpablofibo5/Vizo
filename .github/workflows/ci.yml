@@ -77,14 +77,15 @@ jobs:
           pnpm exec vitest run \
             tests/catalogo \
             tests/persistencia \
-            tests/umbrales/aritmetica.test.ts
+            tests/umbrales/aritmetica.test.ts \
+            tests/umbrales/precondiciones.test.ts
 
       # ─────────────────────────────────────────────────────────────────────
       # ROJO CONTROLADO — se retira al cerrar la semana 4 (6 de septiembre)
       # ─────────────────────────────────────────────────────────────────────
       # La suite del motor existe ANTES que el motor, a propósito
-      # (docs/PLAN.md semanas 2-4). Hoy falla completa con
-      # `MotorNoImplementado`, que es el estado correcto.
+      # (docs/PLAN.md semanas 2-4). Hoy pasan individual, IVA y vigencia;
+      # fallan los 7 casos de acumulación, que son la semana 4.
       #
       # `continue-on-error` es una excepción con fecha de caducidad, no una
       # costumbre: en cuanto el motor esté implementado se borra esta línea y

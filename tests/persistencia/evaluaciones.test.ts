@@ -4,7 +4,7 @@ import { conectar } from '../soporte/db.js'
 import { cargarConfigActividad } from '../../src/catalogo/cargador.js'
 import { evaluar } from '../../src/dominio/motor.js'
 import { registrarEvaluacion } from '../../src/persistencia/evaluaciones.js'
-import { entrada, operacion } from '../soporte/fixtures.js'
+import { casoPara } from '../soporte/fixtures.js'
 
 /**
  * El registro de la evaluación es lo que se defiende en una visita.
@@ -67,7 +67,7 @@ describe('Registro de evaluaciones', () => {
 
   it('guarda los insumos con los que se calculó, no solo el resultado', async () => {
     const config = await cargarConfigActividad(db, 'V_BIS', '2026-02-15')
-    const ev = evaluar(entrada(operacion({ fecha: '2026-02-15', base: 950_000 })), config)
+    const ev = evaluar(casoPara(config, { fecha: '2026-02-15', base: 950_000 }), config)
     const operacionId = await insertarOperacion('950000.00', '950000.00', '2026-02-15')
 
     const id = await registrarEvaluacion(db, { tenantId, operacionId, evaluacion: ev, config })
@@ -114,7 +114,7 @@ describe('Registro de evaluaciones', () => {
 
   it('una operación de enero queda registrada con la UMA de 2025', async () => {
     const config = await cargarConfigActividad(db, 'V_BIS', '2026-01-15')
-    const ev = evaluar(entrada(operacion({ fecha: '2026-01-15', base: 910_000 })), config)
+    const ev = evaluar(casoPara(config, { fecha: '2026-01-15', base: 910_000 }), config)
     const operacionId = await insertarOperacion('910000.00', '910000.00', '2026-01-15')
 
     const id = await registrarEvaluacion(db, { tenantId, operacionId, evaluacion: ev, config })
@@ -134,7 +134,7 @@ describe('Registro de evaluaciones', () => {
 
   it('la evaluación registrada es inmutable', async () => {
     const config = await cargarConfigActividad(db, 'V_BIS', '2026-02-15')
-    const ev = evaluar(entrada(operacion({ fecha: '2026-02-15', base: 500_000 })), config)
+    const ev = evaluar(casoPara(config, { fecha: '2026-02-15', base: 500_000 }), config)
     const operacionId = await insertarOperacion('500000.00', '500000.00', '2026-02-15')
     const id = await registrarEvaluacion(db, { tenantId, operacionId, evaluacion: ev, config })
 
@@ -149,11 +149,11 @@ describe('Registro de evaluaciones', () => {
 
   it('reevaluar no pisa la evaluación anterior: son dos filas', async () => {
     const config = await cargarConfigActividad(db, 'V_BIS', '2026-02-15')
-    const op = operacion({ fecha: '2026-02-15', base: 500_000 })
+    const caso = casoPara(config, { fecha: '2026-02-15', base: 500_000 })
     const operacionId = await insertarOperacion('500000.00', '500000.00', '2026-02-15')
 
-    await registrarEvaluacion(db, { tenantId, operacionId, evaluacion: evaluar(entrada(op), config), config })
-    await registrarEvaluacion(db, { tenantId, operacionId, evaluacion: evaluar(entrada(op), config), config })
+    await registrarEvaluacion(db, { tenantId, operacionId, evaluacion: evaluar(caso, config), config })
+    await registrarEvaluacion(db, { tenantId, operacionId, evaluacion: evaluar(caso, config), config })
 
     const { rows } = await db.query(
       `select count(*)::int as n from evaluaciones_umbral where operacion_id = $1`,

@@ -22,9 +22,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Versión FIJA, no `latest`. Dos razones:
+      #   · `latest` consulta la API de GitHub en cada corrida y ya nos tumbó
+      #     un run con "rate limit exceeded" — un fallo que no dice nada sobre
+      #     el código.
+      #   · Reproducibilidad: el CI debe correr con la misma versión que la
+      #     máquina de desarrollo. Un CLI que cambia solo es una entrada no
+      #     controlada, justo lo que la regla dura 6 pide evitar.
+      # Al subirla, actualizar también la local (`brew upgrade supabase`).
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.111.0
 
       # Sin `version`: la toma del campo packageManager de package.json, que es
       # la única fuente de verdad. Declararla en los dos lados hace fallar la

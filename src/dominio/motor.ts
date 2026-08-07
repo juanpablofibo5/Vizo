@@ -73,6 +73,18 @@ export function evaluar(entrada: EntradaEvaluacion, config: ConfigActividad): Ev
 
   // Si la operación por sí sola ya obliga a avisar, el aviso es individual: no
   // se reporta dos veces la misma obligación.
+  //
+  // POR CONFIRMAR-8 (auditoría de la semana 4): qué pasa DESPUÉS del primer
+  // aviso por acumulación. Si los pagos 1-3 ya dispararon uno, el pago 4 deja
+  // la suma por encima del umbral y aquí vuelve a marcar 'acumulacion'.
+  // Las dos lecturas posibles:
+  //   (a) cada operación nueva que mantiene la suma sobre el umbral se reporta
+  //       —es la conducta actual, y la conservadora: no omite nada;
+  //   (b) la ventana se "reinicia" tras el aviso y solo vuelve a disparar
+  //       cuando las operaciones NO reportadas cruzan el umbral por su cuenta.
+  // El marco no lo resuelve explícitamente. Se implementa (a) porque un aviso
+  // de más se corrige; uno omitido se sanciona. Pendiente de validar con el
+  // especialista PLD antes del piloto.
   const avisoPorAcumulacion = !avisoIndividual && sumaVentana >= umbralAviso
 
   // ── 4. Restricción de efectivo (Art. 32) ───────────────────────────────
@@ -222,6 +234,18 @@ function verificarPrecondiciones(entrada: EntradaEvaluacion, config: ConfigActiv
         `operación evaluada (${operacion.fechaOperacion}).`,
     )
   }
+
+  // 6. La operación evaluada NO puede venir también en su propio historial.
+  //    Encontrado en la auditoría de la semana 4: si el llamador olvida
+  //    excluirla, su monto se cuenta dos veces y la suma dispara un aviso que
+  //    no corresponde. Un aviso de más es menos grave que uno omitido, pero
+  //    sigue siendo un cálculo que no se puede defender.
+  if (historial.some((h) => h.id === operacion.id)) {
+    throw new EntradaInvalida(
+      `La operación ${operacion.id} viene también en su propio historial: se contaría dos veces. ` +
+        'Excluye la operación evaluada al consultar el historial.',
+    )
+  }
 }
 
 /** ¿La fecha cae dentro de la vigencia de la UMA con la que se armó la config? */
@@ -272,16 +296,25 @@ function montoContra(operacion: Operacion, umbral: Umbral): Centavos {
 /**
  * El monto de una operación del historial, en la misma base que el umbral.
  *
- * Si el umbral es `con_iva` y la operación previa no trae total, se usa la
- * base: sumar de menos podría omitir un aviso, pero inventar un IVA sería
- * peor. El cargador del historial siempre trae ambos montos, así que este
- * fallback no se ejercita en producción.
+ * Si el umbral se evalúa `con_iva` y la operación previa no trae total, el
+ * motor SE DETIENE. La auditoría de la semana 4 mostró que el fallback
+ * anterior —usar la base— sumaba de menos en silencio, y sumar de menos en la
+ * acumulación es exactamente cómo se omite un aviso.
+ *
+ * Es el mismo criterio que en el resto del sistema: ante un dato que falta,
+ * fallar ruidosamente en vez de calcular con un supuesto.
  */
 function montoDePrevia(previa: OperacionPrevia, umbral: Umbral): Centavos {
-  if (umbral.base === 'con_iva' && previa.montoTotal !== undefined) {
-    return previa.montoTotal
+  if (umbral.base !== 'con_iva') {
+    return previa.montoBase
   }
-  return previa.montoBase
+  if (previa.montoTotal === undefined) {
+    throw new EntradaInvalida(
+      `El umbral de aviso se evalúa con impuestos, pero la operación ${previa.id} del historial ` +
+        'no trae monto total. Sumar solo la base omitiría parte de la acumulación.',
+    )
+  }
+  return previa.montoTotal
 }
 
 interface DatosMotivo {

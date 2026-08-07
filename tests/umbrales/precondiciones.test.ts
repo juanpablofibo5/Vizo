@@ -4,7 +4,7 @@ import { conectar } from '../soporte/db.js'
 import { cargarConfigActividad } from '../../src/catalogo/cargador.js'
 import { EntradaInvalida, evaluar } from '../../src/dominio/motor.js'
 import { centavos } from '../../src/dominio/dinero.js'
-import { CLIENTE_A, casoPara, entrada, operacion, previa } from '../soporte/fixtures.js'
+import { CLIENTE_A, casoPara, entrada, mxn, operacion, previa } from '../soporte/fixtures.js'
 
 /**
  * PRECONDICIONES DEL MOTOR.
@@ -105,5 +105,73 @@ describe('Precondiciones del motor', () => {
         config,
       ),
     ).toThrow(/posterior a la operación evaluada/)
+  })
+})
+
+/**
+ * Hallazgos de la auditoría de la semana 4.
+ *
+ * Los dos primeros eran defectos: producían un cálculo mal sin avisar. El
+ * tercero es una ambigüedad del marco regulatorio, no un error — se prueba
+ * para dejar el comportamiento elegido a la vista.
+ */
+describe('Acumulación: precondiciones y decisiones', () => {
+  let db: Client
+
+  beforeAll(async () => {
+    db = await conectar()
+  })
+
+  afterAll(async () => {
+    await db.end()
+  })
+
+  it('rechaza que la operación evaluada venga en su propio historial', async () => {
+    // Sin esto, olvidar `excluirOperacionId` al consultar cuenta el monto dos
+    // veces y dispara un aviso por una suma que no existe.
+    const config = await cargarConfigActividad(db, 'V_BIS', '2026-05-15')
+    const caso = casoPara(config, { fecha: '2026-05-15', base: 500_000 })
+    const duplicada = { ...previa('2026-05-15', 500_000), id: caso.operacion.id }
+
+    expect(() =>
+      evaluar({ ...caso, historial: [duplicada] }, config),
+    ).toThrow(/se contaría dos veces/)
+  })
+
+  it('con umbral "con_iva", exige el monto total de cada operación previa', async () => {
+    // Escenario de POR CONFIRMAR-4: si la base del Art. 17 cambia a "con
+    // impuestos", sumar solo la base de las previas omitiría parte de la
+    // acumulación — en silencio, que es la peor forma.
+    const base = await cargarConfigActividad(db, 'V_BIS', '2026-05-15')
+    const configConIva = {
+      ...base,
+      umbrales: base.umbrales.map((u) =>
+        u.tipo === 'aviso' ? { ...u, base: 'con_iva' as const } : u,
+      ),
+    }
+    const caso = casoPara(configConIva, { fecha: '2026-05-15', base: 500_000, iva: 80_000 }, [
+      previa('2026-03-15', 500_000), // sin montoTotal
+    ])
+
+    expect(() => evaluar(caso, configConIva)).toThrow(/no trae monto total/)
+  })
+
+  it('POR CONFIRMAR-8 · tras el primer aviso por acumulación, el pago siguiente vuelve a marcar', async () => {
+    // No es un bug: el marco no dice qué pasa después del primer aviso. Se
+    // eligió la conducta conservadora —seguir marcando— porque un aviso de más
+    // se corrige y uno omitido se sanciona. Este test documenta la elección
+    // para que un cambio de criterio sea deliberado y no accidental.
+    const config = await cargarConfigActividad(db, 'V_BIS', '2026-06-15')
+    const ev = evaluar(
+      casoPara(config, { fecha: '2026-06-15', base: 400_000 }, [
+        previa('2026-03-15', 400_000),
+        previa('2026-04-15', 400_000),
+        previa('2026-05-15', 400_000), // aquí ya se disparó un aviso
+      ]),
+      config,
+    )
+
+    expect(ev.resultadoAviso).toBe('acumulacion')
+    expect(ev.sumaVentana).toBe(mxn(1_600_000))
   })
 })

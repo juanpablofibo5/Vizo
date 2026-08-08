@@ -19,3 +19,8 @@ coverage/
 # Next.js
 .next/
 next-env.d.ts
+# Vercel
+# El `.env*` que agrega `vercel link` se quitó a propósito: es más amplio que
+# las reglas de arriba y va DESPUÉS del `!.env.example`, así que volvería a
+# ignorar la plantilla que sí se versiona.
+.vercel

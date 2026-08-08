@@ -13,7 +13,8 @@
 | **Supabase** | proyecto **vizo** | ref `qmlmoyvjdejklkfussza` · región `us-east-1` | ✅ `ACTIVE_HEALTHY` |
 | **Supabase** | URL de API | `https://qmlmoyvjdejklkfussza.supabase.co` | — |
 | **Vercel** | cuenta / team | `juan-pablo-figueroa` (`team_OqoGgavkffdMhlnBhqPnod5j`) | ✅ CLI autenticado |
-| **Vercel** | proyecto | — | ⏳ se crea en la semana 1 con `vercel link` (necesita el scaffold de Next.js) |
+| **Vercel** | proyecto `vizo` | `prj_U98S0BU9ILy7fpfVNCb2CpvrmBIB` | ✅ creado 7 ago, ligado al repo — ver §6 |
+| **GoDaddy** | dominio `vizo.mx` | ns `ns59/ns60.domaincontrol.com` | ⏳ comprado; DNS aún en parqueo — ver §6 |
 
 **Convivencia con casa-confianza:** el proyecto `vizo` vive en la misma organización que `casa-confianza`, por decisión explícita. `casa-confianza` **no se tocó ni se borró**. Cuando VIZO pase a Pro conviene separarlo a su propia organización para que la facturación y los accesos queden aislados (restricción no negociable #6).
 
@@ -96,7 +97,7 @@ vercel --prod           # deploy manual; lo normal es que main despliegue solo
 | ~~2~~ | ~~Docker Desktop corriendo~~ | — | ✅ hecho el 4 ago |
 | ~~3~~ | ~~`supabase link --project-ref qmlmoyvjdejklkfussza`~~ | — | ✅ hecho el 4 ago |
 | ~~4~~ | ~~Descargar los XSD del SPPLD~~ | — | ✅ hecho el 4 ago — ver `regulatorio/README.md` |
-| 5 | Crear el proyecto de Vercel con `vercel link` | cualquiera, tras el scaffold | semana 1 |
+| ~~5~~ | ~~Crear el proyecto de Vercel~~ | — | ✅ hecho el 7 ago — ver §6 |
 | 6 | Alerta del DOF por la publicación de las RCG | Juan Pablo | semana 0 |
 | 7 | Upgrade a Supabase Pro | Juan Pablo (es una compra) | semana 5 |
 | 8 | Mover VIZO a su propia organización de Supabase | Juan Pablo | junto con el upgrade a Pro |
@@ -106,3 +107,45 @@ vercel --prod           # deploy manual; lo normal es que main despliegue solo
 **Sobre el 9.** La aplicación se conecta con `VIZO_DB_URL`, que apunta al rol `postgres` (`rolbypassrls = true`). Hoy eso está contenido porque toda escritura pasa por `enTransaccionDeSesion`, que baja el rol a `authenticated` dentro de la transacción (ADR-16), y hay tests de regresión que se ponen rojos si alguien lo quita. Pero es una protección que **hay que acordarse de usar**. Un rol propio sin BYPASSRLS convierte el olvido en imposible en vez de detectable, que es el orden de preferencia de CLAUDE.md.
 
 **Sobre el 10.** Cada Server Action abre una conexión nueva con `pg` y la cierra al terminar. En local no se nota; en Vercel cada invocación concurrente es una conexión directa, y el límite se alcanza antes de lo que parece. Corresponde apuntar `VIZO_DB_URL` al pooler de transacciones (puerto 6543), no al puerto 5432. No es un defecto hoy —no hay nada desplegado— pero sí lo primero que falla bajo carga.
+
+---
+
+## 6. Vercel y el dominio vizo.mx
+
+Estado al 7 de agosto de 2026.
+
+| Pieza | Estado |
+|---|---|
+| Proyecto `vizo` (`prj_U98S0BU9ILy7fpfVNCb2CpvrmBIB`) | ✅ creado, ligado a `juanpablofibo5/Vizo` |
+| Deploy automático desde `main` | ✅ conectado |
+| `vizo.mx` y `www.vizo.mx` asignados al proyecto | ✅ del lado de Vercel |
+| DNS en GoDaddy apuntando a Vercel | ❌ **pendiente** — el dominio sirve la página de parqueo |
+| Variables de entorno en Vercel | ❌ **pendiente** — cero configuradas |
+| Protección de deploy (Vercel Authentication) | ✅ activa: solo la cuenta dueña ve el sitio |
+
+### Lo que falta para que el dominio sirva la app
+
+**1. DNS en GoDaddy.** El dominio está comprado ahí (`ns59/ns60.domaincontrol.com`) y hoy apunta a la IP de parqueo. Vercel pide una de dos:
+
+- **Recomendado:** agregar en GoDaddy el registro `A` de `vizo.mx` → `76.76.21.21`, y un `CNAME` de `www` → `cname.vercel-dns.com`. Deja el resto del DNS (correo, etc.) donde está.
+- **Alternativa:** cambiar los nameservers del dominio a los de Vercel. Mueve *todo* el DNS, incluido el correo si algún día lo hay.
+
+**2. Variables de entorno.** El proyecto no tiene ninguna, así que aunque el DNS apunte, la app no arranca. Hacen falta tres, y **las tres las carga Juan Pablo**, no un agente: dos son credenciales.
+
+| Variable | Qué es | Notas |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://qmlmoyvjdejklkfussza.supabase.co` | No es secreto |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | llave publicable del proyecto remoto | Viaja al navegador por diseño |
+| `VIZO_DB_URL` | cadena de conexión a Postgres | **Contiene contraseña** |
+
+Las dos `NEXT_PUBLIC_*` se inyectan **en tiempo de build**: hay que redesplegar después de cargarlas, no basta con guardarlas.
+
+**3. Antes de cargar `VIZO_DB_URL`, resolver los pendientes 9 y 10.** Hoy esa cadena sería la del superusuario `postgres`, que ignora RLS (ADR-16), y apuntaría al puerto directo en vez del pooler. Ninguna de las dos cosas se nota en local y las dos muerden en serverless.
+
+**4. La base de producción no tiene usuarios.** Tiene el catálogo regulatorio, pero cero obligados y cero cuentas: `supabase/seed.sql` solo corre en local, a propósito, porque son datos demo. Con el dominio conectado hoy, el resultado sería un login por el que nadie puede entrar. Antes de mostrar la app hay que decidir qué obligado y qué usuarios existen en producción — decisión de producto, no de infraestructura.
+
+### Decisión pendiente: apex o subdominio
+
+`vizo.mx` es el dominio comercial. Ponerle encima un prototipo de la semana 5 ocupa el apex y obliga a redirects después. La alternativa convencional en SaaS multi-tenant es `app.vizo.mx` para la aplicación y el apex para la landing. Un subdominio no cuesta nada: se crea con un registro DNS más.
+
+Hoy ambos nombres están asignados al proyecto, así que la decisión sigue abierta y se ejecuta en GoDaddy, no en Vercel.

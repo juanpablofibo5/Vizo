@@ -129,10 +129,16 @@ Estado al 7 de agosto de 2026.
 |---|---|
 | Proyecto `vizo` (`prj_U98S0BU9ILy7fpfVNCb2CpvrmBIB`) | ✅ creado, ligado a `juanpablofibo5/Vizo` |
 | Deploy automático desde `main` | ✅ conectado |
-| `vizo.mx` y `www.vizo.mx` asignados al proyecto | ✅ del lado de Vercel |
-| DNS en GoDaddy apuntando a Vercel | ❌ **pendiente** — el dominio sirve la página de parqueo |
-| Variables de entorno en Vercel | ❌ **pendiente** — cero configuradas |
+| `vizo.mx`, `www.vizo.mx` y **`app.vizo.mx`** asignados al proyecto | ✅ del lado de Vercel |
+| DNS en GoDaddy apuntando a Vercel | ❌ **pendiente** — falta el registro A de `app` |
+| `NEXT_PUBLIC_SUPABASE_URL` en Vercel | ✅ cargada en production, preview y development |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` y `VIZO_DB_URL` | ❌ **pendientes** — son credenciales, las carga su dueño |
+| Datos demo en la base de producción | ✅ un obligado, dos sucursales, dos usuarios **sin contraseña** |
 | Protección de deploy (Vercel Authentication) | ✅ activa: solo la cuenta dueña ve el sitio |
+
+**Decisión tomada el 9 de agosto:** la app vive en **`app.vizo.mx`**; el apex `vizo.mx` queda libre para la landing comercial. Es lo convencional en SaaS multi-tenant y no compromete el dominio comercial con un prototipo.
+
+**Verificado, no supuesto:** Vercel marcó las variables de producción como *Sensitive*, lo que hacía dudar de si estarían disponibles en tiempo de build — que es cuando las `NEXT_PUBLIC_*` se inyectan al bundle. Se comprobó con un build real: la URL aparece en el bundle estático. Sí llegan.
 
 ### Lo que falta para que el dominio sirva la app
 

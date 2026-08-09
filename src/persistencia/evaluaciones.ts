@@ -1,5 +1,6 @@
 import type { EjecutorSql } from '../catalogo/cargador'
 import { centavosAPesosTexto } from '../dominio/dinero'
+import { exigirSesionActiva, type ContextoSesion } from './transaccion'
 import type { ConfigActividad, Evaluacion } from '../dominio/tipos'
 
 /**
@@ -16,7 +17,17 @@ import type { ConfigActividad, Evaluacion } from '../dominio/tipos'
  */
 
 export interface DatosRegistro {
-  tenantId: string
+  /**
+   * Quién evalúa. De aquí sale el tenant: no se recibe suelto.
+   *
+   * ISSUE #7, abierto en la auditoría de la semana 5 y cerrado aquí. Mientras
+   * esta función recibía `tenantId` y se llamaba con una conexión cualquiera,
+   * escribía en la tabla que sostiene el cálculo regulatorio SIN que RLS se
+   * evaluara — porque la app se conecta con un rol que la salta. No era un
+   * defecto vivo mientras solo la llamaban los tests; la semana 7 la conecta a
+   * la UI, que es cuando lo habría sido.
+   */
+  sesion: ContextoSesion
   /**
    * La operación NO se pasa por separado: se toma de `evaluacion.operacionId`.
    *
@@ -29,11 +40,20 @@ export interface DatosRegistro {
   config: ConfigActividad
 }
 
-/** Devuelve el id de la evaluación registrada. */
+/**
+ * Devuelve el id de la evaluación registrada.
+ *
+ * DEBE llamarse DENTRO de una `enTransaccionDeSesion`: la evaluación y la
+ * operación que la origina tienen que quedar o las dos o ninguna, así que
+ * comparten transacción y esta función no puede abrir la suya. La precondición
+ * de abajo lo exige en vez de confiar en que se lea este párrafo.
+ */
 export async function registrarEvaluacion(
   db: EjecutorSql,
-  { tenantId, evaluacion: ev, config }: DatosRegistro,
+  { sesion, evaluacion: ev, config }: DatosRegistro,
 ): Promise<string> {
+  await exigirSesionActiva(db, sesion)
+
   const { insumos } = ev
   const operacionId = ev.operacionId
 
@@ -59,7 +79,7 @@ export async function registrarEvaluacion(
        $18, $19
      ) returning id`,
     [
-      tenantId,
+      sesion.tenantId,
       operacionId,
       config.actividadId,
       centavosAPesosTexto(insumos.uma),

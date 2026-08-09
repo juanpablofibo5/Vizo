@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { Client } from 'pg'
-import { conectar } from '../soporte/db'
+import { conectar, crearTenantConUsuario } from '../soporte/db'
 import {
   IdentidadIndeterminada,
   historialParaAcumulacion,
@@ -10,6 +10,7 @@ import {
 import { cargarConfigActividad } from '../../src/catalogo/cargador'
 import { evaluar } from '../../src/dominio/motor'
 import { pesos } from '../../src/dominio/dinero'
+import { enTransaccionDeSesion, type ContextoSesion } from '../../src/persistencia/transaccion'
 
 /**
  * El historial contra la base real.
@@ -20,6 +21,7 @@ import { pesos } from '../../src/dominio/dinero'
  */
 describe('Historial para acumulación', () => {
   let db: Client
+  let sesion: ContextoSesion
   let tenantId: string
   let actividadId: string
   let clienteId: string
@@ -36,12 +38,9 @@ describe('Historial para acumulación', () => {
   })
 
   beforeEach(async () => {
-    const marca = String(Date.now()).slice(-9) + Math.floor(Math.random() * 100)
-    const t = await db.query(
-      `insert into tenants (rfc, razon_social) values ($1,'Historial SA') returning id`,
-      [`HIS${marca.slice(0, 9)}`],
-    )
-    tenantId = (t.rows[0] as { id: string }).id
+    const marca = String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 900) + 100)
+    sesion = await crearTenantConUsuario(db, marca)
+    tenantId = sesion.tenantId
     actividadId = (
       (await db.query(`select id from actividades_vulnerables where fraccion='V_BIS'`))
         .rows[0] as { id: string }
@@ -82,8 +81,16 @@ describe('Historial para acumulación', () => {
     return (r.rows[0] as { id: string }).id
   }
 
+  /**
+   * El historial exige correr como `authenticated` (issue #7): en la
+   * aplicación comparte transacción con la operación que se está evaluando.
+   * Aquí se le da una propia.
+   */
+  const enSesion = <T,>(cuerpo: () => Promise<T>): Promise<T> =>
+    enTransaccionDeSesion(db, sesion, cuerpo)
+
   const params = (fecha: string) => ({
-    tenantId,
+    sesion,
     clienteId,
     actividadId,
     fechaOperacion: fecha,
@@ -94,7 +101,7 @@ describe('Historial para acumulación', () => {
     await operar('2026-06-01', '500000.00', sucNorte)
     await operar('2026-07-15', '480000.00', sucCentro)
 
-    const historial = await historialParaAcumulacion(db, params('2026-07-20'))
+    const historial = await enSesion(() => historialParaAcumulacion(db, params('2026-07-20')))
     expect(historial).toHaveLength(2)
     expect(historial.map((h) => h.montoBase)).toEqual([pesos(500_000), pesos(480_000)])
   })
@@ -103,7 +110,7 @@ describe('Historial para acumulación', () => {
     await operar('2026-01-10', '500000.00', sucNorte) // 8 meses antes
     await operar('2026-06-01', '300000.00', sucNorte)
 
-    const historial = await historialParaAcumulacion(db, params('2026-09-10'))
+    const historial = await enSesion(() => historialParaAcumulacion(db, params('2026-09-10')))
     expect(historial).toHaveLength(1)
     expect(historial[0]?.montoBase).toBe(pesos(300_000))
   })
@@ -112,7 +119,7 @@ describe('Historial para acumulación', () => {
     await operar('2026-06-01', '500000.00', sucNorte, clienteId)
     await operar('2026-06-02', '900000.00', sucNorte, otroClienteId)
 
-    const historial = await historialParaAcumulacion(db, params('2026-07-01'))
+    const historial = await enSesion(() => historialParaAcumulacion(db, params('2026-07-01')))
     expect(historial).toHaveLength(1)
     expect(historial[0]?.clienteId).toBe(clienteId)
   })
@@ -121,10 +128,10 @@ describe('Historial para acumulación', () => {
     await operar('2026-06-01', '400000.00', sucNorte)
     const evaluada = await operar('2026-06-15', '400000.00', sucNorte)
 
-    const historial = await historialParaAcumulacion(db, {
+    const historial = await enSesion(() => historialParaAcumulacion(db, {
       ...params('2026-06-15'),
       excluirOperacionId: evaluada,
-    })
+    }))
     expect(historial).toHaveLength(1)
     expect(historial[0]?.id).not.toBe(evaluada)
   })
@@ -133,7 +140,7 @@ describe('Historial para acumulación', () => {
     // En V Bis la identificación es "siempre": todas caen, incluso montos
     // pequeños. Es lo que hace que la acumulación sea el caso típico.
     await operar('2026-06-01', '1000.00', sucNorte)
-    const historial = await historialParaAcumulacion(db, params('2026-07-01'))
+    const historial = await enSesion(() => historialParaAcumulacion(db, params('2026-07-01')))
     expect(historial[0]?.caeEnIdentificacion).toBe(true)
   })
 
@@ -143,11 +150,11 @@ describe('Historial para acumulación', () => {
     const tercero = await operar('2026-05-15', '400000.00', sucNorte)
 
     const config = await cargarConfigActividad(db, 'V_BIS', '2026-05-15')
-    const historial = await historialParaAcumulacion(db, {
+    const historial = await enSesion(() => historialParaAcumulacion(db, {
       ...params('2026-05-15'),
       ventanaMeses: config.ventanaMeses,
       excluirOperacionId: tercero,
-    })
+    }))
 
     const ev = evaluar(
       {

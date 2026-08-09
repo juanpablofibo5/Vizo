@@ -1,10 +1,28 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { Client } from 'pg'
-import { conectar } from '../soporte/db'
+import { conectar, crearTenantConUsuario } from '../soporte/db'
 import { cargarConfigActividad } from '../../src/catalogo/cargador'
 import { evaluar } from '../../src/dominio/motor'
 import { registrarEvaluacion } from '../../src/persistencia/evaluaciones'
 import { casoPara } from '../soporte/fixtures'
+import { enTransaccionDeSesion, type ContextoSesion } from '../../src/persistencia/transaccion'
+
+/**
+ * Envuelve el registro en su transacción de sesión.
+ *
+ * `registrarEvaluacion` exige correr como `authenticated` (issue #7): en la
+ * aplicación comparte transacción con la operación que la origina, así que no
+ * abre la suya. Aquí se le da una.
+ */
+async function registrarEnSesion(
+  db: Client,
+  sesion: ContextoSesion,
+  datos: Omit<Parameters<typeof registrarEvaluacion>[1], 'sesion'>,
+): Promise<string> {
+  return enTransaccionDeSesion(db, sesion, () =>
+    registrarEvaluacion(db, { ...datos, sesion }),
+  )
+}
 
 /**
  * El registro de la evaluación es lo que se defiende en una visita.
@@ -15,6 +33,7 @@ import { casoPara } from '../soporte/fixtures'
  */
 describe('Registro de evaluaciones', () => {
   let db: Client
+  let sesion: ContextoSesion
   let tenantId: string
   let clienteId: string
   let sucursalId: string
@@ -31,12 +50,9 @@ describe('Registro de evaluaciones', () => {
   beforeEach(async () => {
     // Un tenant por corrida: las operaciones son append-only, así que no se
     // pueden limpiar. RFC único por timestamp.
-    const marca = String(Date.now()).slice(-9)
-    const t = await db.query(
-      `insert into tenants (rfc, razon_social) values ($1, 'Prueba de registro') returning id`,
-      [`TST${marca}`],
-    )
-    tenantId = (t.rows[0] as { id: string }).id
+    const marca = String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 900) + 100)
+    sesion = await crearTenantConUsuario(db, marca)
+    tenantId = sesion.tenantId
 
     const a = await db.query(`select id from actividades_vulnerables where fraccion = 'V_BIS'`)
     actividadId = (a.rows[0] as { id: string }).id
@@ -70,7 +86,7 @@ describe('Registro de evaluaciones', () => {
     const operacionId = await insertarOperacion('950000.00', '950000.00', '2026-02-15')
     const ev = evaluar(casoPara(config, { id: operacionId, fecha: '2026-02-15', base: 950_000 }), config)
 
-    const id = await registrarEvaluacion(db, { tenantId, evaluacion: ev, config })
+    const id = await registrarEnSesion(db, sesion, { evaluacion: ev, config })
     expect(id).toBeTruthy()
 
     const { rows } = await db.query(
@@ -117,7 +133,7 @@ describe('Registro de evaluaciones', () => {
     const operacionId = await insertarOperacion('910000.00', '910000.00', '2026-01-15')
     const ev = evaluar(casoPara(config, { id: operacionId, fecha: '2026-01-15', base: 910_000 }), config)
 
-    const id = await registrarEvaluacion(db, { tenantId, evaluacion: ev, config })
+    const id = await registrarEnSesion(db, sesion, { evaluacion: ev, config })
     const { rows } = await db.query(
       `select uma_valor::text, uma_vigencia::text, resultado_aviso::text
          from evaluaciones_umbral where id = $1`,
@@ -136,7 +152,7 @@ describe('Registro de evaluaciones', () => {
     const config = await cargarConfigActividad(db, 'V_BIS', '2026-02-15')
     const operacionId = await insertarOperacion('500000.00', '500000.00', '2026-02-15')
     const ev = evaluar(casoPara(config, { id: operacionId, fecha: '2026-02-15', base: 500_000 }), config)
-    const id = await registrarEvaluacion(db, { tenantId, evaluacion: ev, config })
+    const id = await registrarEnSesion(db, sesion, { evaluacion: ev, config })
 
     await expect(
       db.query(`update evaluaciones_umbral set resultado_aviso = 'no' where id = $1`, [id]),
@@ -152,8 +168,8 @@ describe('Registro de evaluaciones', () => {
     const operacionId = await insertarOperacion('500000.00', '500000.00', '2026-02-15')
     const caso = casoPara(config, { id: operacionId, fecha: '2026-02-15', base: 500_000 })
 
-    await registrarEvaluacion(db, { tenantId, evaluacion: evaluar(caso, config), config })
-    await registrarEvaluacion(db, { tenantId, evaluacion: evaluar(caso, config), config })
+    await registrarEnSesion(db, sesion, { evaluacion: evaluar(caso, config), config })
+    await registrarEnSesion(db, sesion, { evaluacion: evaluar(caso, config), config })
 
     const { rows } = await db.query(
       `select count(*)::int as n from evaluaciones_umbral where operacion_id = $1`,
@@ -197,12 +213,12 @@ describe('La evaluación se sella con su operación', () => {
   })
 
   it('el registro apunta siempre a la operación que se evaluó', async () => {
-    const marca = String(Date.now()).slice(-9)
-    const t = await db.query(
-      `insert into tenants (rfc, razon_social) values ($1,'Sello SA') returning id`,
-      [`SEL${marca}`],
-    )
-    const tid = (t.rows[0] as { id: string }).id
+    const marca = String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 900) + 100)
+    // Un obligado DISTINTO al del beforeEach, con su propio usuario: el
+    // registro corre como authenticated y el actor tiene que existir en ese
+    // tenant, no en otro.
+    const otra = await crearTenantConUsuario(db, marca)
+    const tid = otra.tenantId
     const act = (
       (await db.query(`select id from actividades_vulnerables where fraccion='V_BIS'`)).rows[0] as {
         id: string
@@ -238,7 +254,7 @@ describe('La evaluación se sella con su operación', () => {
 
     const config = await cargarConfigActividad(db, 'V_BIS', '2026-02-15')
     const ev = evaluar(casoPara(config, { id: op, fecha: '2026-02-15', base: 950_000 }), config)
-    const id = await registrarEvaluacion(db, { tenantId: tid, evaluacion: ev, config })
+    const id = await registrarEnSesion(db, otra, { evaluacion: ev, config })
 
     // El monto registrado y el de la operación tienen que ser el mismo.
     const { rows } = await db.query(
@@ -249,5 +265,56 @@ describe('La evaluación se sella con su operación', () => {
     )
     const f = rows[0] as Record<string, string>
     expect(f['ev']).toBe(f['op'])
+  })
+
+  describe('ISSUE #7: no se puede registrar saltándose RLS', () => {
+    const nuevaMarca = () =>
+      String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 900) + 100)
+
+    it('rechaza correr como postgres, que salta las políticas', async () => {
+      const sesion = await crearTenantConUsuario(db, nuevaMarca())
+      const config = await cargarConfigActividad(db, 'V_BIS', '2026-02-15')
+      // No hace falta que la operación exista: la precondición corta ANTES de
+      // tocar la tabla. Que corte antes es justamente lo que se está probando.
+      const operacionId = (
+        (await db.query('select gen_random_uuid() as id')).rows[0] as { id: string }
+      ).id
+      const ev = evaluar(
+        casoPara(config, { id: operacionId, fecha: '2026-02-15', base: 950_000 }),
+        config,
+      )
+
+      // Sin envolver: la conexión es la de los tests, rol postgres.
+      await expect(registrarEvaluacion(db, { sesion, evaluacion: ev, config })).rejects.toThrow(
+        /se salta RLS/,
+      )
+
+      // Y no dejó nada a medias.
+      const { rows } = await db.query(
+        `select count(*)::int as n from evaluaciones_umbral where operacion_id = $1`,
+        [operacionId],
+      )
+      expect((rows[0] as { n: number }).n).toBe(0)
+    })
+
+    it('rechaza una sesión cuyo tenant no es el de la transacción', async () => {
+      const sesion = await crearTenantConUsuario(db, nuevaMarca())
+      const otra = await crearTenantConUsuario(db, nuevaMarca())
+      const config = await cargarConfigActividad(db, 'V_BIS', '2026-02-15')
+      const operacionId = (
+        (await db.query('select gen_random_uuid() as id')).rows[0] as { id: string }
+      ).id
+      const ev = evaluar(
+        casoPara(config, { id: operacionId, fecha: '2026-02-15', base: 950_000 }),
+        config,
+      )
+
+      // La transacción se abre con una sesión y se registra con otra.
+      await expect(
+        enTransaccionDeSesion(db, sesion, () =>
+          registrarEvaluacion(db, { sesion: otra, evaluacion: ev, config }),
+        ),
+      ).rejects.toThrow(/obligado equivocado/)
+    })
   })
 })

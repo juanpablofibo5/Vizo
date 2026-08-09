@@ -1,6 +1,7 @@
 import type { EjecutorSql } from '../catalogo/cargador'
 import { pesosTextoACentavos } from '../dominio/dinero'
 import { inicioVentana } from '../dominio/fechas'
+import { exigirSesionActiva, type ContextoSesion } from './transaccion'
 import type { OperacionPrevia, ResolucionIdentidad } from '../dominio/tipos'
 
 /**
@@ -15,10 +16,18 @@ import type { OperacionPrevia, ResolucionIdentidad } from '../dominio/tipos'
  *   · MISMA actividad — los acumulados jamás se cruzan entre fracciones (A-04)
  *   · dentro de la ventana deslizante
  * Y uno que a propósito NO existe: la sucursal.
+ *
+ * ISSUE #7. El tenant sale de la SESIÓN, no de un parámetro suelto, y esta
+ * consulta exige correr como `authenticated`. La razón es asimétrica y por eso
+ * importa: con RLS puesta, un tenant equivocado no devuelve datos ajenos —
+ * devuelve CERO FILAS. Y cero filas en la acumulación significa sumar de
+ * menos, es decir un aviso omitido, que es la dirección cara del error
+ * (10,000 a 65,000 UMA de multa). Un aviso de más se corrige.
  */
 
 export interface ParametrosHistorial {
-  tenantId: string
+  /** De aquí sale el tenant. No se recibe suelto: ver el párrafo de arriba. */
+  sesion: ContextoSesion
   clienteId: string
   actividadId: string
   fechaOperacion: string
@@ -40,6 +49,8 @@ export async function historialParaAcumulacion(
   db: EjecutorSql,
   p: ParametrosHistorial,
 ): Promise<OperacionPrevia[]> {
+  await exigirSesionActiva(db, p.sesion)
+
   const inicio = inicioVentana(p.fechaOperacion, p.ventanaMeses)
 
   // `cae_en_identificacion` se resuelve por operación contra el umbral vigente
@@ -75,7 +86,7 @@ export async function historialParaAcumulacion(
         and ($6::uuid is null or o.id <> $6::uuid)
       order by o.fecha_operacion, o.registrado_en`,
     [
-      p.tenantId,
+      p.sesion.tenantId,
       p.clienteId,
       p.actividadId,
       inicio,

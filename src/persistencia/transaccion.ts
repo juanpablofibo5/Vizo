@@ -41,6 +41,42 @@ export interface ContextoSesion {
   rol: 'admin' | 'capturista'
 }
 
+/**
+ * Exige estar YA dentro de una transacción de sesión.
+ *
+ * Existe porque hay operaciones que tienen que ser atómicas entre sí —una
+ * operación y su evaluación no pueden quedar separadas— y por tanto comparten
+ * una sola transacción. Las funciones internas de esa transacción no pueden
+ * abrir la suya: un `begin` anidado en Postgres es un no-op con warning, y el
+ * `commit` interno cerraría la transacción externa a media faena.
+ *
+ * La alternativa era un comentario que dijera "llamar solo desde dentro de
+ * enTransaccionDeSesion". Un comentario no lo impide; esto sí, y falla al
+ * primer intento en vez de escribir saltándose RLS.
+ */
+export async function exigirSesionActiva(
+  db: EjecutorSql,
+  sesion: ContextoSesion,
+): Promise<void> {
+  const { rows } = await db.query(
+    `select current_user::text as rol, app.tenant_id()::text as tenant`,
+  )
+  const estado = rows[0] as { rol: string; tenant: string | null }
+
+  if (estado.rol !== 'authenticated') {
+    throw new Error(
+      `Esta función escribe datos regulados y exige correr como 'authenticated', pero corre ` +
+        `como '${estado.rol}', que se salta RLS. Envuélvela en enTransaccionDeSesion.`,
+    )
+  }
+  if (estado.tenant !== sesion.tenantId) {
+    throw new Error(
+      'El tenant de la sesión de base no coincide con el de la sesión que se pasó. ' +
+        'Se estaría escribiendo en el obligado equivocado.',
+    )
+  }
+}
+
 export async function enTransaccionDeSesion<T>(
   db: EjecutorSql,
   sesion: ContextoSesion,

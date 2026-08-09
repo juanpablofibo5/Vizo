@@ -85,6 +85,58 @@ export async function camposConDocumento(
   return new Set((rows as Array<{ campo: string }>).map((r) => r.campo))
 }
 
+/**
+ * Abre el expediente de un cliente, o devuelve el que ya existe.
+ *
+ * No se abre solo al entrar a la pantalla: abrir un expediente es un hecho que
+ * queda en la bitácora con nombre y hora, y un GET que escribe convierte una
+ * recarga del navegador en un evento. Se abre cuando alguien lo pide.
+ */
+export async function abrirExpediente(
+  db: EjecutorTransaccional,
+  p: { sesion: ContextoSesion; clienteId: string },
+): Promise<{ expedienteId: string; yaExistia: boolean }> {
+  return enTransaccionDeSesion(db, p.sesion, async () => {
+    const previo = await db.query(
+      `select id from expedientes where tenant_id = $1 and cliente_id = $2 order by version desc limit 1`,
+      [p.sesion.tenantId, p.clienteId],
+    )
+    if (previo.rows.length > 0) {
+      return { expedienteId: (previo.rows[0] as { id: string }).id, yaExistia: true }
+    }
+
+    const { rows } = await db.query(
+      `insert into expedientes (tenant_id, cliente_id, actividad_id)
+       select $1, $2, av.id
+         from actividades_vulnerables av
+         join actividades_tenant at on at.actividad_id = av.id and at.tenant_id = $1
+        where av.fraccion = 'V_BIS'
+       returning id`,
+      [p.sesion.tenantId, p.clienteId],
+    )
+    if (rows.length === 0) {
+      // Sin esta actividad dada de alta, el expediente no tendría catálogo
+      // contra el cual medirse y saldría "completo" sin serlo.
+      throw new Error(
+        'Este obligado no tiene registrada la Fracción V Bis, así que no se le puede abrir ' +
+          'un expediente de esa actividad. Revisa actividades_tenant.',
+      )
+    }
+    const expedienteId = (rows[0] as { id: string }).id
+
+    await db.query('select app.bitacora_registrar($1,$2,$3,$4,$5::jsonb,$6)', [
+      p.sesion.tenantId,
+      'expediente.abierto',
+      'expediente',
+      expedienteId,
+      JSON.stringify({ cliente_id: p.clienteId }),
+      p.sesion.usuarioId,
+    ])
+
+    return { expedienteId, yaExistia: false }
+  })
+}
+
 export interface ResultadoCompletitud extends Completitud {
   expedienteId: string
 }

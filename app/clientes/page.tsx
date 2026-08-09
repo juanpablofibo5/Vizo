@@ -63,12 +63,13 @@ export default async function Clientes() {
               <th>Tipo</th>
               <th>RFC</th>
               <th>Identidad</th>
+              <th>Expediente</th>
             </tr>
           </thead>
           <tbody>
             {clientes.length === 0 ? (
               <tr>
-                <td className="vacia" colSpan={4}>
+                <td className="vacia" colSpan={5}>
                   Todavía no hay clientes dados de alta.
                 </td>
               </tr>
@@ -86,6 +87,9 @@ export default async function Clientes() {
                     ) : (
                       'resuelta'
                     )}
+                  </td>
+                  <td>
+                    <Link href={`/clientes/${c.id}/expediente`}>Ver expediente</Link>
                   </td>
                 </tr>
               ))

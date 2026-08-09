@@ -47,3 +47,20 @@ table { width: 100%; border-collapse: collapse; background: #fff; }
 th, td { text-align: left; padding: .55rem .7rem; border-bottom: 1px solid #ececed; }
 th { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #666; }
 td.vacia { color: #777; padding: 2rem; text-align: center; }
+
+/* La huella del documento. Se muestra COMPLETA a propósito: un hash truncado
+   no sirve para verificar nada, y verificar es para lo que existe. */
+.hash {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .72rem;
+  line-height: 1.4;
+  word-break: break-all;
+  color: var(--texto-suave, #555);
+  margin: .2rem 0;
+}
+
+input[type='file'] {
+  padding: .4rem;
+  font-size: .9rem;
+}

@@ -93,3 +93,14 @@ values (
   '00000000-0000-4000-8000-000000000002', 'moral', 'CLB030303CCC',
   'Cliente Privado del Otro Tenant SA', 'MX'
 );
+
+-- ---------------------------------------------------------------------------
+-- Contraseña LOCAL del rol de aplicación
+-- ---------------------------------------------------------------------------
+-- La migración 018 crea `vizo_app` sin contraseña a propósito: una contraseña
+-- en una migración queda en el repositorio y viaja a producción.
+--
+-- Esta línea vive en el seed porque el seed SOLO corre en local, igual que los
+-- usuarios demo. En producción la contraseña se carga a mano una vez y nunca
+-- toca el repositorio (ver docs/INFRA.md §5, pendiente 9).
+alter role vizo_app with password 'vizo-local-dev';

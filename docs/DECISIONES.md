@@ -143,6 +143,29 @@ RLS no filtra TRUNCATE y los triggers `for each row` no lo ven, así que las dos
 
 ---
 
+## ADR-18 · La aplicación se conecta con un rol que no puede saltarse RLS — 2026-08-09
+
+**Contexto:** el ADR-16 corrigió el hallazgo de la semana 5 haciendo que toda escritura bajara el rol a `authenticated` dentro de la transacción. Funciona y hay tests que se ponen rojos si alguien lo quita, pero la causa seguía viva: la conexión era del rol `postgres`, con `rolbypassrls = true`. La seguridad dependía de **acordarse** de usar la protección — el nivel 3 del orden de preferencia de CLAUDE.md, que es el último recurso y no el primero.
+
+**Decisión:** un rol propio `vizo_app`, `NOSUPERUSER NOBYPASSRLS NOINHERIT`, miembro de `authenticated`. Dos cadenas de conexión con nombres distintos: `VIZO_DB_URL` (la app) y `VIZO_DB_URL_ADMIN` (migraciones, seed y tests).
+
+**Por qué NOINHERIT, que es la parte no obvia:** heredando, `vizo_app` tendría los permisos de `authenticated` sin pedirlos, y una consulta que olvidara `set local role` funcionaría igual — correctamente filtrada por RLS, pero por accidente. Con NOINHERIT el rol de conexión no puede hacer *nada* por sí mismo, así que el olvido falla ruidosamente. De una capa de seguridad se quiere precisamente eso.
+
+**Comprobado conectándose de verdad como `vizo_app`**, no consultando `pg_roles` —que un rol declare no tener BYPASSRLS y que de hecho no pueda saltarse las políticas son dos afirmaciones distintas, y solo la segunda importa—:
+
+| Intento | Antes (`postgres`) | Ahora (`vizo_app`) |
+|---|---|---|
+| `select` sin asumir el rol | devolvía los datos de **todos** los obligados | `permission denied` |
+| `insert` sin asumir el rol | escribía saltándose RLS | `permission denied` |
+| `insert` en el obligado ajeno, por el camino correcto | escribía | lo detiene la política |
+| `set role postgres` / concederse BYPASSRLS / leer `auth.users` | — | `permission denied` |
+
+**Alternativas descartadas:** (a) dejarlo como estaba y confiar en los tests de regresión — vigilan que la línea exista, no que alguien escriba una función nueva que no la use; (b) que `vizo_app` heredara de `authenticated` — ver arriba.
+
+**Costo:** ~1 h. **Lo que abre:** en producción hay que cargar la contraseña del rol una vez, a mano, y cambiar `VIZO_DB_URL` del proyecto de Vercel. Anotado en `INFRA.md §5`.
+
+---
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 1. **Sellado del manifiesto** (ADR-10): ¿una constancia NOM-151 sobre el manifiesto con los hashes de todos los documentos satisface la exigencia de fecha cierta, o la autoridad espera constancia por documento?

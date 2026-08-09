@@ -23,8 +23,17 @@ import type { ContextoSesion } from '../../src/persistencia/transaccion'
  * a `authenticated` y planta los claims. Estos tests ejercitan ese camino, así
  * que RLS se evalúa de verdad — no reemplazan al smoke test, lo complementan.
  */
+/**
+ * Conexión ADMINISTRATIVA, distinta de la que usa la aplicación.
+ *
+ * Desde la migración 018 la app se conecta como `vizo_app`, que no puede
+ * saltarse RLS. Los tests sí necesitan un rol elevado para PREPARAR el
+ * escenario —crear obligados, usuarios y sucursales—, así que usan otra
+ * variable. Que sean dos nombres distintos es a propósito: si fueran el mismo,
+ * cambiar uno cambiaría el otro sin que nadie lo notara.
+ */
 export const URL_DB_LOCAL =
-  process.env['VIZO_DB_URL'] ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
+  process.env['VIZO_DB_URL_ADMIN'] ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
 
 export async function conectar(): Promise<Client> {
   const cliente = new Client({ connectionString: URL_DB_LOCAL })

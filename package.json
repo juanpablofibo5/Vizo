@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:umbrales": "vitest run tests/umbrales",
-    "test:estructura": "supabase db reset && psql \"$VIZO_DB_URL\" -v ON_ERROR_STOP=1 -f tests/estructura/smoke.sql",
+    "test:estructura": "supabase db reset && psql \"$VIZO_DB_URL_ADMIN\" -v ON_ERROR_STOP=1 -f tests/estructura/smoke.sql",
     "test:xsd": "vitest run tests/xsd",
     "typecheck": "tsc --noEmit",
     "db:start": "supabase start",

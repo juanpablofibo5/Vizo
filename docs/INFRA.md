@@ -101,10 +101,21 @@ vercel --prod           # deploy manual; lo normal es que main despliegue solo
 | 6 | Alerta del DOF por la publicación de las RCG | Juan Pablo | semana 0 |
 | 7 | Upgrade a Supabase Pro | Juan Pablo (es una compra) | semana 5 |
 | 8 | Mover VIZO a su propia organización de Supabase | Juan Pablo | junto con el upgrade a Pro |
-| 9 | Rol de base `vizo_app`, sin superusuario y sin BYPASSRLS | cualquiera | antes del primer deploy |
+| ~~9~~ | ~~Rol de base `vizo_app`~~ | — | ✅ hecho el 9 ago — migración 018, ADR-18 |
 | 10 | Pooler de transacciones para la conexión SQL directa | cualquiera | antes del primer deploy |
 
-**Sobre el 9.** La aplicación se conecta con `VIZO_DB_URL`, que apunta al rol `postgres` (`rolbypassrls = true`). Hoy eso está contenido porque toda escritura pasa por `enTransaccionDeSesion`, que baja el rol a `authenticated` dentro de la transacción (ADR-16), y hay tests de regresión que se ponen rojos si alguien lo quita. Pero es una protección que **hay que acordarse de usar**. Un rol propio sin BYPASSRLS convierte el olvido en imposible en vez de detectable, que es el orden de preferencia de CLAUDE.md.
+**Sobre el 9, ya hecho.** La aplicación se conecta como `vizo_app`: sin superusuario, sin BYPASSRLS y **NOINHERIT**, así que no puede hacer nada por sí mismo — tiene que asumir `authenticated`. Olvidar el cambio de rol pasó de ser un agujero silencioso a un `permission denied` inmediato (ADR-18).
+
+Hay **dos** cadenas de conexión y llevan nombres distintos a propósito:
+
+| Variable | Rol | Quién la usa |
+|---|---|---|
+| `VIZO_DB_URL` | `vizo_app` | La aplicación. Sin BYPASSRLS. |
+| `VIZO_DB_URL_ADMIN` | `postgres` | Migraciones, seed y la suite de tests, que preparan escenarios. **La app nunca.** |
+
+Si `VIZO_DB_URL_ADMIN` aparece importada desde `app/` o `src/`, es un incidente de seguridad y no un atajo.
+
+**La contraseña de `vizo_app` en producción se carga UNA VEZ, a mano.** La migración crea el rol sin contraseña a propósito: una contraseña en una migración queda en el repositorio y viaja a producción. En local la pone `supabase/seed.sql`, que solo corre en local.
 
 **Sobre el 10.** Cada Server Action abre una conexión nueva con `pg` y la cierra al terminar. En local no se nota; en Vercel cada invocación concurrente es una conexión directa, y el límite se alcanza antes de lo que parece. Corresponde apuntar `VIZO_DB_URL` al pooler de transacciones (puerto 6543), no al puerto 5432. No es un defecto hoy —no hay nada desplegado— pero sí lo primero que falla bajo carga.
 

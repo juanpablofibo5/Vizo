@@ -11,7 +11,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  VIZO_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+  # La app se conecta como vizo_app (sin BYPASSRLS); los tests y el smoke
+  # necesitan el rol elevado para preparar escenarios. Son dos cosas distintas
+  # y llevan nombres distintos a propósito.
+  VIZO_DB_URL: postgresql://vizo_app:vizo-local-dev@127.0.0.1:54322/postgres
+  VIZO_DB_URL_ADMIN: postgresql://postgres:postgres@127.0.0.1:54322/postgres
 
 jobs:
   # Un solo job: los tests de la Capa 0 y el smoke test estructural necesitan
@@ -72,7 +76,7 @@ jobs:
       # separación de roles y los tres ataques que la auditoría de la semana 1
       # reprodujo. Si algo de esto se rompe no es un bug: es un incidente.
       - name: Smoke test estructural
-        run: psql "$VIZO_DB_URL" -v ON_ERROR_STOP=1 -f tests/estructura/smoke.sql
+        run: psql "$VIZO_DB_URL_ADMIN" -v ON_ERROR_STOP=1 -f tests/estructura/smoke.sql
 
       # Capa 0, cargador, aritmética y registro de evaluaciones: BLOQUEANTE.
       # Todo esto ya está implementado y no tiene por qué fallar.

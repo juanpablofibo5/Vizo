@@ -7,6 +7,7 @@ import {
   porcentaje,
   umaACentavos,
   umaCentavos,
+  formatearPesosTexto,
 } from '../../src/dominio/dinero'
 
 /**
@@ -123,5 +124,37 @@ describe('Aritmética de centavos', () => {
     ])('%d → %s', (valor, esperado) => {
       expect(formatearPesos(pesos(valor))).toBe(esperado)
     })
+  })
+})
+
+describe('Formateo para pantalla', () => {
+  /**
+   * `formatearPesosTexto` recibe y devuelve TEXTO. No es un detalle de estilo:
+   * un monto que se convierte a float para pintarlo puede perder el centavo que
+   * decide si hay aviso, y lo perdería justo en la pantalla donde alguien lo va
+   * a leer para decidir.
+   */
+  it('no pasa por float: el valor que revienta a parseFloat sobrevive', () => {
+    // parseFloat('941412.75') * 100 = 94141274.99999999
+    expect(formatearPesosTexto('941412.75')).toBe('$941,412.75')
+    expect(formatearPesosTexto('8.20')).toBe('$8.20')
+    expect(formatearPesosTexto('0.01')).toBe('$0.01')
+  })
+
+  it('pone separadores de miles donde van', () => {
+    expect(formatearPesosTexto('1200000.00')).toBe('$1,200,000.00')
+    expect(formatearPesosTexto('100.00')).toBe('$100.00')
+    expect(formatearPesosTexto('1000.50')).toBe('$1,000.50')
+  })
+
+  it('aguanta lo que Postgres puede devolver', () => {
+    // numeric sin parte decimal, y negativos (una corrección puede serlo).
+    expect(formatearPesosTexto('500')).toBe('$500.00')
+    expect(formatearPesosTexto('-1000.50')).toBe('$-1,000.50')
+  })
+
+  it('un importe grande no pierde precisión', () => {
+    // 2^53 en centavos se sale del entero seguro de JS; como texto, da igual.
+    expect(formatearPesosTexto('99999999999.99')).toBe('$99,999,999,999.99')
   })
 })

@@ -106,3 +106,20 @@ export function centavosAPesosTexto(monto: Centavos | UmaCentavos): string {
   const abs = Math.abs(monto)
   return `${signo}${Math.trunc(abs / 100)}.${String(abs % 100).padStart(2, '0')}`
 }
+
+/**
+ * Formatea un `numeric` de Postgres (que llega como TEXTO) para mostrarlo.
+ *
+ * Recibe texto y devuelve texto: nunca pasa por `Number`. Un monto que se
+ * convierte a float para pintarlo puede perder el centavo que decide si hay
+ * aviso — y lo perdería justo en la pantalla donde alguien lo va a leer.
+ *
+ * Vive aquí y no en cada página porque tener dos formateadores es tener dos
+ * formatos: la lista de operaciones mostraba $400,000.00 y el panel de alertas
+ * $400000.00 para el mismo importe.
+ */
+export function formatearPesosTexto(numericTexto: string): string {
+  const [enteros = '0', decimales = '00'] = numericTexto.split('.')
+  const conMiles = enteros.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return `$${conMiles}.${decimales.padEnd(2, '0').slice(0, 2)}`
+}

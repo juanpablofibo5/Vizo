@@ -64,3 +64,22 @@ input[type='file'] {
   padding: .4rem;
   font-size: .9rem;
 }
+
+/* Alertas: se distinguen del resto sin gritar. Un panel de cumplimiento que
+   parece un tablero de incendios deja de leerse a la semana. */
+.chip-alerta {
+  background: #fde9c8;
+  color: #7a4a06;
+}
+
+.tarjeta-alerta {
+  border-left: 3px solid #c98a1e;
+}
+
+.barra a {
+  color: inherit;
+  text-decoration: none;
+  font-size: .92rem;
+  opacity: .75;
+}
+.barra a:hover { opacity: 1; text-decoration: underline; }

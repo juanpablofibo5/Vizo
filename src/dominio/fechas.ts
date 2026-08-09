@@ -77,3 +77,44 @@ export function dentroDeVentana(fecha: FechaISO, inicio: FechaISO, referencia: F
   // Comparación lexicográfica: para YYYY-MM-DD equivale a la cronológica.
   return fecha >= inicio && fecha <= referencia
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// La fecha de hoy, en la zona que importa
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * México. El obligado cumple en su jurisdicción, no en UTC.
+ */
+export const ZONA_MEXICO = 'America/Mexico_City'
+
+/**
+ * HALLAZGO DE LA AUDITORÍA DE LA SEMANA 6.
+ *
+ * La pantalla del expediente calculaba "hoy" con
+ * `new Date().toISOString().slice(0, 10)`, que devuelve la fecha **en UTC**.
+ * En Mérida son seis horas de diferencia, así que a partir de las 18:00 hora
+ * local el sistema creía que ya era mañana. Durante esas seis horas, cada día,
+ * la vigencia del catálogo se resolvía con la fecha equivocada.
+ *
+ * Es el mismo error que el gotcha del 1 de febrero, en pequeño: un umbral o un
+ * campo que entra en vigor mañana se aplicaría desde las 18:00 de hoy. No
+ * revienta nada — devuelve el catálogo de otro día.
+ *
+ * Recibe el instante como parámetro para poder probarlo: una función que lee
+ * el reloj por dentro no se puede verificar en los bordes, que es justo donde
+ * falla.
+ */
+export function fechaEn(instante: Date, zona: string = ZONA_MEXICO): string {
+  // 'en-CA' formatea como AAAA-MM-DD, que es lo que espera Postgres.
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: zona,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(instante)
+}
+
+/** Hoy en México, según el reloj del SERVIDOR — nunca el del navegador. */
+export function hoyEnMexico(): string {
+  return fechaEn(new Date())
+}

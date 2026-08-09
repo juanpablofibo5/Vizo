@@ -1,6 +1,7 @@
 import type { EjecutorSql } from '../catalogo/cargador'
 import { enTransaccionDeSesion, type ContextoSesion } from './transaccion'
 import {
+  DocumentoInvalido,
   prepararDocumento,
   rutaDocumento,
   type DocumentoRecibido,
@@ -80,6 +81,37 @@ export async function registrarDocumento(
   const listo = prepararDocumento(p.documento)
 
   return enTransaccionDeSesion(db, p.sesion, async () => {
+    // NIVEL 3, sobre lo que la migración 017 ya impide en la base.
+    //
+    // El propósito aquí NO es la seguridad —de eso se encarga la FK
+    // compuesta— sino el mensaje. "violates foreign key constraint
+    // documentos_reemplaza_mismo_campo" no le dice nada a quien captura.
+    if (p.reemplazaA !== undefined) {
+      const { rows } = await db.query(
+        `select campo, expediente_id from documentos where id = $1`,
+        [p.reemplazaA],
+      )
+      const previo = rows[0] as { campo: string; expediente_id: string } | undefined
+      if (previo === undefined) {
+        throw new DocumentoInvalido(
+          `El documento ${p.reemplazaA} que se pretende reemplazar no existe en este obligado.`,
+        )
+      }
+      if (previo.expediente_id !== p.expedienteId) {
+        throw new DocumentoInvalido(
+          'Ese documento pertenece a OTRO expediente. Un reemplazo nunca cruza expedientes: ' +
+            'descubriría un requisito del cliente equivocado.',
+        )
+      }
+      if (previo.campo !== listo.campo) {
+        throw new DocumentoInvalido(
+          `Se está subiendo un "${listo.campo}" que dice reemplazar a un "${previo.campo}". ` +
+            'Un reemplazo sustituye al documento del MISMO campo; si no, el campo anterior ' +
+            'queda descubierto sin que nadie lo note.',
+        )
+      }
+    }
+
     // El id se pide primero porque la ruta lo contiene: sin él no se puede
     // insertar la fila con su `storage_path` definitivo.
     const { rows: idRows } = await db.query('select gen_random_uuid() as id')

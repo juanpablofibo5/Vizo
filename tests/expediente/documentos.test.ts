@@ -159,7 +159,7 @@ describe('Documentos del expediente', () => {
         db.query(
           `insert into documentos (tenant_id, expediente_id, campo, storage_path,
                                    hash_sha256, tamano_bytes, mime)
-           values ($1,$2,'x','ruta/falsa/1',$3,0,'application/pdf')`,
+           values ($1,$2,'identificacion_oficial','ruta/falsa/1',$3,0,'application/pdf')`,
           [sesion.tenantId, expedienteId, 'a'.repeat(64)],
         ),
       ).rejects.toThrow(/tamano_positivo/)
@@ -170,7 +170,7 @@ describe('Documentos del expediente', () => {
         db.query(
           `insert into documentos (tenant_id, expediente_id, campo, storage_path,
                                    hash_sha256, tamano_bytes, mime)
-           values ($1,$2,'x','ruta/falsa/2',$3,10,'application/pdf')`,
+           values ($1,$2,'identificacion_oficial','ruta/falsa/2',$3,10,'application/pdf')`,
           [sesion.tenantId, expedienteId, 'A'.repeat(64)], // mayúsculas
         ),
       ).rejects.toThrow(/hash_es_sha256_hex/)
@@ -240,6 +240,92 @@ describe('Documentos del expediente', () => {
       expect(datos).not.toContain('.pdf')
     })
   })
+  describe('integridad del documento (auditoría de la semana 6)', () => {
+    /**
+     * Tres bugs con la misma raíz: `registrarDocumento` guardaba `campo` y
+     * `reemplaza_a` sin contrastarlos con nada. Los tres dejaban el expediente
+     * en un estado plausible y equivocado, sin lanzar nada.
+     */
+    it('un campo con TYPO se rechaza, en vez de guardarse y no contar nunca', async () => {
+      await expect(
+        registrarDocumento(db, almacen, {
+          sesion,
+          expedienteId,
+          documento: { ...pdf(new Uint8Array([1, 2, 3])), campo: 'identificacion_oficia' },
+        }),
+      ).rejects.toThrow(/no existe en el catálogo/)
+    })
+
+    it('el mensaje dice cuáles SÍ son válidos', async () => {
+      await registrarDocumento(db, almacen, {
+        sesion, expedienteId,
+        documento: { ...pdf(new Uint8Array([9])), campo: 'inventado' },
+      }).catch((e: Error) => {
+        expect(e.message).toContain('acta_constitutiva')
+        expect(e.message).toContain('identificacion_oficial')
+      })
+    })
+
+    it('un reemplazo no puede cruzar de campo: descubriría el anterior', async () => {
+      const ine = await registrarDocumento(db, almacen, {
+        sesion, expedienteId, documento: pdf(new Uint8Array(randomBytes(64))),
+      })
+      await expect(
+        registrarDocumento(db, almacen, {
+          sesion,
+          expedienteId,
+          documento: { ...pdf(new Uint8Array(randomBytes(64))), campo: 'comprobante_domicilio' },
+          reemplazaA: ine.documentoId,
+        }),
+      ).rejects.toThrow(/MISMO campo/)
+    })
+
+    it('un reemplazo no puede cruzar de expediente: tocaría al cliente equivocado', async () => {
+      const otro = await crearExpediente(
+        db, sesion, String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 900) + 100),
+      )
+      const ajeno = await registrarDocumento(db, almacen, {
+        sesion, expedienteId: otro, documento: pdf(new Uint8Array(randomBytes(64))),
+      })
+
+      await expect(
+        registrarDocumento(db, almacen, {
+          sesion, expedienteId, documento: pdf(new Uint8Array(randomBytes(64))),
+          reemplazaA: ajeno.documentoId,
+        }),
+      ).rejects.toThrow(/OTRO expediente/)
+    })
+
+    it('y la BASE lo impide aunque alguien no pase por registrarDocumento', async () => {
+      // Nivel 2 de CLAUDE.md: la precondición de arriba es para el mensaje; esto
+      // es lo que protege si mañana otra función escribe en la tabla.
+      const ine = await registrarDocumento(db, almacen, {
+        sesion, expedienteId, documento: pdf(new Uint8Array(randomBytes(64))),
+      })
+      await expect(
+        db.query(
+          `insert into documentos (tenant_id, expediente_id, campo, storage_path,
+                                   hash_sha256, tamano_bytes, mime, reemplaza_a)
+           values ($1,$2,'comprobante_domicilio','ruta/cruzada/1',$3,10,'application/pdf',$4)`,
+          [sesion.tenantId, expedienteId, 'b'.repeat(64), ine.documentoId],
+        ),
+      ).rejects.toThrow(/documentos_reemplaza_mismo_campo/)
+    })
+
+    it('un documento no puede reemplazarse a sí mismo', async () => {
+      const { rows } = await db.query('select gen_random_uuid() as id')
+      const id = (rows[0] as { id: string }).id
+      await expect(
+        db.query(
+          `insert into documentos (id, tenant_id, expediente_id, campo, storage_path,
+                                   hash_sha256, tamano_bytes, mime, reemplaza_a)
+           values ($1,$2,$3,'identificacion_oficial','ruta/propia/1',$4,10,'application/pdf',$1)`,
+          [id, sesion.tenantId, expedienteId, 'c'.repeat(64)],
+        ),
+      ).rejects.toThrow(/no_se_reemplaza_a_si_mismo/)
+    })
+  })
+
 })
 
 async function crearExpediente(

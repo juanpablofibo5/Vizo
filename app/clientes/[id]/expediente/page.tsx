@@ -150,7 +150,25 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
         )}
 
         <h2>Subir documento</h2>
-        {pendientesDocumentales.length > 0 ? (
+        {/*
+          Auditoría de la semana 6: aquí bastaba con `pendientes.length > 0`, y
+          un expediente NUNCA evaluado tiene cero faltantes, así que la
+          pantalla anunciaba "todos los documentos obligatorios están
+          presentes" sobre un expediente vacío — mientras la etiqueta de arriba
+          decía "sin evaluar". Una falsa tranquilidad en una pantalla de
+          cumplimiento es peor que un error.
+        */}
+        {!evaluado ? (
+          <div className="aviso">
+            <p>
+              Este expediente todavía no se ha evaluado, así que <strong>no se sabe</strong> qué le
+              falta. No es lo mismo que estar completo.
+            </p>
+            <form action={abrir.bind(null, clienteId)}>
+              <button type="submit">Evaluar completitud</button>
+            </form>
+          </div>
+        ) : pendientesDocumentales.length > 0 ? (
           <FormularioSubida
             clienteId={clienteId}
             expedienteId={expediente.id}

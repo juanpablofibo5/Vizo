@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dentroDeVentana, inicioVentana, restarMeses, ultimoDiaDelMes } from '../../src/dominio/fechas'
+import { dentroDeVentana, inicioVentana, restarMeses, ultimoDiaDelMes, fechaEn } from '../../src/dominio/fechas'
 
 /**
  * La ventana de acumulación se calcula con estas funciones. Un error de un día
@@ -57,5 +57,40 @@ describe('Aritmética de fechas', () => {
       expect(() => inicioVentana('2026-05-15', -6)).toThrow()
       expect(() => inicioVentana('2026-05-15', 1.5)).toThrow()
     })
+  })
+})
+
+describe('La fecha de hoy, en la zona que importa', () => {
+  /**
+   * HALLAZGO DE LA AUDITORÍA DE LA SEMANA 6.
+   *
+   * La pantalla del expediente calculaba "hoy" con `toISOString()`, que da la
+   * fecha en UTC. Mérida está seis horas atrás, así que desde las 18:00 hora
+   * local el sistema ya creía que era el día siguiente.
+   */
+  it('a las 20:30 de Mérida todavía es el MISMO día, no el siguiente', () => {
+    const instante = new Date('2026-08-09T02:30:00Z') // 20:30 del 8 en Mérida
+    expect(fechaEn(instante)).toBe('2026-08-08')
+    // Lo que hacía antes, para que quede escrito por qué cambió:
+    expect(instante.toISOString().slice(0, 10)).toBe('2026-08-09')
+  })
+
+  it('a las 00:30 de Mérida ya es el día nuevo', () => {
+    expect(fechaEn(new Date('2026-08-09T06:30:00Z'))).toBe('2026-08-09')
+  })
+
+  it('respeta el horario de verano: en enero el desfase es distinto que en julio', () => {
+    // Enero: UTC-6. 05:30Z es 23:30 del día anterior.
+    expect(fechaEn(new Date('2026-01-16T05:30:00Z'))).toBe('2026-01-15')
+    // Julio: la regla de 2022 quitó el horario de verano, sigue UTC-6.
+    expect(fechaEn(new Date('2026-07-16T05:30:00Z'))).toBe('2026-07-15')
+  })
+
+  it('el borde del 1 de febrero se resuelve en hora de México, no en UTC', () => {
+    // 31 de enero, 19:00 en Mérida = 1 de febrero 01:00 UTC. Con UTC se
+    // aplicarían los umbrales del año nuevo cinco horas antes de tiempo.
+    const instante = new Date('2026-02-01T01:00:00Z')
+    expect(fechaEn(instante)).toBe('2026-01-31')
+    expect(instante.toISOString().slice(0, 10)).toBe('2026-02-01')
   })
 })

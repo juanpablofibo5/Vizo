@@ -7,6 +7,7 @@ import { almacenExpedientes } from '../../../../src/supabase/almacen'
 import { registrarDocumento, FalloDeAlmacen } from '../../../../src/persistencia/documentos'
 import { abrirExpediente, recalcularCompletitud } from '../../../../src/persistencia/expediente'
 import { DocumentoInvalido } from '../../../../src/dominio/documentos'
+import { hoyEnMexico } from '../../../../src/dominio/fechas'
 
 export interface EstadoSubida {
   problemas: string[]
@@ -22,10 +23,14 @@ function cadenaDeConexion(): string {
   return url
 }
 
-/** Hoy en la zona del servidor, en formato AAAA-MM-DD. */
-function hoy(): string {
-  return new Date().toISOString().slice(0, 10)
-}
+/**
+ * Hoy en México, no en UTC.
+ *
+ * Auditoría de la semana 6: esto era `toISOString().slice(0,10)`, que a partir
+ * de las 18:00 en Mérida ya reportaba el día siguiente y resolvía la vigencia
+ * del catálogo con la fecha equivocada. Ver `hoyEnMexico`.
+ */
+const hoy = hoyEnMexico
 
 export async function abrir(clienteId: string): Promise<void> {
   const sesion = await sesionRequerida()

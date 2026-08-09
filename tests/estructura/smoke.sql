@@ -85,7 +85,11 @@ begin
   -- de ellas permitía vaciar la bitácora de todos los obligados. Se revisa en
   -- cada corrida porque el privilegio por omisión vuelve con cada tabla nueva.
   perform 1 from app.verificar_privilegios_por_omision() limit 1; if found then raise exception 'FALLA 1e: privilegios concedidos por omisión (TRUNCATE y compañía)'; end if;
-  raise notice '✓ 1. Aserciones estructurales (RLS, append-only, tenancy, grants, privilegios por omisión)';
+  -- 1f: lo mismo en el esquema `storage`, donde NO se puede arreglar con un
+  -- revoke (las tablas son de supabase_storage_admin) y la protección es un
+  -- trigger. Ahí vive la evidencia documental del expediente.
+  perform 1 from app.verificar_privilegios_storage() limit 1; if found then raise exception 'FALLA 1f: storage.objects sin guardia de TRUNCATE'; end if;
+  raise notice '✓ 1. Aserciones estructurales (RLS, append-only, tenancy, grants, privilegios en public y storage)';
 
   -- 2. La bitácora encadena --------------------------------------------------
   perform app.bitacora_registrar(v_tenant_a, 'catalogo.seed_aplicado', 'catalogo');

@@ -1,6 +1,9 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { Client } from 'pg'
 import { conectar, crearTenantConUsuario } from '../soporte/db'
+import { almacenComo } from '../soporte/almacen'
+import { BUCKET_AVISOS } from '../../src/supabase/almacen'
+import type { AlmacenDocumentos } from '../../src/persistencia/documentos'
 import { registrarOperacion } from '../../src/persistencia/operaciones'
 import {
   AvisoNoValida,
@@ -30,6 +33,7 @@ describe('Generación del aviso contra la base', () => {
   let sucursalId: string
   let clienteId: string
   let rutaXsd: string
+  let almacen: AlmacenDocumentos
 
   beforeAll(async () => {
     db = await conectar()
@@ -64,6 +68,7 @@ describe('Generación del aviso contra la base', () => {
       [sesion.tenantId, `AVI${marca}`],
     )
     clienteId = (c.rows[0] as { id: string }).id
+    almacen = almacenComo(sesion, BUCKET_AVISOS)
   })
 
   const crearDesarrollo = async (): Promise<string> => {
@@ -113,7 +118,7 @@ describe('Generación del aviso contra la base', () => {
       actividadId,
       periodo: PERIODO,
       granularidad: 'un_aviso_por_operacion',
-    })
+    }, almacen)
 
     expect(r.tipo).toBe('normal')
     expect(r.operacionesIncluidas).toBe(1)
@@ -134,7 +139,7 @@ describe('Generación del aviso contra la base', () => {
       actividadId,
       periodo: PERIODO,
       granularidad: 'un_aviso_por_operacion',
-    })
+    }, almacen)
     expect(r.operacionesIncluidas).toBe(0)
     expect(r.tipo).toBe('cero')
   })
@@ -145,7 +150,7 @@ describe('Generación del aviso contra la base', () => {
       actividadId,
       periodo: PERIODO,
       granularidad: 'un_aviso_por_operacion',
-    })
+    }, almacen)
 
     expect(r.tipo).toBe('cero')
     expect(r.avisosEnElInforme).toBe(0)
@@ -166,7 +171,7 @@ describe('Generación del aviso contra la base', () => {
       actividadId,
       periodo: PERIODO,
       granularidad: 'un_aviso_por_operacion',
-    })
+    }, almacen)
     expect(separados.operacionesIncluidas).toBe(2)
     expect(separados.avisosEnElInforme).toBe(2)
     expect(validarContraXsd(separados.xml, rutaXsd).valida).toBe(true)
@@ -180,7 +185,7 @@ describe('Generación del aviso contra la base', () => {
         actividadId,
         periodo: PERIODO,
         granularidad: 'un_aviso_por_periodo',
-      }),
+      }, almacen),
     ).rejects.toThrow(/avisos_unico_por_periodo/)
   })
 
@@ -192,7 +197,7 @@ describe('Generación del aviso contra la base', () => {
       actividadId,
       periodo: PERIODO,
       granularidad: 'un_aviso_por_operacion',
-    })
+    }, almacen)
 
     const { rows } = await db.query(
       `select operacion_id::text, evaluacion_id::text from aviso_operaciones where aviso_id = $1`,
@@ -221,7 +226,7 @@ describe('Generación del aviso contra la base', () => {
         actividadId,
         periodo: PERIODO,
         granularidad: 'un_aviso_por_operacion',
-      }),
+      }, almacen),
     ).rejects.toThrow(/row-level security/)
   })
 
@@ -237,7 +242,7 @@ describe('Generación del aviso contra la base', () => {
         actividadId,
         periodo: PERIODO,
         granularidad: 'un_aviso_por_operacion',
-      }),
+      }, almacen),
     ).rejects.toThrow(CatalogoDelAvisoIncompleto)
   })
 
@@ -258,7 +263,7 @@ describe('Generación del aviso contra la base', () => {
         actividadId,
         periodo: PERIODO,
         granularidad: 'un_aviso_por_operacion',
-      }),
+      }, almacen),
     ).rejects.toThrow(AvisoNoValida)
 
     // Un aviso en estado `validado` que en realidad no valida es peor que no

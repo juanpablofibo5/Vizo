@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
-import { almacenSobre } from '../../src/supabase/almacen'
+import { almacenSobre, BUCKET_EXPEDIENTES } from '../../src/supabase/almacen'
 import type { AlmacenDocumentos } from '../../src/persistencia/documentos'
 import type { ContextoSesion } from '../../src/persistencia/transaccion'
 
@@ -62,10 +62,13 @@ export function jwtDeSesion(sesion: ContextoSesion): string {
  * exactamente lo que manda el navegador, así que las políticas del bucket se
  * evalúan igual que en producción.
  */
-export function almacenComo(sesion: ContextoSesion): AlmacenDocumentos {
+export function almacenComo(
+  sesion: ContextoSesion,
+  bucket: string = BUCKET_EXPEDIENTES,
+): AlmacenDocumentos {
   const cliente = createClient(URL_API, llaveAnon(), {
     auth: { persistSession: false, autoRefreshToken: false },
     global: { headers: { Authorization: `Bearer ${jwtDeSesion(sesion)}` } },
   })
-  return almacenSobre(cliente)
+  return almacenSobre(cliente, bucket)
 }

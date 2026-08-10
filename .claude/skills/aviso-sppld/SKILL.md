@@ -63,6 +63,10 @@ El aviso reporta el **monto total recibido, incluyendo contribuciones**. Esto es
 
 ## Advertencia sobre las RCG
 
-Las Reglas de Carácter General están vencidas desde el 16 de julio de 2026 y pendientes de publicación. Cuando salgan traerán **nuevos formatos oficiales de avisos**, lo que implica XSD nuevos.
+**Ya salieron**: Acuerdo 115/2026, DOF 7 de agosto de 2026, vigencia general 30 de noviembre de 2026. Nada nuevo es exigible antes de esa fecha, así que el formato `din` vigente sigue siendo el correcto.
+
+Dos cosas del Acuerdo tocan directamente este pipeline y **están sin contrastar contra el DOF** (issue #9), así que no se siembra catálogo con ellas: el **Art. 24 Bis** definiría, fracción por fracción, qué fecha cuenta como la del acto para computar el plazo; y el **Art. 24 Bis 1** diría que va un aviso por cada acto u operación, sin consolidar. El XSD admite las dos lecturas de granularidad, así que no desempata — por eso `Granularidad` es un parámetro sin valor por omisión (issue #10).
+
+Detalle en `docs/ACUERDO-115-2026.md`.
 
 Por eso `formatos_aviso` es una tabla con vigencias y no una constante. Cuando salgan las RCG, la respuesta correcta es cargar el XSD nuevo con su fecha de vigencia y dejar que el motor elija según la fecha del periodo — no editar código.

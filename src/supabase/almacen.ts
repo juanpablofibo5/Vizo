@@ -13,8 +13,21 @@ import type { AlmacenDocumentos } from '../persistencia/documentos'
  */
 export const BUCKET_EXPEDIENTES = 'expedientes'
 
-export function almacenSobre(cliente: SupabaseClient): AlmacenDocumentos {
-  const bucket = cliente.storage.from(BUCKET_EXPEDIENTES)
+/**
+ * El XML del aviso y su acuse van en SU PROPIO bucket.
+ *
+ * `expedientes` solo admite PDF e imágenes, y ensanchar esa lista para que
+ * cupiera un XML abriría la puerta a subir XML donde va una identificación. Lo
+ * que se le entrega a la autoridad y lo que prueba que se entregó tampoco
+ * comparten conservación con los datos personales del expediente.
+ */
+export const BUCKET_AVISOS = 'avisos'
+
+export function almacenSobre(
+  cliente: SupabaseClient,
+  nombreBucket: string = BUCKET_EXPEDIENTES,
+): AlmacenDocumentos {
+  const bucket = cliente.storage.from(nombreBucket)
 
   return {
     async subir(ruta, bytes, mime) {
@@ -39,5 +52,9 @@ export function almacenSobre(cliente: SupabaseClient): AlmacenDocumentos {
 }
 
 export async function almacenExpedientes(): Promise<AlmacenDocumentos> {
-  return almacenSobre(await clienteServidor())
+  return almacenSobre(await clienteServidor(), BUCKET_EXPEDIENTES)
+}
+
+export async function almacenAvisos(): Promise<AlmacenDocumentos> {
+  return almacenSobre(await clienteServidor(), BUCKET_AVISOS)
 }

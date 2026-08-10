@@ -3,6 +3,8 @@ import { formatoVigente } from './formatos'
 import { enTransaccionDeSesion, type ContextoSesion } from './transaccion'
 import type { EjecutorTransaccional } from './manifiesto'
 import { validarContraXsd } from '../aviso/validacion'
+import { fragmentarInforme } from '../aviso/fragmentacion'
+import type { AlmacenDocumentos } from './documentos'
 import {
   construirInformeXml,
   referenciaAviso,
@@ -41,14 +43,25 @@ export class CatalogoDelAvisoIncompleto extends Error {
   }
 }
 
+export interface LoteGenerado {
+  lote: number
+  totalLotes: number
+  storagePath: string
+  hashSha256: string
+  bytes: number
+}
+
 export interface ResultadoAviso {
   avisoId: string
   tipo: 'normal' | 'cero'
+  /** El informe completo, sin fragmentar. Para inspección y pruebas. */
   xml: string
   hashXml: string
   operacionesIncluidas: number
   avisosEnElInforme: number
   formatoVersion: string
+  /** Los archivos realmente presentables, en orden. */
+  lotes: LoteGenerado[]
 }
 
 interface FilaReportable {
@@ -150,6 +163,7 @@ export async function generarAviso(
     periodo: string
     granularidad: Granularidad
   },
+  almacen: AlmacenDocumentos,
 ): Promise<ResultadoAviso> {
   return enTransaccionDeSesion(db, p.sesion, async () => {
     const formato = await formatoVigente(db, { actividadId: p.actividadId, fecha: p.periodo })
@@ -268,12 +282,13 @@ export async function generarAviso(
               },
             ]
 
-    const xml = construirInformeXml({
+    const informe = {
       mesReportado: c.mes_reportado,
       claveSujetoObligado: c.rfc,
       claveActividad: c.clave_sppld,
       avisos,
-    })
+    }
+    const xml = construirInformeXml(informe)
 
     // BLOQUEANTE, y dentro de la transacción: si no valida no se guarda nada.
     const validacion = validarContraXsd(xml, formato.rutaXsd)
@@ -299,6 +314,42 @@ export async function generarAviso(
     )
     const avisoId = (ins.rows[0] as { id: string }).id
 
+    // ── Fragmentación y guardado ────────────────────────────────────────────
+    // El XML no se devuelve y ya: se GUARDA. Hasta esta semana `generarAviso`
+    // regresaba la cadena y dejaba `xml_storage_path` en NULL, así que el
+    // Representante no tenía nada que descargar y el aviso existía solo como
+    // fila. Un aviso que no se puede bajar no se puede presentar.
+    const fragmentos = fragmentarInforme(informe)
+    const lotes: LoteGenerado[] = []
+
+    for (const f of fragmentos) {
+      const bytes = new TextEncoder().encode(f.xml)
+      const hashLote = createHash('sha256').update(f.xml, 'utf8').digest('hex')
+      // El tenant_id ABRE la ruta porque la política de Storage lee
+      // storage.foldername(name)[1]. No es estilo: es la frontera.
+      const ruta = `${p.sesion.tenantId}/${avisoId}/lote-${String(f.lote).padStart(3, '0')}.xml`
+
+      await almacen.subir(ruta, bytes, 'application/xml')
+      await db.query(
+        `insert into aviso_lotes (tenant_id, aviso_id, lote, total_lotes,
+                                  storage_path, hash_sha256, bytes, avisos_en_lote)
+         values ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [p.sesion.tenantId, avisoId, f.lote, f.totalLotes, ruta, hashLote, f.bytes, f.avisos],
+      )
+      lotes.push({
+        lote: f.lote,
+        totalLotes: f.totalLotes,
+        storagePath: ruta,
+        hashSha256: hashLote,
+        bytes: f.bytes,
+      })
+    }
+
+    await db.query(
+      `update avisos set fragmentos = $2, xml_storage_path = $3 where id = $1`,
+      [avisoId, fragmentos.length, lotes[0]?.storagePath ?? null],
+    )
+
     // Qué operación y con QUÉ EVALUACIÓN entró. Sin la evaluación, el aviso
     // afirma un resultado sin dejar ver de qué cálculo salió.
     for (const f of filas) {
@@ -322,6 +373,7 @@ export async function generarAviso(
         avisos: avisos.length,
         operaciones: operaciones.length,
         hash_xml: hashXml,
+        lotes: lotes.length,
       }),
       p.sesion.usuarioId,
     ])
@@ -334,6 +386,102 @@ export async function generarAviso(
       operacionesIncluidas: operaciones.length,
       avisosEnElInforme: avisos.length,
       formatoVersion: formato.version,
+      lotes,
     }
+  })
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// El flujo humano
+// ─────────────────────────────────────────────────────────────────────────
+/**
+ * Estas tres funciones envuelven a `app.aviso_*`, que son SECURITY DEFINER y
+ * viven en la migración 001. Es a propósito que la regla dura no esté aquí:
+ *
+ * · el rol se comprueba dentro de la función de la base, con `app.es_admin()`
+ * · la transición de estado se comprueba ahí mismo
+ * · el evento de bitácora se registra ahí mismo, en la misma transacción
+ *
+ * Así, alguien que llame a la base saltándose este archivo —desde psql, desde
+ * otro servicio, desde una consola— topa con las mismas reglas. Si la
+ * comprobación viviera en TypeScript, sería una sugerencia.
+ */
+
+export class TransicionInvalida extends Error {
+  constructor(mensaje: string) {
+    super(mensaje)
+    this.name = 'TransicionInvalida'
+  }
+}
+
+/**
+ * `validado` → `listo_revision`: el aviso pasa a manos de una persona.
+ *
+ * Existe como paso propio y no como parte de generar, porque son dos actos
+ * distintos: la máquina terminó su parte, y alguien decide que eso ya se puede
+ * revisar. Van por UPDATE porque la política de la base solo deja mover el
+ * aviso entre los estados PREVIOS a la aprobación — pasar a `aprobado` por
+ * esta vía lo rechaza el `with check`.
+ */
+export async function marcarListoParaRevision(
+  db: EjecutorTransaccional,
+  p: { sesion: ContextoSesion; avisoId: string },
+): Promise<void> {
+  return enTransaccionDeSesion(db, p.sesion, async () => {
+    const { rowCount } = (await db.query(
+      `update avisos set estatus = 'listo_revision'::estatus_aviso
+        where id = $1 and tenant_id = $2 and estatus = 'validado'::estatus_aviso`,
+      [p.avisoId, p.sesion.tenantId],
+    )) as unknown as { rowCount: number }
+
+    if (rowCount !== 1) {
+      throw new TransicionInvalida(
+        `El aviso ${p.avisoId} no pasó a revisión. O no es de este obligado, o no está en ` +
+          "'validado', o quien lo intenta no es admin. Un aviso solo llega a revisión " +
+          'después de validar contra el XSD.',
+      )
+    }
+
+    await db.query('select app.bitacora_registrar($1,$2,$3,$4,$5::jsonb,$6)', [
+      p.sesion.tenantId,
+      'aviso.listo_revision',
+      'aviso',
+      p.avisoId,
+      JSON.stringify({}),
+      p.sesion.usuarioId,
+    ])
+  })
+}
+
+/**
+ * La aprobación humana: el segundo paso bloqueante del pipeline.
+ *
+ * No la hace VIZO. La hace una persona con nombre, y queda su id y su hora en
+ * la bitácora. Automatizar esto destruiría el valor probatorio de todo lo
+ * demás: un aviso aprobado por un proceso no lo aprobó nadie.
+ */
+export async function aprobarAviso(
+  db: EjecutorTransaccional,
+  p: { sesion: ContextoSesion; avisoId: string },
+): Promise<void> {
+  return enTransaccionDeSesion(db, p.sesion, async () => {
+    await db.query('select app.aviso_aprobar($1)', [p.avisoId])
+  })
+}
+
+/**
+ * El acuse que devuelve el portal, después de que la PERSONA presentó.
+ *
+ * VIZO no presenta. El archivo se sube al SPPLD con la e.firma del sujeto
+ * obligado, y lo que vuelve —el acuse— se registra aquí como prueba de que se
+ * cumplió. Registrar el acuse es lo que mueve el aviso a `presentado`: el
+ * estado no lo declara VIZO, lo declara la evidencia.
+ */
+export async function registrarAcuse(
+  db: EjecutorTransaccional,
+  p: { sesion: ContextoSesion; avisoId: string; storagePath: string },
+): Promise<void> {
+  return enTransaccionDeSesion(db, p.sesion, async () => {
+    await db.query('select app.aviso_registrar_acuse($1,$2)', [p.avisoId, p.storagePath])
   })
 }

@@ -102,54 +102,78 @@ $$;
 -- función exista no dice que detecte nada.
 do $$
 declare
-  v_tenant uuid;
-  v_rota   bigint;
-  v_motivo text;
-  v_n      int;
+  v_tenant  uuid;
+  v_rota    bigint;
+  v_motivo  text;
+  v_n       int;
+  v_ok      boolean := false;
 begin
-  -- EXCLUDING IDENTITY: `bitacora.id` es `generated always as identity`, y una
-  -- copia que la herede rechaza los valores explícitos que se le van a
-  -- insertar. La copia guarda datos; no genera secuencias propias.
-  create temp table bitacora_asercion
-    (like public.bitacora including all excluding identity) on commit drop;
+  -- ── La aserción NO deja rastro ──────────────────────────────────────────
+  -- Todo lo que sigue crea un obligado de prueba y le escribe eventos. En una
+  -- base local da igual: el siguiente `db reset` lo borra. En PRODUCCIÓN se
+  -- quedaría para siempre — la bitácora es append-only y ni siquiera TRUNCATE
+  -- la vacía, así que esos tres eventos serían indeleble basura dentro del
+  -- único objeto que se defiende ante la autoridad.
+  --
+  -- Por eso el bloque de abajo se deshace a sí mismo: hace su trabajo, guarda
+  -- el veredicto en variables (que no son transaccionales y sobreviven) y
+  -- revierte con una excepción propia. Si una aserción falla de verdad, su
+  -- excepción lleva otro SQLSTATE y sale hacia arriba sin ser atrapada.
+  begin
+    create temp table bitacora_asercion
+      (like public.bitacora including all excluding identity) on commit drop;
 
-  insert into tenants (rfc, razon_social)
-  values ('ASR010101AAA', 'Aserción de la migración 019')
-  returning id into v_tenant;
+    insert into tenants (rfc, razon_social)
+    values ('ASR010101AAA', 'Aserción de la migración 019')
+    returning id into v_tenant;
 
-  perform app.bitacora_registrar(v_tenant, 'catalogo.seed_aplicado', 'catalogo');
-  perform app.bitacora_registrar(v_tenant, 'cliente.alta', 'cliente', gen_random_uuid());
-  perform app.bitacora_registrar(v_tenant, 'operacion.registrada', 'operacion', gen_random_uuid());
+    perform app.bitacora_registrar(v_tenant, 'catalogo.seed_aplicado', 'catalogo');
+    perform app.bitacora_registrar(v_tenant, 'cliente.alta', 'cliente', gen_random_uuid());
+    perform app.bitacora_registrar(v_tenant, 'operacion.registrada', 'operacion', gen_random_uuid());
 
-  insert into bitacora_asercion select * from public.bitacora where tenant_id = v_tenant;
+    insert into bitacora_asercion select * from public.bitacora where tenant_id = v_tenant;
 
-  select count(*) into v_n from bitacora_asercion;
-  if v_n <> 3 then
-    raise exception 'La copia debía traer 3 eventos, trajo %', v_n;
+    select count(*) into v_n from bitacora_asercion;
+    if v_n <> 3 then
+      raise exception 'La copia debía traer 3 eventos, trajo %', v_n;
+    end if;
+
+    -- La copia íntegra verifica.
+    select secuencia_rota into v_rota
+      from app.bitacora_verificar_en(v_tenant, 'bitacora_asercion'::regclass) limit 1;
+    if v_rota is not null then
+      raise exception 'La copia sin alterar no debería reportar rotura (eslabón %)', v_rota;
+    end if;
+
+    -- Se altera el segundo evento EN LA COPIA.
+    update bitacora_asercion set datos = '{"alterado":true}'::jsonb where secuencia = 2;
+
+    select secuencia_rota, motivo into v_rota, v_motivo
+      from app.bitacora_verificar_en(v_tenant, 'bitacora_asercion'::regclass) limit 1;
+    if v_rota is distinct from 2 then
+      raise exception 'La alteración del eslabón 2 no se detectó (reportó %)', v_rota;
+    end if;
+
+    -- Y la bitácora REAL sigue intacta: nunca se tocó.
+    select secuencia_rota into v_rota from app.bitacora_verificar(v_tenant) limit 1;
+    if v_rota is not null then
+      raise exception 'La bitácora real quedó rota: la demo no debe tocarla';
+    end if;
+
+    v_ok := true;
+    raise exception using errcode = 'VZ001', message = 'deshacer los datos de la aserción';
+  exception
+    when sqlstate 'VZ001' then null;  -- revierte el obligado y sus eventos
+  end;
+
+  if not v_ok then
+    raise exception 'La aserción de la migración 019 no llegó a completarse';
   end if;
 
-  -- La copia íntegra verifica.
-  select secuencia_rota into v_rota
-    from app.bitacora_verificar_en(v_tenant, 'bitacora_asercion'::regclass) limit 1;
-  if v_rota is not null then
-    raise exception 'La copia sin alterar no debería reportar rotura (eslabón %)', v_rota;
+  if exists (select 1 from tenants where rfc = 'ASR010101AAA') then
+    raise exception 'La aserción dejó datos en la base: tenía que revertirse sola';
   end if;
 
-  -- Se altera el segundo evento EN LA COPIA.
-  update bitacora_asercion set datos = '{"alterado":true}'::jsonb where secuencia = 2;
-
-  select secuencia_rota, motivo into v_rota, v_motivo
-    from app.bitacora_verificar_en(v_tenant, 'bitacora_asercion'::regclass) limit 1;
-  if v_rota is distinct from 2 then
-    raise exception 'La alteración del eslabón 2 no se detectó (reportó %)', v_rota;
-  end if;
-
-  -- Y la bitácora REAL sigue intacta: nunca se tocó.
-  select secuencia_rota into v_rota from app.bitacora_verificar(v_tenant) limit 1;
-  if v_rota is not null then
-    raise exception 'La bitácora real quedó rota: la demo no debe tocarla';
-  end if;
-
-  raise notice 'Verificación sobre copia: OK. Alteración detectada en el eslabón 2 (%), real intacta.', v_motivo;
+  raise notice 'Verificación sobre copia: OK. Alteración detectada en el eslabón 2 (%), real intacta, sin dejar rastro.', v_motivo;
 end;
 $$;

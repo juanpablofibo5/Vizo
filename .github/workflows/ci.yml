@@ -48,6 +48,13 @@ jobs:
           node-version: 24
           cache: pnpm
 
+      # xmllint (libxml2) valida el XML del aviso contra el XSD oficial. El
+      # runner de Ubuntu suele traerlo, pero una dependencia que no se declara
+      # es una dependencia que un día no está — y el día que falte, el paso
+      # bloqueante del aviso se cae sin que nadie sepa por qué.
+      - name: Instalar xmllint
+        run: sudo apt-get install -y --no-install-recommends libxml2-utils
+
       - name: Instalar dependencias
         run: pnpm install --frozen-lockfile
 
@@ -104,3 +111,15 @@ jobs:
       # un aviso omitido. Si se pone roja, no se despliega.
       - name: Suite del motor de umbrales
         run: pnpm test:umbrales
+
+      # ─────────────────────────────────────────────────────────────────────
+      # BLOQUEANTE desde la semana 9
+      # ─────────────────────────────────────────────────────────────────────
+      # El criterio de aceptación más duro del producto: un aviso que no valida
+      # contra el XSD oficial no existe — el portal lo rechaza y la obligación
+      # queda incumplida con su plazo corriendo.
+      #
+      # Va en su propio paso, y no solo dentro de `pnpm test`, para que en el
+      # log de CI se vea si lo que se rompió fue esto.
+      - name: Validación contra el XSD oficial del SPPLD
+        run: pnpm test:xsd

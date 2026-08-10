@@ -10,6 +10,8 @@ export default defineConfig({
     // en paralelo produce fallos que no son del código.
     fileParallelism: false,
     reporters: 'verbose',
+    // Revisa lo que la suite DEJÓ en la base. Ver `tests/soporte/teardown.ts`.
+    globalSetup: ['./tests/soporte/teardown.ts'],
   },
   resolve: {
     alias: {

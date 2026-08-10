@@ -46,9 +46,24 @@ describe('Cadena de la bitácora', () => {
       )
     }
 
+    // TEMP, y no es un detalle de limpieza.
+    //
+    // AUDITORÍA DE LA SEMANA 8, defecto 4. Esta copia se creaba en `public` y
+    // se quedaba ahí al terminar la suite: una tabla con eventos REALES de
+    // bitácora, sin RLS y sin políticas. Cualquiera con sesión la leía entera,
+    // de todos los obligados.
+    //
+    // La aserción estructural del proyecto lo detecta —FALLA 1a, "tablas sin
+    // RLS"—, pero `test:estructura` corre `supabase db reset` ANTES del smoke,
+    // así que el reset borraba la evidencia antes de mirarla. La guarda estaba
+    // bien; el orden del runbook la dejaba ciega. Se ve corriendo el smoke
+    // DESPUÉS de la suite.
+    //
+    // En `pg_temp` la copia vive en la sesión y muere con ella: no hay tabla
+    // que olvidar, ni política que definir, ni forma de que otro la lea.
     await db.query('drop table if exists copia_bitacora')
     await db.query(
-      `create table copia_bitacora (like public.bitacora including all excluding identity)`,
+      `create temp table copia_bitacora (like public.bitacora including all excluding identity)`,
     )
     await db.query(`insert into copia_bitacora select * from public.bitacora where tenant_id = $1`, [
       sesion.tenantId,

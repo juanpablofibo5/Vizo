@@ -174,6 +174,46 @@ describe('Reconstrucción histórica del expediente', () => {
     ).rejects.toThrow(SinRastroEnBitacora)
   })
 
+  /**
+   * AUDITORÍA DE LA SEMANA 8, defecto 2.
+   *
+   * La pregunta que este módulo existe para responder es "¿cómo estaba el
+   * expediente el día Y?", así que preguntar con `'2026-08-09'` es lo natural.
+   * Y era justo lo que fallaba: la sesión de Postgres corre en UTC, así que
+   * `'2026-08-09'::timestamptz` es el 8 de agosto a las 18:00 de Mérida. El
+   * corte se iba SEIS HORAS ANTES del inicio del día que se preguntaba.
+   *
+   * No reventaba: contestaba con menos eventos. En una reconstrucción eso es
+   * peor que un error — es una foto incompleta que parece completa.
+   *
+   * Comprobado con el arreglo quitado: sin él este test truena con
+   * `SinRastroEnBitacora`, porque hoy entero cae fuera del corte.
+   */
+  it('preguntar por una FECHA cubre ese día completo en México, no en UTC', async () => {
+    const ine = await subir('identificacion_oficial')
+    await recalcularCompletitud(db, { sesion, expedienteId, fecha: '2026-08-09' })
+
+    const { rows } = await db.query(
+      `select (now() at time zone 'America/Mexico_City')::date::text as hoy`,
+    )
+    const hoyEnMexico = (rows[0] as { hoy: string }).hoy
+
+    const r = await reconstruirHasta(hoyEnMexico)
+    expect(r.documentos.map((d) => d.hashSha256)).toContain(ine.hash)
+
+    // Y la respuesta dice en qué instante se convirtió la fecha: quien la lee
+    // no tiene que acordarse de la regla. Va en UTC, como todo lo demás, así
+    // que puede caer al día siguiente del calendario — visto desde México es el
+    // último microsegundo del día que se preguntó, y eso es lo que se verifica.
+    expect(r.hasta).not.toBe(hoyEnMexico)
+    const { rows: enMexico } = await db.query(
+      `select to_char($1::timestamptz at time zone 'America/Mexico_City',
+                      'YYYY-MM-DD HH24:MI:SS.US') as local`,
+      [r.hasta],
+    )
+    expect((enMexico[0] as { local: string }).local).toBe(`${hoyEnMexico} 23:59:59.999999`)
+  })
+
   it('no lee las tablas de estado: reconstruye aunque el expediente ya no exista', async () => {
     // LA PRUEBA DE FONDO. Se borra el expediente y sus documentos de las tablas
     // de estado; la bitácora es append-only y sigue ahí. Si la reconstrucción

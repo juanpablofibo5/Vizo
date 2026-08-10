@@ -1,4 +1,5 @@
 import type { EjecutorSql } from '../catalogo/cargador'
+import { ZONA_MEXICO } from '../dominio/fechas'
 import { exigirSesionActiva, type ContextoSesion } from './transaccion'
 
 /**
@@ -52,6 +53,24 @@ export interface EstadoHistorico {
   eventosConsiderados: number
 }
 
+/**
+ * Un corte de solo fecha significa el FINAL de ese día en México.
+ *
+ * AUDITORÍA DE LA SEMANA 8. La pregunta que este módulo existe para responder
+ * es "¿cómo estaba el expediente el día Y?", así que pasar `'2026-08-09'` es lo
+ * natural — y era justo lo que fallaba. La sesión de Postgres corre en UTC, así
+ * que `'2026-08-09'::timestamptz` es el 8 de agosto a las 18:00 de Mérida: la
+ * respuesta se daba con seis horas MENOS y todo un día de menos, sin avisar.
+ *
+ * Un instante completo se respeta tal cual. Solo la fecha desnuda —que es
+ * ambigua por naturaleza— se resuelve, y se resuelve como la entiende quien
+ * pregunta: el día Y completo, en la jurisdicción donde el obligado cumple.
+ *
+ * El instante que se usó de verdad vuelve en `hasta`, para que la respuesta no
+ * dependa de que alguien recuerde esta regla.
+ */
+const SOLO_FECHA = /^\d{4}-\d{2}-\d{2}$/
+
 export class SinRastroEnBitacora extends Error {
   constructor(expedienteId: string, hasta: string) {
     super(
@@ -76,6 +95,22 @@ export async function reconstruirExpediente(
 ): Promise<EstadoHistorico> {
   await exigirSesionActiva(db, p.sesion)
 
+  // El corte se resuelve ANTES de consultar, y se resuelve en la base: la zona
+  // horaria de México la conoce Postgres, no este proceso. Ver `SOLO_FECHA`.
+  const corte = SOLO_FECHA.test(p.hasta)
+    ? (
+        (
+          await db.query(
+            `select to_char(
+                      ($1::date + interval '1 day' - interval '1 microsecond')
+                        at time zone $2 at time zone 'UTC',
+                      'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as t`,
+            [p.hasta, ZONA_MEXICO],
+          )
+        ).rows[0] as { t: string }
+      ).t
+    : p.hasta
+
   // Un evento pertenece al expediente si ES el expediente (objeto_id) o si lo
   // nombra en sus datos — así entran documentos y manifiestos, que tienen id
   // propio.
@@ -89,12 +124,12 @@ export async function reconstruirExpediente(
         -- tipo del parámetro por su primer uso, y sin él compara texto con uuid.
         and (objeto_id = $3::uuid or datos->>'expediente_id' = $3::text)
       order by secuencia`,
-    [p.sesion.tenantId, p.hasta, p.expedienteId],
+    [p.sesion.tenantId, corte, p.expedienteId],
   )
 
   const eventos = rows as FilaEvento[]
   if (eventos.length === 0) {
-    throw new SinRastroEnBitacora(p.expedienteId, p.hasta)
+    throw new SinRastroEnBitacora(p.expedienteId, corte)
   }
 
   let abiertoEn: string | null = null
@@ -156,7 +191,9 @@ export async function reconstruirExpediente(
 
   return {
     expedienteId: p.expedienteId,
-    hasta: p.hasta,
+    // El instante REALMENTE usado, no el que llegó: si era solo una fecha, aquí
+    // se ve en qué se convirtió.
+    hasta: corte,
     abiertoEn,
     documentos: vigentes,
     completitud,

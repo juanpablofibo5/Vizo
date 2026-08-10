@@ -1,5 +1,6 @@
 import { cargarConfigActividad, type EjecutorSql } from '../catalogo/cargador'
-import { enTransaccionDeSesion, type ContextoSesion } from './transaccion'
+import { ZONA_MEXICO } from '../dominio/fechas'
+import { enTransaccionDeSesion, exigirSesionActiva, type ContextoSesion } from './transaccion'
 import {
   construirManifiesto,
   hashDeManifiesto,
@@ -100,11 +101,35 @@ export async function generarManifiesto(
     )
 
     const cabeza = await db.query(`select app.bitacora_cabeza($1) as h`, [p.sesion.tenantId])
-    const config = await cargarConfigActividad(
-      db,
-      e.fraccion,
-      new Date().toISOString().slice(0, 10),
+
+    // UN SOLO reloj —el de la base— para las dos cosas que dependen del tiempo:
+    // la marca que queda dentro del hash y la fecha con la que se resuelve la
+    // vigencia del catálogo.
+    //
+    // AUDITORÍA DE LA SEMANA 8. Aquí había `new Date().toISOString()`, que es
+    // el reloj del host y en UTC: el mismo defecto que la auditoría de la
+    // semana 6 corrigió en la pantalla del expediente y que se volvió a colar
+    // aquí. A partir de las 18:00 de Mérida el manifiesto resolvía el catálogo
+    // con la fecha de MAÑANA, y en la frontera del 1 de febrero eso significa
+    // sellar un expediente declarando una `catalogo_version` que no era la
+    // vigente cuando se generó. Queda dentro del hash: no se puede corregir
+    // después sin romper la firma.
+    //
+    // Que las dos salgan de la MISMA consulta tampoco es adorno. Con dos
+    // relojes, `generado_en` podía caer el 1 de febrero y la vigencia
+    // resolverse con el 31 de enero — un manifiesto que se contradice a sí
+    // mismo y que nadie podría explicar años después.
+    const reloj = await db.query(
+      `select to_char(now() at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as generado_en,
+              (now() at time zone $1)::date::text as fecha_local`,
+      [ZONA_MEXICO],
     )
+    const { generado_en: generadoEn, fecha_local: fechaLocal } = reloj.rows[0] as {
+      generado_en: string
+      fecha_local: string
+    }
+
+    const config = await cargarConfigActividad(db, e.fraccion, fechaLocal)
 
     const documentos: DocumentoDelManifiesto[] = (
       docs.rows as Array<Record<string, string>>
@@ -127,11 +152,6 @@ export async function generarManifiesto(
       resultadoAviso: o['resultado_aviso'] as string,
     }))
 
-    // `generado_en` sale de la BASE, no del reloj del servidor de aplicación:
-    // es parte del hash y tiene que ser la hora que se defiende.
-    const ahora = await db.query(
-      `select to_char(now() at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as t`,
-    )
     const hashCabeza = (cabeza.rows[0] as { h: string }).h
 
     const contenido = construirManifiesto({
@@ -149,7 +169,7 @@ export async function generarManifiesto(
       operaciones,
       catalogoVersion: config.catalogoVersion,
       hashBitacoraCabeza: hashCabeza,
-      generadoEn: (ahora.rows[0] as { t: string }).t,
+      generadoEn,
     })
 
     const hash = hashDeManifiesto(contenido)
@@ -204,22 +224,33 @@ export async function generarManifiesto(
  * dejó de ser la misma — y las dos cosas hay que mirarlas de inmediato.
  */
 export async function verificarManifiesto(
-  db: EjecutorSql,
-  manifiestoId: string,
+  db: EjecutorTransaccional,
+  p: { sesion: ContextoSesion; manifiestoId: string },
 ): Promise<{ coincide: boolean; hashRegistrado: string; hashRecomputado: string }> {
-  const { rows } = await db.query(
-    `select contenido, hash_sha256 from manifiestos where id = $1`,
-    [manifiestoId],
-  )
-  if (rows.length === 0) {
-    throw new ExpedienteSinManifiesto(`No existe el manifiesto ${manifiestoId}.`)
-  }
-  const m = rows[0] as { contenido: ValorCanonico; hash_sha256: string }
-  const recomputado = hashDeManifiesto(m.contenido)
+  return enTransaccionDeSesion(db, p.sesion, async () => {
+    await exigirSesionActiva(db, p.sesion)
 
-  return {
-    coincide: recomputado === m.hash_sha256,
-    hashRegistrado: m.hash_sha256,
-    hashRecomputado: recomputado,
-  }
+    // Quien de verdad bloquea el cruce entre obligados es RLS, y RLS solo
+    // aplica porque esto ya corre dentro de la sesión. El `tenant_id` explícito
+    // es la segunda capa: comprobado quitando cada una por separado, con la
+    // otra puesta el aislamiento aguanta; hace falta tumbar las dos —que era el
+    // estado original— para que un obligado verifique el manifiesto de otro.
+    const { rows } = await db.query(
+      `select contenido, hash_sha256 from manifiestos where id = $1 and tenant_id = $2`,
+      [p.manifiestoId, p.sesion.tenantId],
+    )
+    if (rows.length === 0) {
+      throw new ExpedienteSinManifiesto(
+        `No existe el manifiesto ${p.manifiestoId} en este obligado.`,
+      )
+    }
+    const m = rows[0] as { contenido: ValorCanonico; hash_sha256: string }
+    const recomputado = hashDeManifiesto(m.contenido)
+
+    return {
+      coincide: recomputado === m.hash_sha256,
+      hashRegistrado: m.hash_sha256,
+      hashRecomputado: recomputado,
+    }
+  })
 }

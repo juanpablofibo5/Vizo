@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Client } from 'pg'
 import { randomBytes } from 'node:crypto'
 import { conectar, crearTenantConUsuario } from '../soporte/db'
@@ -7,6 +7,7 @@ import { registrarDocumento } from '../../src/persistencia/documentos'
 import { recalcularCompletitud } from '../../src/persistencia/expediente'
 import { registrarOperacion } from '../../src/persistencia/operaciones'
 import {
+  ExpedienteSinManifiesto,
   generarManifiesto,
   verificarManifiesto,
 } from '../../src/persistencia/manifiesto'
@@ -89,7 +90,7 @@ describe('Manifiesto contra la base', () => {
     expect(m.version).toBe(1)
     expect(m.hash).toMatch(/^[0-9a-f]{64}$/)
 
-    const v = await verificarManifiesto(db, m.manifiestoId)
+    const v = await verificarManifiesto(db, { sesion, manifiestoId: m.manifiestoId })
     expect(v.coincide).toBe(true)
     expect(v.hashRecomputado).toBe(v.hashRegistrado)
   })
@@ -124,7 +125,7 @@ describe('Manifiesto contra la base', () => {
 
   it('si alguien altera el contenido guardado, la verificación lo dice', async () => {
     const m = await generarManifiesto(db, { sesion, expedienteId })
-    expect((await verificarManifiesto(db, m.manifiestoId)).coincide).toBe(true)
+    expect((await verificarManifiesto(db, { sesion, manifiestoId: m.manifiestoId })).coincide).toBe(true)
 
     // Se desactiva el trigger a propósito para simular a alguien con acceso
     // directo a la base. Es la única forma de probar que la detección sirve.
@@ -137,7 +138,7 @@ describe('Manifiesto contra la base', () => {
     )
     await db.query('alter table manifiestos enable trigger manifiestos_append_only')
 
-    const v = await verificarManifiesto(db, m.manifiestoId)
+    const v = await verificarManifiesto(db, { sesion, manifiestoId: m.manifiestoId })
     expect(v.coincide).toBe(false)
     expect(v.hashRecomputado).not.toBe(v.hashRegistrado)
   })
@@ -153,7 +154,7 @@ describe('Manifiesto contra la base', () => {
     )
     expect((rows[0] as { n: number }).n).toBe(2)
     // La primera sigue verificando: no dejó de ser verdad porque llegó otra.
-    expect((await verificarManifiesto(db, primera.manifiestoId)).coincide).toBe(true)
+    expect((await verificarManifiesto(db, { sesion, manifiestoId: primera.manifiestoId })).coincide).toBe(true)
   })
 
   it('un expediente SIN evaluar no puede tener manifiesto', async () => {
@@ -206,5 +207,61 @@ describe('Manifiesto contra la base', () => {
       [expedienteId],
     )
     expect((rows[0] as { n: number }).n).toBe(2)
+  })
+
+  /**
+   * AUDITORÍA DE LA SEMANA 8, defecto 1.
+   *
+   * La vigencia del catálogo se resolvía con
+   * `new Date().toISOString().slice(0, 10)`: el reloj del HOST y en UTC. Es el
+   * mismo defecto que la semana 6 corrigió en la pantalla del expediente, colado
+   * de nuevo en el objeto que se sella.
+   *
+   * La consecuencia no es un crash. A partir de las 18:00 de Mérida el
+   * manifiesto declaraba la `catalogo_version` de MAÑANA, y en la frontera del 1
+   * de febrero eso es declarar una UMA que todavía no regía. Queda DENTRO del
+   * hash: corregirlo después rompe la firma.
+   *
+   * El test adelanta el reloj del proceso a una fecha sin UMA cargada. Si el
+   * código volviera a mirar ese reloj, el cargador reventaría con
+   * `CatalogoIncompleto`. Como la fecha sale de la base, no lo mira.
+   */
+  it('la vigencia del catálogo la fija el reloj de la BASE, no el del proceso', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      // Antes de que existiera UMA en el catálogo. El host cree estar en 2024.
+      vi.setSystemTime(new Date('2024-06-15T12:00:00Z'))
+      const m = await generarManifiesto(db, { sesion, expedienteId })
+      expect(m.hash).toMatch(/^[0-9a-f]{64}$/)
+
+      // Y `generado_en` tampoco salió del reloj mentido.
+      const generadoEn = (m.contenido as Record<string, unknown>)['generado_en'] as string
+      expect(generadoEn.startsWith('2024-')).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  /**
+   * AUDITORÍA DE LA SEMANA 8, defecto 3.
+   *
+   * `verificarManifiesto` era la única función del módulo sin sesión y sin
+   * cruce por `tenant_id`. Dos consecuencias, las dos malas: desde la
+   * aplicación —que corre como `vizo_app`— moría con `permission denied`, y
+   * desde un rol elevado verificaba el manifiesto de CUALQUIER obligado.
+   *
+   * Es justo la función que importa años después, cuando hay que demostrar que
+   * un expediente no cambió.
+   */
+  it('no verifica el manifiesto de otro obligado', async () => {
+    const m = await generarManifiesto(db, { sesion, expedienteId })
+    const ajena = await crearTenantConUsuario(
+      db,
+      String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 900) + 100),
+    )
+
+    await expect(
+      verificarManifiesto(db, { sesion: ajena, manifiestoId: m.manifiestoId }),
+    ).rejects.toThrow(ExpedienteSinManifiesto)
   })
 })

@@ -117,13 +117,20 @@ describe('Aritmética de centavos', () => {
   })
 
   describe('formato para bitácora y mensajes', () => {
-    it.each([
+    // El título se arma con template literal y no con `it.each('%s')`: vitest
+    // lee `$` en el título como acceso a propiedad, así que `$941,412.75` salía
+    // impreso como `undefined,412.75`. La aserción era correcta; el nombre
+    // mentía sobre lo que comprobaba, que en una suite que se lee para auditar
+    // no es un detalle.
+    for (const [valor, esperado] of [
       [941_412.75, '$941,412.75'],
       [0.01, '$0.01'],
       [1_200_000, '$1,200,000.00'],
-    ])('%d → %s', (valor, esperado) => {
-      expect(formatearPesos(pesos(valor))).toBe(esperado)
-    })
+    ] as Array<[number, string]>) {
+      it(`${valor} → ${esperado}`, () => {
+        expect(formatearPesos(pesos(valor))).toBe(esperado)
+      })
+    }
   })
 })
 

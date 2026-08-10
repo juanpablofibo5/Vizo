@@ -52,6 +52,23 @@ export interface DatosOperacion {
   desarrolloId?: string | undefined
   /** Id de la operación que esta corrige. La anterior no se borra jamás. */
   corrigeA?: string | undefined
+
+  // ── Datos que el AVISO exige y la operación tiene que traer desde la captura
+  //
+  // No son derivables de lo de arriba. `instrumentoMonetario` y `moneda`
+  // pertenecen a los catálogos del SPPLD, mientras que `formaPago` es el
+  // c_FormaPago del SAT: catálogos distintos, sin correspondencia uno a uno.
+  //
+  // Van opcionales porque el motor de umbrales no los necesita para decidir, y
+  // una operación bajo umbral nunca llega al aviso. Cuando SÍ llega y falta
+  // alguno, `generarAviso` se detiene y dice cuál — en vez de emitir un XML al
+  // que la autoridad le encuentra el hueco (regla dura 6).
+  /** Catálogo `instrumento_monetario` del SPPLD. */
+  instrumentoMonetario?: string | undefined
+  /** Catálogo `moneda` del SPPLD. */
+  monedaCodigo?: string | undefined
+  aportacionFideicomiso?: boolean | undefined
+  nombreInstitucion?: string | undefined
 }
 
 export interface ResultadoOperacion {
@@ -116,10 +133,12 @@ export async function registrarOperacion(
       `insert into operaciones (
          tenant_id, sucursal_id, cliente_id, actividad_id, fecha_operacion,
          monto_base, iva, isai, otros_accesorios, monto_total,
-         forma_pago, descripcion_bien, desarrollo_id, corrige_a, registrado_por
+         forma_pago, descripcion_bien, desarrollo_id, corrige_a, registrado_por,
+         instrumento_monetario, moneda_codigo, aportacion_fideicomiso, nombre_institucion
        ) values ($1,$2,$3,$4,$5::date,
                  $6::numeric,$7::numeric,$8::numeric,$9::numeric,$10::numeric,
-                 $11,$12,$13,$14,$15)
+                 $11,$12,$13,$14,$15,
+                 $16,$17,coalesce($18::boolean,false),$19)
        returning id, registrado_en::text`,
       [
         p.sesion.tenantId,
@@ -137,6 +156,10 @@ export async function registrarOperacion(
         d.desarrolloId ?? null,
         d.corrigeA ?? null,
         p.sesion.usuarioId,
+        d.instrumentoMonetario ?? null,
+        d.monedaCodigo ?? null,
+        d.aportacionFideicomiso ?? null,
+        d.nombreInstitucion ?? null,
       ],
     )
     const operacionId = (ins.rows[0] as { id: string }).id

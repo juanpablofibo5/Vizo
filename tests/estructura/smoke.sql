@@ -89,6 +89,11 @@ begin
   -- revoke (las tablas son de supabase_storage_admin) y la protección es un
   -- trigger. Ahí vive la evidencia documental del expediente.
   perform 1 from app.verificar_privilegios_storage() limit 1; if found then raise exception 'FALLA 1f: storage.objects sin guardia de TRUNCATE'; end if;
+
+  -- Una vista que enumera columnas se queda atrás cuando la tabla crece, y
+  -- quien la consulte creerá que el dato no existe — o tomará uno parecido.
+  -- `moneda` y `moneda_codigo` son catálogos DISTINTOS y viven en esa tabla.
+  perform app.verificar_vista_operaciones_vigentes();
   raise notice '✓ 1. Aserciones estructurales (RLS, append-only, tenancy, grants, privilegios en public y storage)';
 
   -- 2. La bitácora encadena --------------------------------------------------

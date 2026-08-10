@@ -1,0 +1,117 @@
+import type { EjecutorSql } from '../catalogo/cargador'
+import { plazoDePresentacion, type Plazo } from '../dominio/calendario'
+import { exigirSesionActiva, type ContextoSesion } from './transaccion'
+
+/**
+ * Qué periodos siguen sin presentarse, y cuánto falta para su fecha límite.
+ *
+ * Es lo que alimenta la alerta de calendario: la obligación no avisa sola, y el
+ * día 17 llega igual para quien se acordó y para quien no.
+ *
+ * ────────────────────────────────────────────────────────────────────────────
+ * LO QUE ESTA CONSULTA NO SABE
+ * ────────────────────────────────────────────────────────────────────────────
+ * No sabe desde cuándo el obligado tiene que informar. La obligación arranca con
+ * su alta y registro ante la autoridad, y esa fecha NO está en el modelo de
+ * datos: `tenants` guarda cuándo se creó la fila en VIZO, que es otra cosa.
+ *
+ * Así que la serie de meses empieza en la primera operación registrada. Eso
+ * cubre "hubo actividad y no se ha presentado" —que es el caso que produce una
+ * omisión— y NO cubre "me di de alta en marzo, no operé, y debía informar en
+ * cero desde entonces".
+ *
+ * Está dicho aquí y no resuelto con una suposición: inventar una fecha de alta
+ * produce una lista de pendientes plausible y equivocada, en las dos
+ * direcciones. Ver el issue de la fecha de alta.
+ */
+
+export interface PeriodoPendiente {
+  /** 'AAAA-MM-01'. */
+  periodo: string
+  plazo: Plazo
+  /** Estado del aviso si ya se empezó; null si no existe todavía. */
+  estatusAviso: string | null
+  operacionesReportables: number
+}
+
+export async function periodosPendientes(
+  db: EjecutorSql,
+  p: {
+    sesion: ContextoSesion
+    actividadId: string
+    /** Hoy EN MÉXICO. Se recibe: la hora que decide algo no sale del navegador. */
+    hoy: string
+  },
+): Promise<PeriodoPendiente[]> {
+  await exigirSesionActiva(db, p.sesion)
+
+  const parametros = await db.query(
+    `select clave, valor::int as valor
+       from parametros_motor
+      where clave in ('dia_limite_presentacion', 'dia_alerta_presentacion')
+        and daterange(vigente_desde, vigente_hasta, '[]') @> $1::date`,
+    [p.hoy],
+  )
+  const porClave = new Map(
+    (parametros.rows as Array<{ clave: string; valor: number }>).map((r) => [r.clave, r.valor]),
+  )
+  const diaLimite = porClave.get('dia_limite_presentacion')
+  const diaAlerta = porClave.get('dia_alerta_presentacion')
+  if (diaLimite === undefined || diaAlerta === undefined) {
+    throw new Error(
+      `Faltan parámetros de calendario vigentes en ${p.hoy}. El día límite es dato de ` +
+        'catálogo, no una constante: cárgalo en parametros_motor con su vigencia.',
+    )
+  }
+
+  // El catálogo guarda un DÍA DEL MES (avisar a partir del 10) y el dominio
+  // razona en días de anticipación. La conversión va aquí, explícita, para no
+  // torcer la semántica del catálogo ni la de la función.
+  const diasAviso = diaLimite - diaAlerta
+
+  // Los meses van del primero con actividad hasta el mes ANTERIOR al de hoy:
+  // un mes que no ha cerrado todavía no se reporta.
+  const { rows } = await db.query(
+    `with meses as (
+       select generate_series(
+                date_trunc('month', (select min(fecha_operacion)
+                                       from operaciones_vigentes
+                                      where tenant_id = $1 and actividad_id = $2)),
+                date_trunc('month', $3::date) - interval '1 month',
+                interval '1 month'
+              )::date as periodo
+     )
+     select m.periodo::text,
+            a.estatus::text as estatus_aviso,
+            (select count(*)::int
+               from operaciones_vigentes o
+               join lateral (
+                 select x.resultado_aviso from evaluaciones_umbral x
+                  where x.operacion_id = o.id order by x.evaluado_en desc limit 1
+               ) ev on true
+              where o.tenant_id = $1 and o.actividad_id = $2
+                and o.fecha_operacion >= m.periodo
+                and o.fecha_operacion < m.periodo + interval '1 month'
+                and ev.resultado_aviso <> 'no') as reportables
+       from meses m
+       left join avisos a
+         on a.tenant_id = $1 and a.actividad_id = $2 and a.periodo = m.periodo
+      where a.estatus is null or a.estatus <> 'presentado'
+      order by m.periodo`,
+    [p.sesion.tenantId, p.actividadId, p.hoy],
+  )
+
+  return (
+    rows as Array<{ periodo: string; estatus_aviso: string | null; reportables: number }>
+  ).map((r) => ({
+    periodo: r.periodo,
+    plazo: plazoDePresentacion({
+      periodo: r.periodo,
+      hoy: p.hoy,
+      diaLimite,
+      diasAviso,
+    }),
+    estatusAviso: r.estatus_aviso,
+    operacionesReportables: r.reportables,
+  }))
+}

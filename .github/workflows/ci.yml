@@ -61,11 +61,18 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      # Levanta Postgres y aplica migraciones + seed desde cero. Las
+      # `supabase start`, NO `supabase db start`.
+      #
+      # AUDITORÍA DE LA SEMANA 10. Aquí decía `db start`, que levanta ÚNICAMENTE
+      # Postgres — sin Storage, sin Auth, sin Kong. Los tests que hablan con
+      # Storage no podían correr en CI desde que existen (semana 6), y nadie se
+      # enteró porque tampoco estaban en la lista de lo que CI corría.
+      #
+      # Levanta el stack completo y aplica migraciones + seed desde cero. Las
       # aserciones estructurales de la migración 001 corren aquí: si alguna
       # regla dura se viola, la migración falla y el job se pone rojo.
-      - name: Migraciones en base limpia
-        run: supabase db start
+      - name: Stack completo y migraciones en base limpia
+        run: supabase start
 
       # Detecta esquema tocado a mano que nadie migró: si la base difiere de
       # lo que producen las migraciones, desarrollo y producción divergieron.
@@ -85,41 +92,33 @@ jobs:
       - name: Smoke test estructural
         run: psql "$VIZO_DB_URL_ADMIN" -v ON_ERROR_STOP=1 -f tests/estructura/smoke.sql
 
-      # Capa 0, cargador, aritmética y registro de evaluaciones: BLOQUEANTE.
-      # Todo esto ya está implementado y no tiene por qué fallar.
+      # ─────────────────────────────────────────────────────────────────────
+      # LA SUITE COMPLETA. BLOQUEANTE.
+      # ─────────────────────────────────────────────────────────────────────
+      # AUDITORÍA DE LA SEMANA 10. Aquí había una LISTA de directorios —
+      # catalogo, persistencia y dos archivos de umbrales— escrita cuando esos
+      # eran los únicos que existían. Nunca se actualizó.
       #
-      # Corre DESPUÉS del smoke test a propósito: estos tests insertan datos y
-      # el smoke exige una base recién reseteada (la bitácora es append-only,
-      # así que no se puede limpiar).
-      - name: Catálogo, cargador, aritmética y persistencia
-        run: |
-          pnpm exec vitest run \
-            tests/catalogo \
-            tests/persistencia \
-            tests/umbrales/aritmetica.test.ts \
-            tests/umbrales/precondiciones.test.ts
-
-      # ─────────────────────────────────────────────────────────────────────
-      # BLOQUEANTE desde la semana 4
-      # ─────────────────────────────────────────────────────────────────────
-      # El `continue-on-error` que permitió tener la suite en rojo mientras se
-      # escribía antes que el motor se retiró al cerrar la semana 4, en la
-      # fecha que decía su propio comentario.
+      # Resultado: cinco de los diez directorios de tests jamás bloquearon un
+      # merge. Entre ellos la cadena de la bitácora, el manifiesto, la
+      # reconstrucción histórica, el motor en vivo, el aislamiento cross-tenant
+      # y todo el pipeline del aviso. Estaban verdes en la máquina de
+      # desarrollo y eso no es una garantía de nada.
       #
-      # Esta suite es el criterio de aceptación real del proyecto
-      # (docs/PRUEBAS.md): un umbral mal calculado no produce un bug, produce
-      # un aviso omitido. Si se pone roja, no se despliega.
-      - name: Suite del motor de umbrales
-        run: pnpm test:umbrales
-
-      # ─────────────────────────────────────────────────────────────────────
-      # BLOQUEANTE desde la semana 9
-      # ─────────────────────────────────────────────────────────────────────
-      # El criterio de aceptación más duro del producto: un aviso que no valida
-      # contra el XSD oficial no existe — el portal lo rechaza y la obligación
-      # queda incumplida con su plazo corriendo.
+      # Corre `pnpm test`, cuyo `include` es `tests/**/*.test.ts`: un
+      # directorio nuevo entra solo. Enumerar es lo que dejó el hueco, así que
+      # la corrección no es alargar la lista — es no tener lista.
       #
-      # Va en su propio paso, y no solo dentro de `pnpm test`, para que en el
-      # log de CI se vea si lo que se rompió fue esto.
-      - name: Validación contra el XSD oficial del SPPLD
-        run: pnpm test:xsd
+      # Va DESPUÉS del smoke a propósito: estos tests insertan datos y el smoke
+      # exige una base recién reseteada (la bitácora es append-only, así que no
+      # se puede limpiar).
+      #
+      # Dentro van los dos criterios de aceptación del proyecto:
+      #   · `tests/umbrales` — un umbral mal calculado no produce un bug,
+      #     produce un aviso omitido (docs/PRUEBAS.md).
+      #   · `tests/xsd` — un aviso que no valida contra el XSD oficial no
+      #     existe: el portal lo rechaza y la obligación queda incumplida con
+      #     su plazo corriendo.
+      # Si cualquiera se pone roja, no se despliega.
+      - name: Suite completa
+        run: pnpm test

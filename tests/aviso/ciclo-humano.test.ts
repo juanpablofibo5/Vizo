@@ -226,10 +226,35 @@ describe('Ciclo del aviso con dos roles', () => {
     expect(new TextDecoder().decode(bajado)).toContain('<mes_reportado>202605</mes_reportado>')
   })
 
+  it('el acuse NO puede apuntar a la carpeta de otro obligado', async () => {
+    // AUDITORÍA DE LA SEMANA 10. `registrarAcuse` recibía una ruta de texto
+    // libre y la guardaba sin mirarla. Un acuse que apunta fuera de la carpeta
+    // del obligado marca el aviso como `presentado` señalando un archivo que
+    // ni siquiera se puede leer —RLS de Storage lo impide—, así que la prueba
+    // de que se cumplió no prueba nada. Y el estado ya no se puede corregir:
+    // avisos es append-only a partir de aprobado.
+    await marcarListoParaRevision(db, { sesion: admin, avisoId })
+    await aprobarAviso(db, { sesion: admin, avisoId })
+
+    await expect(
+      registrarAcuse(db, {
+        sesion: admin,
+        avisoId,
+        storagePath: `00000000-0000-0000-0000-000000000000/${avisoId}/acuse.pdf`,
+      }),
+    ).rejects.toThrow(/carpeta del obligado|acuse_ruta_del_obligado/)
+
+    expect(await estatus()).toBe('aprobado')
+  })
+
   it('la bitácora cuenta el ciclo completo, en orden', async () => {
     await marcarListoParaRevision(db, { sesion: admin, avisoId })
     await aprobarAviso(db, { sesion: admin, avisoId })
-    await registrarAcuse(db, { sesion: admin, avisoId, storagePath: 'x/y.pdf' })
+    await registrarAcuse(db, {
+      sesion: admin,
+      avisoId,
+      storagePath: `${admin.tenantId}/${avisoId}/acuse.pdf`,
+    })
 
     const { rows } = await db.query(
       `select evento from bitacora

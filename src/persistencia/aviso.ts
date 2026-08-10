@@ -319,6 +319,22 @@ export async function generarAviso(
     // regresaba la cadena y dejaba `xml_storage_path` en NULL, así que el
     // Representante no tenía nada que descargar y el aviso existía solo como
     // fila. Un aviso que no se puede bajar no se puede presentar.
+    // AUDITORÍA DE LA SEMANA 10 — lo que este bucle deja atrás si algo falla.
+    //
+    // Storage no participa de la transacción. Si un lote se sube y el INSERT
+    // que sigue revienta, la base se revierte y el archivo SE QUEDA. Y el
+    // bucket no tiene política de DELETE —a propósito: lo que se presentó es
+    // evidencia—, así que la aplicación tampoco puede limpiarlo.
+    //
+    // Se deja así, con el orden puesto para que el daño sea el menor posible:
+    // se sube ANTES de insertar la fila, de modo que un lote registrado
+    // siempre tiene su archivo. Al revés habría filas apuntando a la nada, que
+    // es el fallo que importa. Lo que queda son archivos huérfanos que nadie
+    // referencia — basura, no un dato equivocado, y un reintento genera otro
+    // avisoId con otras rutas, así que tampoco chocan.
+    //
+    // La conciliación —listar el bucket contra aviso_lotes— va en su issue. Y
+    // sí: esto mantiene la transacción abierta durante N subidas HTTP.
     const fragmentos = fragmentarInforme(informe)
     const lotes: LoteGenerado[] = []
 

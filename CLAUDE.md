@@ -69,7 +69,8 @@ Next.js (App Router) · TypeScript estricto · Supabase (Postgres + Auth + Stora
 
 - `00_PLAN_MAESTRO.md` — hallazgos regulatorios, economía, fases
 - `01_ARQUITECTURA_V4.md` — modelo de datos y decisiones cerradas
-- `docs/PLATAFORMA.md` — **el alcance de producto**: VIZO se construye como SaaS completo (portal, roles, onboarding, backoffice), no solo el motor. La UI nunca calcula: pinta lo que el motor registró
+- `docs/PLATAFORMA.md` — el diseño de producto: VIZO como SaaS completo (portal, roles, onboarding, backoffice), no solo el motor. La UI nunca calcula: pinta lo que el motor registró
+- `docs/ALCANCE.md` — **las decisiones de alcance**: qué entra en cada fase (F0 núcleo ✓ · F1 plataforma · compuerta de viabilidad · F2/F3), las seis fronteras que no se cruzan, y el mapa de rutas de F1. Cambiar algo de ahí es cambiar de dirección
 - `regulatorio/` — XSD oficiales, instructivos y `decisiones.md` del consultor PLD
 
 ## Gotchas

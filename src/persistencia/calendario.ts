@@ -9,20 +9,18 @@ import { exigirSesionActiva, type ContextoSesion } from './transaccion'
  * día 17 llega igual para quien se acordó y para quien no.
  *
  * ────────────────────────────────────────────────────────────────────────────
- * LO QUE ESTA CONSULTA NO SABE
+ * DESDE CUÁNDO CORRE LA OBLIGACIÓN
  * ────────────────────────────────────────────────────────────────────────────
- * No sabe desde cuándo el obligado tiene que informar. La obligación arranca con
- * su alta y registro ante la autoridad, y esa fecha NO está en el modelo de
- * datos: `tenants` guarda cuándo se creó la fila en VIZO, que es otra cosa.
+ * Desde el ALTA Y REGISTRO ante la autoridad — `tenants.fecha_alta_autoridad`,
+ * que llegó con el issue #16. Un obligado que se dio de alta en marzo y no operó
+ * hasta mayo debe informes en cero por marzo y abril: no hay operaciones que se
+ * lo recuerden, y son incumplimiento igual.
  *
- * Así que la serie de meses empieza en la primera operación registrada. Eso
- * cubre "hubo actividad y no se ha presentado" —que es el caso que produce una
- * omisión— y NO cubre "me di de alta en marzo, no operé, y debía informar en
- * cero desde entonces".
- *
- * Está dicho aquí y no resuelto con una suposición: inventar una fecha de alta
- * produce una lista de pendientes plausible y equivocada, en las dos
- * direcciones. Ver el issue de la fecha de alta.
+ * Si esa fecha es NULL —"no lo sabemos", nunca "no aplica"— la serie arranca en
+ * la primera operación registrada. Eso cubre menos, y a propósito: inventar una
+ * fecha de alta produce una lista de pendientes plausible y equivocada en las
+ * dos direcciones. La pantalla de configuración pide el dato para poder
+ * responder completo.
  */
 
 export interface PeriodoPendiente {
@@ -84,11 +82,20 @@ export async function panoramaDePeriodos(
   // Los meses van del primero con actividad hasta el mes ANTERIOR al de hoy:
   // un mes que no ha cerrado todavía no se reporta.
   const { rows } = await db.query(
-    `with meses as (
+    `with inicio as (
+       -- El alta ante la autoridad manda; la primera operación es el respaldo
+       -- cuando no se conoce. least() NO serviría: si el alta existe y es
+       -- posterior a la primera operación, la obligación empezó en el alta y
+       -- lo anterior son operaciones de antes de ser sujeto obligado.
+       select coalesce(
+                (select fecha_alta_autoridad from tenants where id = $1),
+                (select min(fecha_operacion) from operaciones_vigentes
+                  where tenant_id = $1 and actividad_id = $2)
+              ) as desde
+     ),
+     meses as (
        select generate_series(
-                date_trunc('month', (select min(fecha_operacion)
-                                       from operaciones_vigentes
-                                      where tenant_id = $1 and actividad_id = $2)),
+                date_trunc('month', (select desde from inicio)),
                 date_trunc('month', $3::date) - interval '1 month',
                 interval '1 month'
               )::date as periodo

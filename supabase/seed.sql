@@ -13,10 +13,14 @@
 -- ---------------------------------------------------------------------------
 -- Tenant demo y sus sucursales
 -- ---------------------------------------------------------------------------
-insert into tenants (id, rfc, razon_social, domicilio) values (
+-- `fecha_alta_autoridad` en marzo, DOS MESES antes de la primera operación de
+-- la demo: así se ve el caso que ese campo desbloquea —marzo y abril deben un
+-- informe en cero aunque no haya nada capturado— en vez de esconderlo.
+insert into tenants (id, rfc, razon_social, fecha_alta_autoridad, domicilio) values (
   '00000000-0000-4000-8000-000000000001',
   'DPE010101AAA',
   'Desarrollos Península SA de CV',
+  date '2026-03-09',
   '{"calle":"Prolongación Montejo","numero":"120","colonia":"Campestre","cp":"97120","municipio":"Mérida","estado":"Yucatán"}'::jsonb
 );
 

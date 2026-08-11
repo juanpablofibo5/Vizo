@@ -170,10 +170,50 @@ describe('Periodos pendientes de presentar', () => {
     expect((await pendientes('2026-06-12')).map((x) => x.periodo)).not.toContain('2026-05-01')
   })
 
-  it('sin ninguna operación no inventa periodos', async () => {
-    // LO QUE ESTA CONSULTA NO SABE: desde cuándo el obligado debe informar. Esa
-    // fecha es la del alta ante la autoridad y no está en el modelo. Devolver
-    // una lista aquí sería inventarla.
+  it('sin operaciones NI fecha de alta no inventa periodos', async () => {
+    // Con las dos cosas ausentes no hay desde cuándo contar, y devolver una
+    // lista sería inventarlo.
     expect(await pendientes('2026-06-12')).toEqual([])
+  })
+
+  describe('desde cuándo corre la obligación', () => {
+    const registrarAlta = (fecha: string) =>
+      db.query(`update tenants set fecha_alta_autoridad = $2::date where id = $1`, [
+        sesion.tenantId,
+        fecha,
+      ])
+
+    it('la fecha de ALTA manda: los meses sin operar también deben informe en cero', async () => {
+      // El caso que este campo desbloquea (issue #16). Alta en marzo, primera
+      // operación en mayo: marzo y abril deben informe en cero y no hay ninguna
+      // operación que lo recuerde.
+      await registrarAlta('2026-03-09')
+      await capturar('2026-05-15', 1_200_000)
+
+      const r = await pendientes('2026-06-12')
+      expect(r.map((x) => x.periodo)).toEqual([
+        '2026-03-01',
+        '2026-04-01',
+        '2026-05-01',
+      ])
+      expect(r.map((x) => x.operacionesReportables)).toEqual([0, 0, 1])
+    })
+
+    it('un alta POSTERIOR a la primera operación no arrastra lo de antes', async () => {
+      // No es `least`: lo capturado antes del alta son operaciones de antes de
+      // ser sujeto obligado. Contarlas reclamaría periodos que no se deben.
+      await capturar('2026-02-10', 1_200_000)
+      await registrarAlta('2026-04-01')
+
+      const r = await pendientes('2026-06-12')
+      expect(r.map((x) => x.periodo)).toEqual(['2026-04-01', '2026-05-01'])
+    })
+
+    it('sin fecha de alta, la serie arranca en la primera operación', async () => {
+      // Cubre menos, y se dice: es el respaldo cuando el dato no se conoce.
+      await capturar('2026-04-20', 1_200_000)
+      const r = await pendientes('2026-06-12')
+      expect(r.map((x) => x.periodo)).toEqual(['2026-04-01', '2026-05-01'])
+    })
   })
 })

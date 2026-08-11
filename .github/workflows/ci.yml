@@ -61,6 +61,13 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # `tsc --noEmit` NO alcanza. Next genera los tipos de las rutas al
+      # compilar, así que un `<Link href="/ruta-nueva">` con la ruta mal escrita
+      # —o una ruta que todavía no existe— pasa el typecheck contra el caché
+      # viejo y revienta en el build. Pasó construyendo la pantalla de avisos.
+      - name: Build
+        run: pnpm build
+
       # `supabase start`, NO `supabase db start`.
       #
       # AUDITORÍA DE LA SEMANA 10. Aquí decía `db start`, que levanta ÚNICAMENTE

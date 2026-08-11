@@ -501,3 +501,122 @@ export async function registrarAcuse(
     await db.query('select app.aviso_registrar_acuse($1,$2)', [p.avisoId, p.storagePath])
   })
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Lectura para la pantalla
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface PasoDelAviso {
+  evento: string
+  ocurridoEn: string
+  /** Nombre de quien lo hizo; null si el evento no llevó actor. */
+  actor: string | null
+}
+
+export interface DetalleAviso {
+  id: string
+  periodo: string
+  tipo: string
+  estatus: string
+  formatoVersion: string
+  hashXml: string | null
+  fragmentos: number
+  operaciones: number
+  lotes: Array<{
+    lote: number
+    totalLotes: number
+    storagePath: string
+    hashSha256: string
+    bytes: number
+    avisosEnLote: number
+  }>
+  /** El ciclo tal como quedó en la bitácora, en orden. */
+  pasos: PasoDelAviso[]
+  acuseStoragePath: string | null
+}
+
+/**
+ * Todo lo que la pantalla del aviso necesita, en una lectura.
+ *
+ * Los pasos salen de la BITÁCORA, no de las columnas de `avisos`. La fila dice
+ * en qué estado está hoy; la bitácora dice cómo llegó ahí y quién lo movió — y
+ * eso último es lo que se defiende. Un aviso aprobado sin nombre no lo aprobó
+ * nadie.
+ */
+export async function detalleDeAviso(
+  db: EjecutorTransaccional,
+  p: { sesion: ContextoSesion; avisoId: string },
+): Promise<DetalleAviso | null> {
+  const cab = await db.query(
+    `select a.id::text, a.periodo::text, a.tipo::text, a.estatus::text,
+            a.hash_xml, a.fragmentos, a.acuse_storage_path,
+            f.version as formato_version,
+            (select count(*)::int from aviso_operaciones ao where ao.aviso_id = a.id) as operaciones
+       from avisos a
+       join formatos_aviso f on f.id = a.formato_aviso_id
+      where a.id = $1 and a.tenant_id = $2`,
+    [p.avisoId, p.sesion.tenantId],
+  )
+  if (cab.rows.length === 0) return null
+
+  const a = cab.rows[0] as {
+    id: string
+    periodo: string
+    tipo: string
+    estatus: string
+    hash_xml: string | null
+    fragmentos: number
+    acuse_storage_path: string | null
+    formato_version: string
+    operaciones: number
+  }
+
+  const lotes = await db.query(
+    `select lote, total_lotes, storage_path, hash_sha256, bytes, avisos_en_lote
+       from aviso_lotes where aviso_id = $1 and tenant_id = $2 order by lote`,
+    [p.avisoId, p.sesion.tenantId],
+  )
+
+  const pasos = await db.query(
+    `select b.evento,
+            to_char(b.ocurrido_en at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as ocurrido_en,
+            u.nombre as actor
+       from bitacora b
+       left join usuarios u on u.tenant_id = b.tenant_id and u.id = b.actor_id
+      where b.tenant_id = $1 and b.objeto_id = $2 and b.objeto_tipo = 'aviso'
+      order by b.secuencia`,
+    [p.sesion.tenantId, p.avisoId],
+  )
+
+  return {
+    id: a.id,
+    periodo: a.periodo,
+    tipo: a.tipo,
+    estatus: a.estatus,
+    formatoVersion: a.formato_version,
+    hashXml: a.hash_xml,
+    fragmentos: a.fragmentos,
+    operaciones: a.operaciones,
+    acuseStoragePath: a.acuse_storage_path,
+    lotes: (
+      lotes.rows as Array<{
+        lote: number
+        total_lotes: number
+        storage_path: string
+        hash_sha256: string
+        bytes: number
+        avisos_en_lote: number
+      }>
+    ).map((l) => ({
+      lote: l.lote,
+      totalLotes: l.total_lotes,
+      storagePath: l.storage_path,
+      hashSha256: l.hash_sha256,
+      bytes: l.bytes,
+      avisosEnLote: l.avisos_en_lote,
+    })),
+    pasos: (
+      pasos.rows as Array<{ evento: string; ocurrido_en: string; actor: string | null }>
+    ).map((s) => ({ evento: s.evento, ocurridoEn: s.ocurrido_en, actor: s.actor })),
+  }
+}

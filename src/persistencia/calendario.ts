@@ -31,10 +31,22 @@ export interface PeriodoPendiente {
   plazo: Plazo
   /** Estado del aviso si ya se empezó; null si no existe todavía. */
   estatusAviso: string | null
+  /** Null mientras el periodo no tenga aviso generado. */
+  avisoId: string | null
+  tipoAviso: string | null
+  fragmentos: number | null
   operacionesReportables: number
 }
 
-export async function periodosPendientes(
+/**
+ * TODOS los periodos, presentados incluidos.
+ *
+ * `periodosPendientes` filtra sobre esto. Son dos preguntas distintas: la
+ * alerta quiere saber qué falta; la pantalla de avisos quiere el historial
+ * completo, porque un periodo ya presentado sigue siendo la prueba de que se
+ * cumplió — y en una revisión eso es lo que se enseña.
+ */
+export async function panoramaDePeriodos(
   db: EjecutorSql,
   p: {
     sesion: ContextoSesion
@@ -83,6 +95,9 @@ export async function periodosPendientes(
      )
      select m.periodo::text,
             a.estatus::text as estatus_aviso,
+            a.id::text as aviso_id,
+            a.tipo::text as tipo_aviso,
+            a.fragmentos,
             (select count(*)::int
                from operaciones_vigentes o
                join lateral (
@@ -96,15 +111,24 @@ export async function periodosPendientes(
        from meses m
        left join avisos a
          on a.tenant_id = $1 and a.actividad_id = $2 and a.periodo = m.periodo
-      where a.estatus is null or a.estatus <> 'presentado'
-      order by m.periodo`,
+      order by m.periodo desc`,
     [p.sesion.tenantId, p.actividadId, p.hoy],
   )
 
   return (
-    rows as Array<{ periodo: string; estatus_aviso: string | null; reportables: number }>
+    rows as Array<{
+      periodo: string
+      estatus_aviso: string | null
+      aviso_id: string | null
+      tipo_aviso: string | null
+      fragmentos: number | null
+      reportables: number
+    }>
   ).map((r) => ({
     periodo: r.periodo,
+    avisoId: r.aviso_id,
+    tipoAviso: r.tipo_aviso,
+    fragmentos: r.fragmentos,
     plazo: plazoDePresentacion({
       periodo: r.periodo,
       hoy: p.hoy,
@@ -114,4 +138,19 @@ export async function periodosPendientes(
     estatusAviso: r.estatus_aviso,
     operacionesReportables: r.reportables,
   }))
+}
+
+/**
+ * Lo que falta por presentar. Es `panoramaDePeriodos` sin los ya presentados.
+ *
+ * Se deriva en vez de repetir la consulta: dos SQL que responden casi lo mismo
+ * divergen en cuanto alguien toca uno solo, y aquí divergir significa que la
+ * alerta y la pantalla se contradigan sobre si un mes está en regla.
+ */
+export async function periodosPendientes(
+  db: EjecutorSql,
+  p: { sesion: ContextoSesion; actividadId: string; hoy: string },
+): Promise<PeriodoPendiente[]> {
+  const todos = await panoramaDePeriodos(db, p)
+  return todos.filter((x) => x.estatusAviso !== 'presentado')
 }

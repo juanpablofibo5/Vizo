@@ -24,7 +24,7 @@ export const AREAS: Area[] = [
   { estado: 'lista', ruta: '/clientes', nombre: 'Clientes' },
   { estado: 'lista', ruta: '/operaciones', nombre: 'Operaciones' },
   { estado: 'lista', ruta: '/alertas', nombre: 'Alertas' },
-  { estado: 'en_construccion', nombre: 'Avisos' },
+  { estado: 'lista', ruta: '/avisos', nombre: 'Avisos' },
   { estado: 'en_construccion', nombre: 'Evidencia' },
   { estado: 'en_construccion', nombre: 'Calendario' },
   { estado: 'en_construccion', nombre: 'Configuración' },

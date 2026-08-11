@@ -3,6 +3,7 @@ import { conBase, leerComoUsuario } from '../../../src/supabase/conexion'
 import { Marco } from '../../componentes/marco'
 import { detalleDeAviso, type PasoDelAviso } from '../../../src/persistencia/aviso'
 import { EstadoAviso, nombreDePeriodo } from '../estados'
+import { tamanoLegible } from '../../../src/dominio/tamano'
 import { BotonAprobar, BotonListoRevision, FormularioAcuse } from '../formularios'
 
 export const dynamic = 'force-dynamic'
@@ -150,7 +151,7 @@ export default async function DetalleAvisoPagina({
                         Lote {l.lote} de {l.totalLotes}
                       </strong>
                       <span className="tenue pequeno num">
-                        {(l.bytes / 1024).toFixed(1)} KB · {l.avisosEnLote} aviso(s)
+                        {tamanoLegible(l.bytes)} · {l.avisosEnLote} aviso(s)
                       </span>
                     </div>
                     <a className="pequeno" href={`/avisos/${detalle.id}/lote/${String(l.lote)}`}>

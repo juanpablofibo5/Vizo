@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Marco } from '../../../componentes/marco'
+import { tamanoLegible } from '../../../../src/dominio/tamano'
 import { Client } from 'pg'
 import { obligadoDeSesion, sesionRequerida } from '../../../../src/supabase/sesion'
 import type { Completitud } from '../../../../src/dominio/expediente'
@@ -206,7 +207,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
                   <td>
                     <code className="hash">{d.hash_sha256}</code>
                   </td>
-                  <td>{(Number(d.tamano_bytes) / 1024).toFixed(0)} KB</td>
+                  <td>{tamanoLegible(d.tamano_bytes)}</td>
                 </tr>
               ))
             )}

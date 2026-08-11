@@ -20,7 +20,7 @@ export type Area =
   | { estado: 'en_construccion'; nombre: string }
 
 export const AREAS: Area[] = [
-  { estado: 'en_construccion', nombre: 'Inicio' },
+  { estado: 'lista', ruta: '/', nombre: 'Inicio' },
   { estado: 'lista', ruta: '/clientes', nombre: 'Clientes' },
   { estado: 'lista', ruta: '/operaciones', nombre: 'Operaciones' },
   { estado: 'lista', ruta: '/alertas', nombre: 'Alertas' },

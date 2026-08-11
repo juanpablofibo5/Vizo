@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { conBase, leerComoUsuario } from '../../src/supabase/conexion'
 import { Marco } from '../componentes/marco'
+import { EtiquetaVeredicto, VeredictoExplicable } from '../componentes/veredicto'
+import { veredictosDeOperaciones, type Veredicto } from '../../src/persistencia/veredicto'
 import { formatearPesosTexto as pesos } from '../../src/dominio/dinero'
 
 export const dynamic = 'force-dynamic'
@@ -18,15 +20,9 @@ interface Fila {
   registrado_en: string
 }
 
-const ETIQUETA_RESULTADO: Record<string, string> = {
-  no: 'sin aviso',
-  individual: 'aviso por monto',
-  acumulacion: 'aviso por acumulación',
-}
-
 export default async function Operaciones() {
   return conBase(async ({ db, sesion, perfil, obligado }) => {
-    const { filas, abiertas } = await leerComoUsuario(db, sesion, async () => {
+    const { filas, veredictos, abiertas } = await leerComoUsuario(db, sesion, async () => {
       // Se lee de `operaciones_vigentes`: las corregidas siguen en la tabla
       // —nada se borra— pero no son las que cuentan.
       //
@@ -54,8 +50,16 @@ export default async function Operaciones() {
       const a = await db.query(
         `select count(*)::int as n from alertas where estado = 'abierta'`,
       )
+      const operaciones = r.rows as Fila[]
+      // El veredicto completo, con sus insumos. NO se recalcula nada aquí: se
+      // lee lo que el motor registró al evaluar.
+      const veredictos = await veredictosDeOperaciones(db, {
+        sesion,
+        operacionIds: operaciones.map((o) => o.id),
+      })
       return {
-        filas: r.rows as Fila[],
+        filas: operaciones,
+        veredictos,
         abiertas: (a.rows[0] as { n: number }).n,
       }
     })
@@ -93,7 +97,9 @@ export default async function Operaciones() {
                 </td>
               </tr>
             ) : (
-              filas.map((f) => (
+              filas.map((f) => {
+                const veredicto: Veredicto | undefined = veredictos.get(f.id)
+                return (
                 <tr key={f.id}>
                   <td>{f.fecha_operacion}</td>
                   <td>{f.cliente}</td>
@@ -105,26 +111,24 @@ export default async function Operaciones() {
                     )}
                   </td>
                   <td>
-                    {f.resultado_aviso === null ? (
+                    {veredicto === undefined ? (
                       // No debería pasar: operación y evaluación se escriben en
                       // la misma transacción. Si aparece, es un dato que hay que
                       // mirar, no un hueco que disimular.
                       <span className="chip chip-alerta">sin evaluar</span>
                     ) : (
-                      <span
-                        className={
-                          f.resultado_aviso === 'no' ? 'chip' : 'chip chip-alerta'
-                        }
-                      >
-                        {ETIQUETA_RESULTADO[f.resultado_aviso] ?? f.resultado_aviso}
-                      </span>
-                    )}
-                    {f.alerta_proximidad === true && (
-                      <span className="chip">cerca del umbral</span>
+                      <>
+                        <EtiquetaVeredicto v={veredicto} />
+                        {veredicto.alertaProximidad && (
+                          <span className="chip">cerca del umbral</span>
+                        )}
+                        <VeredictoExplicable v={veredicto} />
+                      </>
                     )}
                   </td>
                 </tr>
-              ))
+                )
+              })
             )}
           </tbody>
         </table>

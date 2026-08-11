@@ -1,6 +1,8 @@
 import { conBase, leerComoUsuario } from '../../src/supabase/conexion'
 import { Marco } from '../componentes/marco'
 import { formatearPesosTexto } from '../../src/dominio/dinero'
+import { VeredictoExplicable } from '../componentes/veredicto'
+import { veredictosDeOperaciones } from '../../src/persistencia/veredicto'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,6 +12,7 @@ interface FilaAlerta {
   titulo: string
   detalle: Record<string, unknown>
   created_at: string
+  operacion_id: string | null
   cliente: string | null
   fecha_operacion: string | null
   monto_base: string | null
@@ -23,12 +26,13 @@ const ORDEN: Record<string, number> = {
 
 export default async function Alertas() {
   return conBase(async ({ db, sesion, perfil, obligado }) => {
-    const filas = await leerComoUsuario(db, sesion, async () => {
+    const { alertas: filas, veredictos } = await leerComoUsuario(db, sesion, async () => {
       // El nombre del aportante se trae AQUÍ, por join y bajo RLS — no vive en
       // la alerta. Así el panel es legible sin que la tabla de alertas guarde
       // datos personales (regla dura 3).
       const r = await db.query(
         `select a.id, a.tipo::text, a.titulo, a.detalle, a.created_at::text,
+                o.id::text as operacion_id,
                 c.nombre_o_razon_social as cliente,
                 o.fecha_operacion::text, o.monto_base::text
            from alertas a
@@ -38,7 +42,14 @@ export default async function Alertas() {
           where a.estado = 'abierta'
           order by a.created_at desc`,
       )
-      return r.rows as FilaAlerta[]
+      const alertas = r.rows as FilaAlerta[]
+      // El MISMO componente que en operaciones: una alerta y su operación no
+      // pueden explicar el veredicto de dos formas distintas.
+      const veredictos = await veredictosDeOperaciones(db, {
+        sesion,
+        operacionIds: alertas.map((a) => a.operacion_id).filter((x): x is string => x !== null),
+      })
+      return { alertas, veredictos }
     })
 
     const ordenadas = [...filas].sort(
@@ -67,6 +78,9 @@ export default async function Alertas() {
               </div>
 
               <p style={{ margin: '.5rem 0' }}>{String(a.detalle['motivo'] ?? '')}</p>
+              {a.operacion_id !== null && veredictos.get(a.operacion_id) !== undefined && (
+                <VeredictoExplicable v={veredictos.get(a.operacion_id)!} />
+              )}
 
               {a.cliente !== null && (
                 <p className="sub" style={{ margin: 0 }}>

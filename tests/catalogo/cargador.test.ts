@@ -88,9 +88,14 @@ describe('Cargador del catálogo', () => {
     })
 
     it('con una fracción que no está dada de alta', async () => {
-      // La Fr. XV se carga en la semana 11, como prueba de que agregar una
-      // fracción es solo INSERTs.
-      await expect(cargarConfigActividad(db, 'XV', '2026-02-15')).rejects.toThrow(
+      // Este test usaba 'XV' — y dejó de servir en cuanto la Fr. XV se cargó de
+      // verdad (prueba X-01, semana 11). Que un test se vuelva verde porque el
+      // mundo cambió, y no porque el código esté bien, es el modo de falla que
+      // este proyecto persigue.
+      //
+      // Ahora usa una fracción que NO está en la Ley: 'XCIX' no puede darse de
+      // alta por accidente.
+      await expect(cargarConfigActividad(db, 'XCIX', '2026-02-15')).rejects.toThrow(
         /no está dada de alta/,
       )
     })

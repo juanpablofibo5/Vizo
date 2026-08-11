@@ -50,6 +50,13 @@ export interface DatosOperacion {
   formaPago: string
   descripcionBien?: string | undefined
   desarrolloId?: string | undefined
+  /**
+   * Bajo qué actividad vulnerable se evalúa.
+   *
+   * Opcional solo cuando el obligado tiene UNA contratada, que es el caso
+   * normal. Con varias es obligatorio: ver la resolución más abajo.
+   */
+  actividadId?: string | undefined
   /** Id de la operación que esta corrige. La anterior no se borra jamás. */
   corrigeA?: string | undefined
 
@@ -109,19 +116,45 @@ export async function registrarOperacion(
   const montoTotal = centavos(d.montoBase + d.iva + d.isai + d.otrosAccesorios)
 
   return enTransaccionDeSesion(db, p.sesion, async () => {
-    // La actividad sale del obligado, no del formulario: un capturista no
-    // elige bajo qué fracción se evalúa su operación.
+    // ── De qué actividad es esta operación ──────────────────────────────
+    //
+    // HALLAZGO DE LA PRUEBA X-01. Aquí decía `where av.fraccion = 'V_BIS'`. El
+    // motor siempre fue agnóstico de fracción —`evaluar(operacion, config)`—,
+    // pero su PUERTA DE ENTRADA no: dar de alta la Fr. XV solo con INSERTs al
+    // catálogo dejaba una fracción que el catálogo conocía y que ninguna
+    // operación podía usar.
+    //
+    // Es justo el defecto que el caso X-01 existe para encontrar, y la
+    // restricción no negociable #7 lo llama por su nombre: el motor es
+    // agnóstico de fracción. Serlo a medias no cuenta.
+    //
+    // Se mantiene el principio original: la actividad sale de las que el
+    // OBLIGADO tiene contratadas, no de un campo libre del formulario. Con una
+    // sola contratada se resuelve sola; con varias hay que decir cuál, porque
+    // adivinar evaluaría la operación contra los umbrales de otra fracción — y
+    // eso produce un aviso omitido o uno que no tocaba.
     const act = await db.query(
       `select av.id, av.fraccion
          from actividades_vulnerables av
          join actividades_tenant at on at.actividad_id = av.id and at.tenant_id = $1
-        where av.fraccion = 'V_BIS'`,
-      [p.sesion.tenantId],
+        where ($2::uuid is null or av.id = $2::uuid)
+        order by av.fraccion`,
+      [p.sesion.tenantId, d.actividadId ?? null],
     )
     if (act.rows.length === 0) {
       throw new OperacionInvalida([
-        'Este obligado no tiene registrada la Fracción V Bis, así que no se puede evaluar ' +
-          'la operación contra ningún umbral. Revisa actividades_tenant.',
+        d.actividadId === undefined
+          ? 'Este obligado no tiene ninguna actividad vulnerable contratada, así que no se ' +
+            'puede evaluar la operación contra ningún umbral. Revisa actividades_tenant.'
+          : `La actividad ${d.actividadId} no está contratada por este obligado.`,
+      ])
+    }
+    if (act.rows.length > 1) {
+      const fracciones = (act.rows as Array<{ fraccion: string }>).map((a) => a.fraccion)
+      throw new OperacionInvalida([
+        `Este obligado tiene varias actividades contratadas (${fracciones.join(', ')}) y la ` +
+          'operación no dice a cuál pertenece. No se asume una: evaluarla contra los umbrales ' +
+          'de otra fracción produce un aviso omitido o uno que no tocaba.',
       ])
     }
     const actividad = act.rows[0] as { id: string; fraccion: string }

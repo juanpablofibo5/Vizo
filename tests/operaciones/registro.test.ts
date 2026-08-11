@@ -220,7 +220,7 @@ describe('Registro de operaciones con el motor en vivo', () => {
       )
       await expect(
         registrarOperacion(db, { sesion: otra, datos: pago('2026-05-01', 100_000) }),
-      ).rejects.toThrow(/no tiene registrada la Fracción V Bis/)
+      ).rejects.toThrow(/no tiene ninguna actividad vulnerable contratada/)
     })
 
     it('no deja operación sin evaluación si algo falla a la mitad', async () => {

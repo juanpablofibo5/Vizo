@@ -76,7 +76,11 @@ export default async function Avisos() {
                 </tr>
               </thead>
               <tbody>
-                {periodos.map((p) => (
+                {/* Más reciente arriba: el periodo en curso es el que se
+                    consulta a diario. La consulta los devuelve en orden
+                    cronológico porque para "lo que falta" el más viejo es el
+                    más urgente; invertir para pintar es cosa de la pantalla. */}
+                {[...periodos].reverse().map((p) => (
                   <tr key={p.periodo}>
                     <td style={{ textTransform: 'capitalize', fontWeight: 550 }}>
                       {nombreDePeriodo(p.periodo)}

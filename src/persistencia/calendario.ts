@@ -111,7 +111,10 @@ export async function panoramaDePeriodos(
        from meses m
        left join avisos a
          on a.tenant_id = $1 and a.actividad_id = $2 and a.periodo = m.periodo
-      order by m.periodo desc`,
+      -- Cronológico ascendente: para "lo que falta", el más viejo es el más
+      -- urgente. Si una pantalla lo quiere al revés, lo invierte ella — el
+      -- orden de presentación no se mete en la capa que responde la pregunta.
+      order by m.periodo`,
     [p.sesion.tenantId, p.actividadId, p.hoy],
   )
 

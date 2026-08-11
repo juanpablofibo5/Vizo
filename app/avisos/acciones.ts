@@ -9,7 +9,7 @@ import {
   marcarListoParaRevision,
   registrarAcuse,
 } from '../../src/persistencia/aviso'
-import { hoyEnMexico } from '../../src/dominio/fechas'
+import { createHash } from 'node:crypto'
 
 /**
  * Las acciones del pipeline del aviso.
@@ -33,7 +33,11 @@ async function ejecutar(
 ): Promise<Resultado> {
   try {
     const mensaje = await conBase(cuerpo)
-    revalidatePath('/avisos')
+    // Generar o aprobar un aviso mueve el semáforo de Inicio y el Calendario,
+    // no solo la lista. Revalidar únicamente `/avisos` dejaba la portada
+    // diciendo "vencido, sin generar" JUSTO DESPUÉS de haberlo resuelto — el
+    // sistema contradiciéndose sobre si el obligado está en regla.
+    for (const ruta of ['/avisos', '/', '/calendario']) revalidatePath(ruta)
     return { ok: true, mensaje }
   } catch (e) {
     const bruto = e instanceof Error ? e.message : String(e)
@@ -118,9 +122,16 @@ export async function accionRegistrarAcuse(
     // El archivo se sube ANTES de mover el estado: `presentado` significa que
     // hay evidencia, y no debe existir ni un instante en que el estado lo
     // afirme sin que el acuse esté guardado.
-    const ruta = `${sesion.tenantId}/${avisoId}/acuse-${hoyEnMexico()}.pdf`
+    const bytes = new Uint8Array(await archivo.arrayBuffer())
+
+    // La ruta lleva el HASH del acuse, no la fecha. Con la fecha, dos intentos
+    // el mismo día chocaban —el bucket no permite sobrescribir, a propósito— y
+    // el segundo moría con un error de Storage que no dice nada. Con el hash,
+    // archivos distintos nunca chocan y el mismo archivo es el mismo objeto.
+    const huella = createHash('sha256').update(bytes).digest('hex')
+    const ruta = `${sesion.tenantId}/${avisoId}/acuse-${huella.slice(0, 16)}.pdf`
     const almacen = await almacenAvisos()
-    await almacen.subir(ruta, new Uint8Array(await archivo.arrayBuffer()), 'application/pdf')
+    await almacen.subir(ruta, bytes, 'application/pdf')
 
     await registrarAcuse(db, { sesion, avisoId, storagePath: ruta })
     return 'Acuse registrado. El aviso quedó como presentado.'

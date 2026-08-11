@@ -168,16 +168,30 @@ export async function generarAviso(
   return enTransaccionDeSesion(db, p.sesion, async () => {
     const formato = await formatoVigente(db, { actividadId: p.actividadId, fecha: p.periodo })
 
+    // El JOIN con `actividades_tenant` NO es adorno.
+    //
+    // AUDITORÍA DE F1. Aquí se leía de `actividades_vulnerables` a secas, sin
+    // comprobar que el obligado tuviera esa actividad CONTRATADA. Y
+    // `actividadId` llega desde un campo oculto del formulario, así que es
+    // entrada del atacante: basta abrir las herramientas del navegador.
+    //
+    // Lo que producía no era un error sino un aviso perfectamente válido bajo
+    // una fracción que el obligado no ejerce — declarándole a la autoridad una
+    // actividad que no realiza. `registrarOperacion` sí lo comprobaba, así que
+    // el mismo obligado quedaba protegido por un camino y expuesto por el otro.
     const cab = await db.query(
       `select t.rfc, av.clave_sppld,
               to_char($2::date, 'YYYYMM') as mes_reportado
-         from tenants t, actividades_vulnerables av
+         from tenants t
+         join actividades_tenant at on at.tenant_id = t.id
+         join actividades_vulnerables av on av.id = at.actividad_id
         where t.id = $1 and av.id = $3`,
       [p.sesion.tenantId, p.periodo, p.actividadId],
     )
     if (cab.rows.length === 0) {
       throw new CatalogoDelAvisoIncompleto(
-        `No se encontró el obligado o la actividad ${p.actividadId}.`,
+        `Este obligado no tiene contratada la actividad ${p.actividadId}, así que no puede ` +
+          'presentar avisos bajo ella. Revisa actividades_tenant.',
       )
     }
     const c = cab.rows[0] as { rfc: string; clave_sppld: string | null; mes_reportado: string }

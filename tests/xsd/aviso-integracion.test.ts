@@ -212,6 +212,39 @@ describe('Generación del aviso contra la base', () => {
     })
   })
 
+  it('NO genera un aviso de una actividad que el obligado no tiene contratada', async () => {
+    // AUDITORÍA DE F1. `actividadId` llega desde un campo OCULTO del formulario,
+    // así que es entrada del atacante: basta abrir las herramientas del
+    // navegador y cambiarlo.
+    //
+    // Un aviso bajo una fracción que el obligado no ejerce le declara a la
+    // autoridad una actividad que no realiza. `registrarOperacion` sí lo
+    // comprobaba —cruza actividades_tenant— y el generador del aviso no: el
+    // mismo obligado quedaba protegido por un camino y expuesto por el otro.
+    // El obligado de este caso NO contrata nada: si se usara la Fr. XV el
+    // fallo vendría de que no tiene formato cargado, y el hueco quedaría
+    // tapado por accidente. Con V Bis —que sí tiene formato— el generador
+    // llega hasta el final.
+    const sinActividades = await crearTenantConUsuario(
+      db,
+      String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 900) + 100),
+      'admin',
+    )
+
+    await expect(
+      generarAviso(
+        db,
+        {
+          sesion: sinActividades,
+          actividadId,
+          periodo: PERIODO,
+          granularidad: 'un_aviso_por_operacion',
+        },
+        almacenComo(sinActividades, BUCKET_AVISOS),
+      ),
+    ).rejects.toThrow(/no tiene contratada|no está contratada/)
+  })
+
   it('un capturista NO puede generar el aviso: lo impide RLS', async () => {
     // La separación de roles no vive en un `if` de la aplicación. Aunque
     // alguien llame a la función directamente, la política de la base rechaza

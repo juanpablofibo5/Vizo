@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { conBase, leerComoUsuario } from '../../src/supabase/conexion'
+import { conBase } from '../../src/supabase/conexion'
 import { enTransaccionDeSesion } from '../../src/persistencia/transaccion'
 
 /**
@@ -77,23 +77,16 @@ export async function guardarFechaAlta(
   }
 }
 
-export interface UsuarioDelObligado {
-  id: string
-  nombre: string
-  email: string
-  rol: string
-  activo: boolean
-}
-
-export async function usuariosDelObligado(): Promise<UsuarioDelObligado[]> {
-  return conBase(({ db, sesion }) =>
-    leerComoUsuario(db, sesion, async () => {
-      const r = await db.query(
-        `select id::text, nombre, email, rol::text, activo
-           from usuarios where tenant_id = $1 order by rol, nombre`,
-        [sesion.tenantId],
-      )
-      return r.rows as UsuarioDelObligado[]
-    }),
-  )
-}
+/*
+ * NOTA DE SEGURIDAD, de la auditoría de F1.
+ *
+ * Aquí vivía `usuariosDelObligado`, exportada y usada por nadie: la pantalla de
+ * configuración lee los usuarios directamente en su Server Component.
+ *
+ * En un módulo `'use server'` eso NO es código muerto normal. Next convierte
+ * CADA export en un endpoint invocable desde el navegador, así que una función
+ * sin usar es superficie de ataque sin contrapartida. Se borró.
+ *
+ * Regla para lo que venga: en un archivo `'use server'` no se exporta nada que
+ * no se llame desde el cliente.
+ */

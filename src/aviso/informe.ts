@@ -29,6 +29,45 @@ import { opcional, rama, serializarDocumento, texto, type Nodo } from './xml'
 
 export const NAMESPACE_DIN = 'http://www.uif.shcp.gob.mx/recepcion/din'
 
+/**
+ * El texto libre, en la forma que el XSD admite.
+ *
+ * HALLAZGO AL VERIFICAR EL GUION DE DEMO. Los tipos de texto del esquema
+ * —`descripcion_1-3000_type`, `direccion_1-50_type`— solo aceptan
+ * `[A-ZÑ\d ...]`: MAYÚSCULAS SIN ACENTOS. Una dirección escrita como la
+ * escribiría cualquiera —"Calle 33 Diagonal, Montes de Amé"— produce un XML que
+ * no valida.
+ *
+ * Sin esto, el modo de falla era el peor posible: la captura se acepta sin
+ * problema y el aviso revienta semanas después, al generarlo, con un volcado de
+ * libxml en pantalla. El obligado descubre el día 16 que no puede presentar.
+ *
+ * NO es "cambiar el dato". El dato capturado se conserva intacto en la base;
+ * esto es la representación que el formato oficial exige, igual que una fecha
+ * viaja como AAAAMMDD sin que nadie diga que se alteró.
+ *
+ * Los caracteres sin equivalente —un emoji, un símbolo raro— se vuelven espacio
+ * en vez de reventar. Es la decisión menos mala de las dos: un aviso rechazado
+ * bloquea el cumplimiento; una descripción con un carácter exótico convertido
+ * en espacio dice exactamente lo mismo.
+ */
+const ADMITIDOS = /[^A-ZÑ0-9 \-_.,;:/()[\]"'&#@$+]/g
+
+export function normalizarTextoDelAviso(valor: string): string {
+  return valor
+    // La Ñ sobrevive: el esquema la admite, y descomponerla la perdería.
+    .replaceAll('ñ', '\u0001')
+    .replaceAll('Ñ', '\u0001')
+    .normalize('NFD')
+    // Quita los diacríticos ya separados de su letra: á → a + ´ → a.
+    .replace(/[\u0300-\u036f]/g, '')
+    .replaceAll('\u0001', 'Ñ')
+    .toUpperCase()
+    .replace(ADMITIDOS, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export class InformeIncompleto extends Error {
   constructor(mensaje: string) {
     super(mensaje)
@@ -143,7 +182,10 @@ function nodoAportacion(a: Aportacion): Nodo {
     texto('moneda', a.moneda),
     texto('monto_aportacion', a.montoAportacion),
     texto('aportacion_fideicomiso', a.aportacionFideicomiso),
-    ...opcional('nombre_institucion', a.nombreInstitucion),
+    ...opcional(
+      'nombre_institucion',
+      a.nombreInstitucion === undefined ? undefined : normalizarTextoDelAviso(a.nombreInstitucion),
+    ),
   ])
 
   return rama('aportaciones', [
@@ -162,13 +204,18 @@ function nodoDesarrollo(d: Desarrollo): Nodo {
       texto('objeto_aviso_anterior', d.objetoAvisoAnterior),
       texto('modificacion', d.modificacion),
       texto('entidad_federativa', d.entidadFederativa),
-      texto('registro_licencia', d.registroLicencia),
+      texto('registro_licencia', normalizarTextoDelAviso(d.registroLicencia)),
       rama('caracteristicas_desarrollo', [
         texto('codigo_postal', d.codigoPostal),
-        texto('colonia', d.colonia),
-        texto('calle', d.calle),
+        texto('colonia', normalizarTextoDelAviso(d.colonia)),
+        texto('calle', normalizarTextoDelAviso(d.calle)),
         texto('tipo_desarrollo', d.tipoDesarrollo),
-        ...opcional('descripcion_desarrollo', d.descripcionDesarrollo),
+        ...opcional(
+          'descripcion_desarrollo',
+          d.descripcionDesarrollo === undefined
+            ? undefined
+            : normalizarTextoDelAviso(d.descripcionDesarrollo),
+        ),
         texto('monto_desarrollo', d.montoDesarrollo),
         texto('unidades_comercializadas', d.unidadesComercializadas),
         texto('costo_unidad', d.costoUnidad),

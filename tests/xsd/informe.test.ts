@@ -7,6 +7,7 @@ import { validarContraXsd } from '../../src/aviso/validacion'
 import {
   construirInformeXml,
   InformeIncompleto,
+  normalizarTextoDelAviso,
   PATRON_REFERENCIA,
   referenciaAviso,
   type Informe,
@@ -220,5 +221,56 @@ describe('Serialización XML', () => {
     expect(() =>
       serializarDocumento(texto('monto_aportacion', 941412.75 as unknown as string)),
     ).toThrow(XmlInvalido)
+  })
+})
+
+/**
+ * El texto libre y lo que el XSD admite.
+ *
+ * Hallazgo al verificar el guion de demo: los tipos de texto del esquema solo
+ * aceptan MAYÚSCULAS SIN ACENTOS. Una dirección escrita como la escribiría
+ * cualquiera producía un XML que no valida — y el obligado se enteraba semanas
+ * después, al generar el aviso.
+ */
+describe('Normalización del texto libre', () => {
+  it('sube a mayúsculas y quita acentos, pero CONSERVA la Ñ', () => {
+    // La Ñ está en el patrón del XSD. Descomponerla la convertiría en N y
+    // cambiaría nombres propios: "Peña" no es "Pena".
+    expect(normalizarTextoDelAviso('Montes de Amé, Peña Ñandú')).toBe('MONTES DE AME, PEÑA ÑANDU')
+  })
+
+  it('un carácter que el esquema no admite se vuelve espacio, no revienta', () => {
+    // La decisión menos mala: un aviso rechazado bloquea el cumplimiento; una
+    // descripción con un símbolo raro vuelto espacio dice lo mismo.
+    expect(normalizarTextoDelAviso('Torre A ✦ nivel 3')).toBe('TORRE A NIVEL 3')
+  })
+
+  it('el texto que una persona escribiría de verdad VALIDA', async () => {
+    const conTextoNatural = construirInformeXml(
+      informeBase([
+        {
+          referencia: referenciaAviso('202605', 1),
+          prioridad: '1',
+          tipoAlerta: '100',
+          operaciones: [
+            {
+              ...operacion(),
+              desarrollo: {
+                ...operacion().desarrollo,
+                colonia: 'Montes de Amé',
+                calle: 'Calle 33 Diagonal núm. 240',
+                descripcionDesarrollo: 'Condominio vertical de 48 unidades, preventa',
+              },
+            },
+          ],
+        },
+      ]),
+    )
+
+    // Antes de normalizar, esto fallaba con un volcado de libxml sobre el
+    // patrón del esquema.
+    const r = validarContraXsd(conTextoNatural, 'regulatorio/xsd/din.xsd')
+    expect(r.errores).toEqual([])
+    expect(conTextoNatural).toContain('<colonia>MONTES DE AME</colonia>')
   })
 })

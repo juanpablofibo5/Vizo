@@ -1,6 +1,8 @@
 import { Client } from 'pg'
 import { registrarOperacion } from '../src/persistencia/operaciones'
 import { pesos } from '../src/dominio/dinero'
+import { abrirExpediente, recalcularCompletitud } from '../src/persistencia/expediente'
+import { hoyEnMexico } from '../src/dominio/fechas'
 import type { ContextoSesion } from '../src/persistencia/transaccion'
 
 /**
@@ -129,7 +131,22 @@ async function main(): Promise<void> {
     //    $1,000,000 > $941,412.75. Aviso por acumulación.
     const junio2 = await capturar(clienteMoral, '2026-06-22', 250_000, '01', '2')
 
+    // ── El expediente, abierto y evaluado ────────────────────────────────
+    // Los DOCUMENTOS no se siembran a propósito: subirlos en vivo es la mejor
+    // parte de la demo — quien la ve mira aparecer la huella SHA-256 del
+    // archivo que acaba de arrastrar. Sembrarlos regalaría ese momento.
+    const admin: ContextoSesion = { usuarioId: ADMIN, tenantId: TENANT, rol: 'admin' }
+    const exp = await abrirExpediente(db, { sesion: admin, clienteId: clienteMoral })
+    const comp = await recalcularCompletitud(db, {
+      sesion: admin,
+      expedienteId: exp.expedienteId,
+      fecha: hoyEnMexico(),
+    })
+
     console.log('Datos demo listos para', TENANT)
+    console.log(
+      `  expediente: ${comp.estatus} · ${String(comp.cubiertos)}/${String(comp.totalObligatorios)} requisitos`,
+    )
     console.log('  desarrollo:', desarrolloId)
     for (const [etiqueta, r] of [
       ['mayo    $400,000', mayo],

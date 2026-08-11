@@ -1,6 +1,7 @@
 import Link from 'next/link'
+import { Marco } from '../componentes/marco'
 import { clienteServidor } from '../../src/supabase/servidor'
-import { sesionRequerida } from '../../src/supabase/sesion'
+import { obligadoDeSesion, sesionRequerida } from '../../src/supabase/sesion'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +17,7 @@ interface FilaCliente {
 
 export default async function Clientes() {
   const sesion = await sesionRequerida()
+  const obligado = await obligadoDeSesion()
   const supabase = await clienteServidor()
 
   // Sin filtro de tenant a propósito: RLS lo aplica. Si esta consulta
@@ -29,16 +31,7 @@ export default async function Clientes() {
   const clientes = (data ?? []) as FilaCliente[]
 
   return (
-    <>
-      <header className="barra">
-        <strong>VIZO</strong>
-        <span>
-          {sesion.nombre}
-          <span className="chip">{sesion.rol}</span>
-        </span>
-      </header>
-
-      <main>
+    <Marco obligado={obligado} perfil={sesion}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h1>Clientes</h1>
@@ -96,8 +89,7 @@ export default async function Clientes() {
             )}
           </tbody>
         </table>
-      </main>
-    </>
+    </Marco>
   )
 }
 

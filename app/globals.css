@@ -1,85 +1,232 @@
-/* UI utilitaria a propósito: el criterio de calidad del MVP es que el ciclo
-   regulatorio cierre, no que la pantalla se vea bonita. Tablas y formularios. */
+/* ─────────────────────────────────────────────────────────────────────────
+   Sistema visual del portal.
+
+   Hasta la semana 10 este archivo empezaba diciendo "UI utilitaria a
+   propósito: el criterio de calidad del MVP es que el ciclo regulatorio
+   cierre, no que la pantalla se vea bonita". Eso dejó de ser cierto el
+   10 de agosto: el proyecto pasó a medirse como SaaS, y la pantalla es
+   ahora la mitad de la pregunta (ver docs/ALCANCE.md).
+
+   Sigue sin ser decoración. Un portal de cumplimiento se lee todos los
+   días bajo presión de plazo: la jerarquía tiene que decir en un vistazo
+   qué está en regla y qué no. Los colores semánticos —en regla, por
+   vencer, vencido— son parte de la información, no del estilo.
+   ───────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Neutrales con sesgo hacia el acento: un gris puro se lee sin elegir. */
+  --fondo:        #F4F6F5;
+  --superficie:   #FFFFFF;
+  --superficie-2: #FAFBFA;
+  --linea:        #E2E7E5;
+  --linea-fuerte: #C9D2CF;
+
+  --texto:        #14211E;
+  --texto-suave:  #475853;
+  --texto-tenue:  #728380;
+
+  /* Acento: verdigrís de sello oficial. */
+  --acento:       #1D6B58;
+  --acento-vivo:  #17836A;
+  --acento-suave: #E4F0EC;
+
+  /* Semánticos. Dicen estado regulatorio, no decoran. */
+  --ok:           #1D6B58;
+  --ok-suave:     #E4F0EC;
+  --alerta:       #9C5416;
+  --alerta-suave: #FAEEE2;
+  --critico:      #8C2F2F;
+  --critico-suave:#F7E8E8;
+
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --radio: 7px;
+  --lateral: 15rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fondo:        #0D1614;
+    --superficie:   #141F1D;
+    --superficie-2: #182422;
+    --linea:        #23322F;
+    --linea-fuerte: #354844;
+
+    --texto:        #E7EDEB;
+    --texto-suave:  #B2C1BD;
+    --texto-tenue:  #7E8F8B;
+
+    --acento:       #56B99B;
+    --acento-vivo:  #6ACFB0;
+    --acento-suave: #17302A;
+
+    --ok:           #56B99B;
+    --ok-suave:     #17302A;
+    --alerta:       #D68A54;
+    --alerta-suave: #2C2018;
+    --critico:      #D2706A;
+    --critico-suave:#2E1B1A;
+  }
+}
+
 * { box-sizing: border-box; }
+
 body {
   margin: 0;
-  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
-  color: #1a1a1a;
-  background: #f7f7f8;
+  font: 15px/1.55 var(--sans);
+  color: var(--texto);
+  background: var(--fondo);
+  -webkit-font-smoothing: antialiased;
 }
-a { color: #0b5cad; }
-main { max-width: 62rem; margin: 0 auto; padding: 1.5rem; }
-h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
-h2 { font-size: 1.1rem; margin: 1.75rem 0 .5rem; }
-.sub { color: #666; margin: 0 0 1.5rem; }
 
-header.barra {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: .75rem 1.5rem; background: #fff; border-bottom: 1px solid #e3e3e6;
+a { color: var(--acento); text-underline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; border-radius: 3px; }
+
+h1 { font-size: 1.45rem; letter-spacing: -.02em; margin: 0 0 .2rem; text-wrap: balance; }
+h2 { font-size: 1.08rem; letter-spacing: -.01em; margin: 2rem 0 .6rem; }
+h3 { font-size: .95rem; margin: 0 0 .3rem; }
+.sub { color: var(--texto-tenue); margin: 0 0 1.6rem; }
+
+/* ── El armazón ─────────────────────────────────────────────────────── */
+.portal { display: grid; grid-template-columns: var(--lateral) 1fr; min-height: 100vh; }
+
+.lateral {
+  background: var(--superficie);
+  border-right: 1px solid var(--linea);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
 }
-header.barra strong { letter-spacing: .12em; }
+
+.marca {
+  padding: 1.15rem 1.25rem 1rem;
+  border-bottom: 1px solid var(--linea);
+  display: flex; flex-direction: column; gap: .15rem;
+}
+.marca .logo { font-weight: 680; letter-spacing: .16em; font-size: .95rem; }
+.marca .obligado { font-size: .8rem; color: var(--texto-suave); line-height: 1.35; }
+.marca .rfc { font-family: var(--mono); font-size: .72rem; color: var(--texto-tenue); }
+
+nav.areas { padding: .7rem .6rem; display: flex; flex-direction: column; gap: 1px; flex: 1; overflow-y: auto; }
+
+nav.areas a, nav.areas span.pendiente {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  padding: .48rem .65rem; border-radius: 5px;
+  font-size: .91rem; color: var(--texto-suave); text-decoration: none;
+}
+nav.areas a:hover { background: var(--superficie-2); color: var(--texto); }
+nav.areas a[aria-current='page'] {
+  background: var(--acento-suave); color: var(--acento); font-weight: 580;
+}
+nav.areas span.pendiente { color: var(--texto-tenue); cursor: default; }
+nav.areas .marca-pendiente {
+  font-family: var(--mono); font-size: .6rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--texto-tenue);
+  border: 1px solid var(--linea-fuerte); border-radius: 3px; padding: .05rem .3rem;
+}
+
+.usuario {
+  border-top: 1px solid var(--linea); padding: .85rem 1.25rem;
+  display: flex; flex-direction: column; gap: .15rem;
+}
+.usuario .nombre { font-size: .88rem; font-weight: 560; }
+.usuario .correo { font-size: .76rem; color: var(--texto-tenue); word-break: break-all; }
+
+.contenido { min-width: 0; }
+main { max-width: 64rem; margin: 0 auto; padding: 2rem 2rem 5rem; }
+
+@media (max-width: 860px) {
+  .portal { grid-template-columns: 1fr; }
+  .lateral { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--linea); }
+  nav.areas { flex-direction: row; flex-wrap: wrap; }
+  main { padding: 1.25rem 1.1rem 4rem; }
+}
+
+/* ── Chips y estados ────────────────────────────────────────────────── */
 .chip {
-  font-size: .78rem; padding: .15rem .5rem; border-radius: 999px;
-  background: #eef2f7; color: #33506e; margin-left: .5rem;
+  display: inline-block; font-size: .74rem; padding: .12rem .5rem;
+  border-radius: 999px; background: var(--acento-suave); color: var(--acento);
+  margin-left: .45rem; font-weight: 550;
 }
+.chip-alerta { background: var(--alerta-suave); color: var(--alerta); }
 
-.tarjeta { background: #fff; border: 1px solid #e3e3e6; border-radius: 8px; padding: 1.25rem; }
-fieldset { border: 1px solid #e3e3e6; border-radius: 6px; padding: 1rem; margin: 0 0 1rem; }
+.estado {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-family: var(--mono); font-size: .68rem; letter-spacing: .06em;
+  text-transform: uppercase; padding: .16rem .45rem;
+  border: 1px solid currentColor; border-radius: 3px; white-space: nowrap;
+}
+.estado.ok      { color: var(--ok); }
+.estado.aviso   { color: var(--alerta); }
+.estado.critico { color: var(--critico); }
+.estado.neutro  { color: var(--texto-tenue); }
+
+/* ── Superficies ────────────────────────────────────────────────────── */
+.tarjeta {
+  background: var(--superficie); border: 1px solid var(--linea);
+  border-radius: var(--radio); padding: 1.15rem 1.25rem;
+}
+.tarjeta-alerta { border-left: 3px solid var(--alerta); }
+
+.rejilla { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+
+/* ── Formularios ────────────────────────────────────────────────────── */
+fieldset { border: 1px solid var(--linea); border-radius: var(--radio); padding: 1rem; margin: 0 0 1rem; background: var(--superficie); }
 legend { font-weight: 600; padding: 0 .4rem; }
-label { display: block; margin-bottom: .75rem; }
-label span { display: block; font-size: .85rem; color: #444; margin-bottom: .2rem; }
-label .pista { color: #777; font-weight: 400; }
-input, select { width: 100%; padding: .45rem .55rem; border: 1px solid #c9ccd1; border-radius: 5px; font: inherit; background: #fff; }
-input:focus, select:focus { outline: 2px solid #0b5cad; outline-offset: 1px; }
+label { display: block; margin-bottom: .8rem; }
+label span { display: block; font-size: .84rem; color: var(--texto-suave); margin-bottom: .22rem; }
+label .pista { color: var(--texto-tenue); font-weight: 400; }
+input, select, textarea {
+  width: 100%; padding: .46rem .6rem; border: 1px solid var(--linea-fuerte);
+  border-radius: 5px; font: inherit; background: var(--superficie); color: var(--texto);
+}
+input[type='file'] { padding: .4rem; font-size: .9rem; }
 .fila { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0 1rem; }
 
-button {
+button, .boton {
   font: inherit; padding: .5rem 1rem; border-radius: 5px; cursor: pointer;
-  border: 1px solid #0b5cad; background: #0b5cad; color: #fff;
+  border: 1px solid var(--acento); background: var(--acento); color: #fff;
+  text-decoration: none; display: inline-block;
 }
-button.secundario { background: #fff; color: #0b5cad; }
+button:hover, .boton:hover { background: var(--acento-vivo); border-color: var(--acento-vivo); }
+button.secundario, .boton.secundario { background: var(--superficie); color: var(--acento); }
+button.secundario:hover, .boton.secundario:hover { background: var(--acento-suave); }
+button:disabled { opacity: .5; cursor: not-allowed; }
 
-.error { background: #fdeaea; border: 1px solid #e5a3a3; color: #8a1f1f; padding: .75rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+/* ── Mensajes ───────────────────────────────────────────────────────── */
+.error {
+  background: var(--critico-suave); border: 1px solid var(--critico); color: var(--critico);
+  padding: .75rem 1rem; border-radius: 6px; margin-bottom: 1rem;
+}
 .error ul { margin: .4rem 0 0; padding-left: 1.2rem; }
-.aviso { background: #fff8e6; border: 1px solid #e8d08a; color: #6b5312; padding: .6rem .9rem; border-radius: 6px; }
+.aviso {
+  background: var(--alerta-suave); border: 1px solid var(--alerta); color: var(--alerta);
+  padding: .6rem .9rem; border-radius: 6px;
+}
+.exito {
+  background: var(--ok-suave); border: 1px solid var(--ok); color: var(--ok);
+  padding: .6rem .9rem; border-radius: 6px;
+}
 
-table { width: 100%; border-collapse: collapse; background: #fff; }
-th, td { text-align: left; padding: .55rem .7rem; border-bottom: 1px solid #ececed; }
-th { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #666; }
-td.vacia { color: #777; padding: 2rem; text-align: center; }
+/* ── Tablas ─────────────────────────────────────────────────────────── */
+.tabla-envoltura { overflow-x: auto; border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); }
+table { width: 100%; border-collapse: collapse; background: var(--superficie); }
+th, td { text-align: left; padding: .58rem .75rem; border-bottom: 1px solid var(--linea); }
+th {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--texto-tenue); font-weight: 500; white-space: nowrap;
+}
+tr:last-child td { border-bottom: 0; }
+td.vacia { color: var(--texto-tenue); padding: 2.5rem; text-align: center; }
+td.num, .num { font-variant-numeric: tabular-nums; }
 
 /* La huella del documento. Se muestra COMPLETA a propósito: un hash truncado
    no sirve para verificar nada, y verificar es para lo que existe. */
 .hash {
-  display: block;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .72rem;
-  line-height: 1.4;
-  word-break: break-all;
-  color: var(--texto-suave, #555);
-  margin: .2rem 0;
+  display: block; font-family: var(--mono); font-size: .72rem; line-height: 1.4;
+  word-break: break-all; color: var(--texto-tenue); margin: .2rem 0;
 }
 
-input[type='file'] {
-  padding: .4rem;
-  font-size: .9rem;
-}
-
-/* Alertas: se distinguen del resto sin gritar. Un panel de cumplimiento que
-   parece un tablero de incendios deja de leerse a la semana. */
-.chip-alerta {
-  background: #fde9c8;
-  color: #7a4a06;
-}
-
-.tarjeta-alerta {
-  border-left: 3px solid #c98a1e;
-}
-
-.barra a {
-  color: inherit;
-  text-decoration: none;
-  font-size: .92rem;
-  opacity: .75;
-}
-.barra a:hover { opacity: 1; text-decoration: underline; }
+.mono { font-family: var(--mono); }
+.tenue { color: var(--texto-tenue); }
+.pequeno { font-size: .85rem; }

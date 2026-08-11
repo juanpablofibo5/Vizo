@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { conBase, leerComoUsuario } from '../../src/supabase/conexion'
-import { Marco } from './marco'
+import { Marco } from '../componentes/marco'
 import { formatearPesosTexto as pesos } from '../../src/dominio/dinero'
 
 export const dynamic = 'force-dynamic'
@@ -25,7 +25,7 @@ const ETIQUETA_RESULTADO: Record<string, string> = {
 }
 
 export default async function Operaciones() {
-  return conBase(async ({ db, sesion, perfil }) => {
+  return conBase(async ({ db, sesion, perfil, obligado }) => {
     const { filas, abiertas } = await leerComoUsuario(db, sesion, async () => {
       // Se lee de `operaciones_vigentes`: las corregidas siguen en la tabla
       // —nada se borra— pero no son las que cuentan.
@@ -61,7 +61,7 @@ export default async function Operaciones() {
     })
 
     return (
-      <Marco nombre={perfil.nombre} rol={perfil.rol} alertasAbiertas={abiertas}>
+      <Marco obligado={obligado} perfil={perfil} alertasAbiertas={abiertas}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h1>Operaciones</h1>

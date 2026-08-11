@@ -46,3 +46,17 @@ export async function sesionRequerida(): Promise<Sesion> {
     nombre: perfil?.nombre ?? data.user.email ?? '',
   }
 }
+
+/**
+ * El obligado de la sesión, para el armazón del portal.
+ *
+ * Se lee con el cliente del usuario, así que RLS aplica: si una sesión
+ * apuntara al tenant equivocado esto devolvería vacío en lugar de pintar el
+ * nombre de otro obligado en el encabezado.
+ */
+export async function obligadoDeSesion(): Promise<{ razonSocial: string; rfc: string }> {
+  const supabase = await clienteServidor()
+  const { data } = await supabase.from('tenants').select('razon_social, rfc').single()
+  const t = data as { razon_social: string; rfc: string } | null
+  return { razonSocial: t?.razon_social ?? '—', rfc: t?.rfc ?? '' }
+}

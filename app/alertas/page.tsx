@@ -1,5 +1,5 @@
 import { conBase, leerComoUsuario } from '../../src/supabase/conexion'
-import { Marco } from '../operaciones/marco'
+import { Marco } from '../componentes/marco'
 import { formatearPesosTexto } from '../../src/dominio/dinero'
 
 export const dynamic = 'force-dynamic'
@@ -22,7 +22,7 @@ const ORDEN: Record<string, number> = {
 }
 
 export default async function Alertas() {
-  return conBase(async ({ db, sesion, perfil }) => {
+  return conBase(async ({ db, sesion, perfil, obligado }) => {
     const filas = await leerComoUsuario(db, sesion, async () => {
       // El nombre del aportante se trae AQUÍ, por join y bajo RLS — no vive en
       // la alerta. Así el panel es legible sin que la tabla de alertas guarde
@@ -46,7 +46,7 @@ export default async function Alertas() {
     )
 
     return (
-      <Marco nombre={perfil.nombre} rol={perfil.rol} alertasAbiertas={filas.length}>
+      <Marco obligado={obligado} perfil={perfil} alertasAbiertas={filas.length}>
         <h1>Alertas abiertas</h1>
         <p className="sub">
           Una alerta no es un aviso: es lo que alguien tiene que mirar. VIZO nunca presenta nada

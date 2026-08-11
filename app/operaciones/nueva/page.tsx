@@ -1,13 +1,13 @@
 import Link from 'next/link'
 import { conBase, leerComoUsuario } from '../../../src/supabase/conexion'
 import { hoyEnMexico } from '../../../src/dominio/fechas'
-import { Marco } from '../marco'
+import { Marco } from '../../componentes/marco'
 import { FormularioOperacion, type Opcion } from './formulario'
 
 export const dynamic = 'force-dynamic'
 
 export default async function NuevaOperacion() {
-  return conBase(async ({ db, sesion, perfil }) => {
+  return conBase(async ({ db, sesion, perfil, obligado }) => {
     const { clientes, sucursales } = await leerComoUsuario(db, sesion, async () => {
       const c = await db.query(
         `select id, nombre_o_razon_social, rfc, curp from clientes_finales
@@ -32,7 +32,7 @@ export default async function NuevaOperacion() {
 
     if (clientes.length === 0 || sucursales.length === 0) {
       return (
-        <Marco nombre={perfil.nombre} rol={perfil.rol}>
+        <Marco obligado={obligado} perfil={perfil}>
           <h1>Registrar operación</h1>
           <div className="aviso">
             {clientes.length === 0 && (
@@ -50,7 +50,7 @@ export default async function NuevaOperacion() {
     }
 
     return (
-      <Marco nombre={perfil.nombre} rol={perfil.rol}>
+      <Marco obligado={obligado} perfil={perfil}>
         <h1>Registrar operación</h1>
         <p className="sub">
           Al guardar, el motor evalúa contra el catálogo vigente <strong>a la fecha de la

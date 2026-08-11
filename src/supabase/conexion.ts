@@ -22,7 +22,15 @@ export interface Contexto {
   db: Client
   sesion: ContextoSesion
   /** Para pintar el encabezado; no se usa para decidir permisos. */
-  perfil: { nombre: string; rol: 'admin' | 'capturista' }
+  perfil: { nombre: string; rol: 'admin' | 'capturista'; email: string }
+  /**
+   * El obligado de la sesión, para el armazón del portal.
+   *
+   * Se lee BAJO RLS como todo lo demás: si algún día una sesión apuntara al
+   * tenant equivocado, esta consulta devolvería vacío en lugar de pintar el
+   * nombre de otro obligado en el encabezado.
+   */
+  obligado: { razonSocial: string; rfc: string }
 }
 
 export async function conBase<T>(cuerpo: (c: Contexto) => Promise<T>): Promise<T> {
@@ -30,10 +38,20 @@ export async function conBase<T>(cuerpo: (c: Contexto) => Promise<T>): Promise<T
   const db = new Client({ connectionString: cadenaDeConexion() })
   await db.connect()
   try {
+    const sesion = { usuarioId: s.usuarioId, tenantId: s.tenantId, rol: s.rol }
+    const obligado = await leerComoUsuario(db, sesion, async () => {
+      const r = await db.query(`select razon_social, rfc from tenants where id = $1`, [
+        s.tenantId,
+      ])
+      const t = r.rows[0] as { razon_social: string; rfc: string } | undefined
+      return { razonSocial: t?.razon_social ?? '—', rfc: t?.rfc ?? '' }
+    })
+
     return await cuerpo({
       db,
-      sesion: { usuarioId: s.usuarioId, tenantId: s.tenantId, rol: s.rol },
-      perfil: { nombre: s.nombre, rol: s.rol },
+      sesion,
+      perfil: { nombre: s.nombre, rol: s.rol, email: s.email },
+      obligado,
     })
   } finally {
     await db.end()

@@ -1,6 +1,7 @@
 import Link from 'next/link'
+import { Marco } from '../../../componentes/marco'
 import { Client } from 'pg'
-import { sesionRequerida } from '../../../../src/supabase/sesion'
+import { obligadoDeSesion, sesionRequerida } from '../../../../src/supabase/sesion'
 import type { Completitud } from '../../../../src/dominio/expediente'
 import { abrir } from './acciones'
 import { FormularioSubida } from './subir'
@@ -20,6 +21,7 @@ interface Documento {
 export default async function Expediente({ params }: { params: Promise<{ id: string }> }) {
   const { id: clienteId } = await params
   const sesion = await sesionRequerida()
+  const obligado = await obligadoDeSesion()
 
   const db = new Client({ connectionString: process.env['VIZO_DB_URL'] ?? '' })
   await db.connect()
@@ -43,7 +45,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
     )
     if (cli.rows.length === 0) {
       return (
-        <Marco nombre={sesion.nombre} rol={sesion.rol}>
+        <Marco obligado={obligado} perfil={sesion}>
           <p className="error">Este cliente no existe en tu obligado.</p>
         </Marco>
       )
@@ -63,7 +65,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
     if (exp.rows.length === 0) {
       const abrirEste = abrir.bind(null, clienteId)
       return (
-        <Marco nombre={sesion.nombre} rol={sesion.rol}>
+        <Marco obligado={obligado} perfil={sesion}>
           <h1>{cliente.nombre_o_razon_social}</h1>
           <p className="sub">
             En Fracción V Bis se integra expediente de cada aportante, sin importar el monto.
@@ -131,7 +133,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
     const faltantesDeDato = faltantes.filter((f) => f.tipoDato !== 'documento')
 
     return (
-      <Marco nombre={sesion.nombre} rol={sesion.rol}>
+      <Marco obligado={obligado} perfil={sesion}>
         <h1>{cliente.nombre_o_razon_social}</h1>
         <p className="sub">
           {cliente.tipo_persona === 'fisica' ? 'Persona física' : 'Persona moral'} ·{' '}
@@ -225,25 +227,3 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
   }
 }
 
-function Marco({
-  nombre,
-  rol,
-  children,
-}: {
-  nombre: string
-  rol: string
-  children: React.ReactNode
-}) {
-  return (
-    <>
-      <header className="barra">
-        <strong>VIZO</strong>
-        <span>
-          {nombre}
-          <span className="chip">{rol}</span>
-        </span>
-      </header>
-      <main>{children}</main>
-    </>
-  )
-}

@@ -206,3 +206,90 @@ export async function recalcularCompletitud(
     return { ...resultado, expedienteId: p.expedienteId }
   })
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// La aprobación humana del expediente
+// ─────────────────────────────────────────────────────────────────────────
+
+export class AprobacionInvalida extends Error {
+  constructor(mensaje: string) {
+    super(mensaje)
+    this.name = 'AprobacionInvalida'
+  }
+}
+
+/**
+ * Aprobar el expediente: alguien declara que el conocimiento del cliente está
+ * completo y es correcto.
+ *
+ * No es un cambio de estatus más. `recalcularCompletitud` dice si están todos
+ * los documentos que el catálogo exige — eso es contar. Aprobar es afirmar que
+ * lo que hay dentro SIRVE: que la identificación es del cliente, que el
+ * comprobante corresponde al domicilio declarado, que el beneficiario
+ * controlador es quien dice ser. Ninguna de esas cosas se puede contar.
+ *
+ * Por eso la regla vive en `app.expediente_aprobar` —SECURITY DEFINER, comprueba
+ * el rol adentro— y esta función solo la envuelve: alguien que llame a la base
+ * desde psql topa con lo mismo. Y por eso `recalcularCompletitud` NO aprueba
+ * sola aunque el expediente quede completo: llegar a 13 de 13 no es que alguien
+ * lo haya mirado.
+ */
+export async function aprobarExpediente(
+  db: EjecutorTransaccional,
+  p: { sesion: ContextoSesion; expedienteId: string },
+): Promise<void> {
+  return enTransaccionDeSesion(db, p.sesion, async () => {
+    await db.query('select app.expediente_aprobar($1)', [p.expedienteId])
+  })
+}
+
+export interface PasoDelExpediente {
+  evento: string
+  ocurridoEn: string
+  actor: string | null
+  datos: Record<string, unknown>
+}
+
+/**
+ * El historial del expediente tal como lo cuenta la BITÁCORA.
+ *
+ * La fila de `expedientes` dice en qué estado está hoy; la bitácora dice cómo
+ * llegó ahí — cada recálculo de completitud, cada documento, y quién aprobó.
+ * Un expediente aprobado sin nombre no lo aprobó nadie.
+ */
+export async function historialDelExpediente(
+  db: EjecutorSql,
+  p: { sesion: ContextoSesion; expedienteId: string },
+): Promise<PasoDelExpediente[]> {
+  const { rows } = await db.query(
+    `select b.evento,
+            to_char(b.ocurrido_en at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as ocurrido_en,
+            u.nombre as actor,
+            b.datos
+       from bitacora b
+       left join usuarios u on u.tenant_id = b.tenant_id and u.id = b.actor_id
+      where b.tenant_id = $1
+        and (b.objeto_id = $2::uuid or b.datos->>'expediente_id' = $2::text)
+      order by b.secuencia desc
+      limit 50`,
+    [p.sesion.tenantId, p.expedienteId],
+  )
+
+  // Se MAPEA, no se castea. Postgres devuelve `ocurrido_en` y la interfaz dice
+  // `ocurridoEn`: un `as` habría dejado pasar `undefined` hasta la pantalla,
+  // que lo habría pintado como "undefined UTC". El test lo atrapó; el
+  // compilador no podía.
+  return (
+    rows as Array<{
+      evento: string
+      ocurrido_en: string
+      actor: string | null
+      datos: Record<string, unknown>
+    }>
+  ).map((r) => ({
+    evento: r.evento,
+    ocurridoEn: r.ocurrido_en,
+    actor: r.actor,
+    datos: r.datos,
+  }))
+}

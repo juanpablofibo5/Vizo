@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { Marco } from '../../../componentes/marco'
+import { BotonAprobarExpediente } from './aprobar'
+import { historialDelExpediente } from '../../../../src/persistencia/expediente'
 import { tamanoLegible } from '../../../../src/dominio/tamano'
 import { Client } from 'pg'
 import { obligadoDeSesion, sesionRequerida } from '../../../../src/supabase/sesion'
@@ -8,6 +10,15 @@ import { abrir } from './acciones'
 import { FormularioSubida } from './subir'
 
 export const dynamic = 'force-dynamic'
+
+/** Los eventos, dichos como se los contarías a alguien. */
+const EVENTOS: Record<string, string> = {
+  'expediente.abierto': 'Se abrió el expediente',
+  'expediente.completitud_evaluada': 'Se evaluó la completitud',
+  'expediente.aprobado': 'Aprobado',
+  'documento.alta': 'Se subió un documento',
+  'manifiesto.generado': 'Se generó el manifiesto',
+}
 
 interface Documento {
   id: string
@@ -119,6 +130,18 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       `select distinct campo, etiqueta from campos_expediente where actividad_id = $1`,
       [expediente.actividad_id],
     )
+    // DENTRO de la transacción, a propósito.
+    //
+    // Estaba después del `rollback` y reventaba con "permission denied for
+    // table bitacora". No era un problema de permisos del catálogo: al
+    // revertir, la sesión se cae y la conexión vuelve a ser `vizo_app`, que
+    // NOINHERIT y sin asumir `authenticated` no puede leer nada. El error
+    // apuntaba a la tabla y la causa era el límite de la transacción.
+    const historial = await historialDelExpediente(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      expedienteId: expediente.id,
+    })
+
     await db.query('rollback')
 
     const faltantes = evaluado ? completitud.faltantes : []
@@ -133,6 +156,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       .map((f) => ({ campo: f.campo, etiqueta: f.etiqueta }))
     const faltantesDeDato = faltantes.filter((f) => f.tipoDato !== 'documento')
 
+
     return (
       <Marco obligado={obligado} perfil={sesion}>
         <h1>{cliente.nombre_o_razon_social}</h1>
@@ -144,6 +168,34 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
             ? `${completitud.cubiertos} de ${completitud.totalObligatorios} requisitos`
             : 'la completitud aún no se ha calculado'}
         </p>
+
+        {/*
+          DOS estados distintos, y confundirlos es el error que este bloque
+          existe para evitar. `completitud` dice si están todos los documentos
+          que el catálogo exige — eso es CONTAR. `estatus` del expediente dice
+          si alguien los MIRÓ y declaró que sirven. Un expediente puede estar
+          13 de 13 y no estar aprobado por nadie.
+        */}
+        {expediente.estatus === 'aprobado' ? (
+          <div className="exito" style={{ marginBottom: '1.5rem' }}>
+            <strong>Expediente aprobado.</strong> Alguien revisó que los documentos
+            corresponden al cliente, y quién fue queda en el historial de abajo.
+          </div>
+        ) : (
+          <div className="tarjeta" style={{ marginBottom: '1.5rem' }}>
+            <h3>Aprobación del expediente</h3>
+            <p className="tenue pequeno" style={{ margin: '0 0 .8rem' }}>
+              Estar completo es que no falte nada. Aprobarlo es que alguien haya
+              comprobado que lo que hay sirve — y esas dos cosas no son la misma.
+            </p>
+            <BotonAprobarExpediente
+              expedienteId={expediente.id}
+              clienteId={clienteId}
+              esAdmin={sesion.rol === 'admin'}
+              completo={expediente.estatus === 'completo'}
+            />
+          </div>
+        )}
 
         {faltantesDeDato.length > 0 && (
           <div className="aviso">
@@ -220,7 +272,47 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
           <strong>pendientes de confirmar</strong> con un especialista PLD.
         </p>
 
-        <Link href="/clientes">← Volver a clientes</Link>
+        <h2>Historial</h2>
+        <p className="sub">
+          Sale de la bitácora, no de la fila del expediente. La fila dice cómo está
+          hoy; esto dice cómo llegó y quién lo movió.
+        </p>
+        <div className="tabla-envoltura">
+          <table>
+            <thead>
+              <tr>
+                <th>Cuándo</th>
+                <th>Qué pasó</th>
+                <th>Quién</th>
+              </tr>
+            </thead>
+            <tbody>
+              {historial.length === 0 ? (
+                <tr>
+                  <td className="vacia" colSpan={3}>
+                    Sin eventos registrados.
+                  </td>
+                </tr>
+              ) : (
+                historial.map((h, i) => (
+                  <tr key={`${h.evento}-${String(i)}`}>
+                    <td className="mono pequeno">
+                      {h.ocurridoEn.replace('T', ' ').replace('Z', ' UTC')}
+                    </td>
+                    <td>{EVENTOS[h.evento] ?? h.evento}</td>
+                    {/* "sistema" no existe aquí: todo evento del expediente lo
+                        provocó una persona. Si apareciera, es un dato a mirar. */}
+                    <td className="pequeno">{h.actor ?? '—'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <Link href="/clientes" style={{ display: 'inline-block', marginTop: '1.5rem' }}>
+          ← Volver a clientes
+        </Link>
       </Marco>
     )
   } finally {

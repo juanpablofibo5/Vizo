@@ -5,7 +5,11 @@ import { Client } from 'pg'
 import { sesionRequerida } from '../../../../src/supabase/sesion'
 import { almacenExpedientes } from '../../../../src/supabase/almacen'
 import { registrarDocumento, FalloDeAlmacen } from '../../../../src/persistencia/documentos'
-import { abrirExpediente, recalcularCompletitud } from '../../../../src/persistencia/expediente'
+import {
+  abrirExpediente,
+  aprobarExpediente,
+  recalcularCompletitud,
+} from '../../../../src/persistencia/expediente'
 import { DocumentoInvalido } from '../../../../src/dominio/documentos'
 import { hoyEnMexico } from '../../../../src/dominio/fechas'
 
@@ -88,6 +92,60 @@ export async function subirDocumento(
     if (e instanceof DocumentoInvalido) return { problemas: [e.message] }
     if (e instanceof FalloDeAlmacen) return { problemas: [e.message] }
     return { problemas: [e instanceof Error ? e.message : 'Error inesperado al subir.'] }
+  } finally {
+    await db.end()
+  }
+}
+
+/**
+ * La aprobación del expediente.
+ *
+ * No comprueba el rol aquí: `app.expediente_aprobar` lo verifica dentro de la
+ * base, igual que el aviso. Lo que sí hace es traducir el error a algo que una
+ * persona pueda leer y actuar.
+ */
+export interface EstadoAprobacion {
+  ok: boolean
+  mensaje: string
+}
+
+export async function accionAprobarExpediente(
+  _previo: EstadoAprobacion | null,
+  datos: FormData,
+): Promise<EstadoAprobacion> {
+  const expedienteId = String(datos.get('expedienteId') ?? '')
+  const clienteId = String(datos.get('clienteId') ?? '')
+  const sesion = await sesionRequerida()
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await aprobarExpediente(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      expedienteId,
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return {
+      ok: true,
+      mensaje: 'Expediente aprobado. Tu nombre y la hora quedaron en la bitácora.',
+    }
+  } catch (e) {
+    const bruto = e instanceof Error ? e.message : String(e)
+    if (/rol admin/i.test(bruto)) {
+      return {
+        ok: false,
+        mensaje:
+          'Solo un usuario con rol admin puede aprobar un expediente. La regla la aplica la base de datos, no la pantalla.',
+      }
+    }
+    if (/expediente completo/i.test(bruto)) {
+      return {
+        ok: false,
+        mensaje:
+          'Solo se aprueba un expediente completo. Faltan requisitos por cubrir: súbelos y vuelve a evaluar la completitud.',
+      }
+    }
+    return { ok: false, mensaje: bruto }
   } finally {
     await db.end()
   }

@@ -7,6 +7,7 @@ import { fragmentarInforme } from '../aviso/fragmentacion'
 import type { AlmacenDocumentos } from './documentos'
 import {
   construirInformeXml,
+  PATRON_FOLIO,
   referenciaAviso,
   type AvisoDelInforme,
   type Granularidad,
@@ -509,10 +510,25 @@ export async function aprobarAviso(
  */
 export async function registrarAcuse(
   db: EjecutorTransaccional,
-  p: { sesion: ContextoSesion; avisoId: string; storagePath: string },
+  p: { sesion: ContextoSesion; avisoId: string; storagePath: string; folio: string },
 ): Promise<void> {
+  // El folio se valida ANTES de guardarlo. Un folio con otra forma no rompe
+  // nada hoy: rompe el día que haya que corregir este aviso, meses después,
+  // cuando el modificatorio no valide y ya no se pueda cambiar —la fila es
+  // append-only a partir de presentado—.
+  if (!PATRON_FOLIO.test(p.folio)) {
+    throw new CatalogoDelAvisoIncompleto(
+      `El folio "${p.folio}" no tiene la forma que el SPPLD asigna (AAAA-N, por ejemplo ` +
+        '2026-12345). Cópialo del acuse tal como viene: es lo que identifica este aviso si ' +
+        'algún día hay que corregirlo.',
+    )
+  }
   return enTransaccionDeSesion(db, p.sesion, async () => {
-    await db.query('select app.aviso_registrar_acuse($1,$2)', [p.avisoId, p.storagePath])
+    await db.query('select app.aviso_registrar_acuse($1,$2,$3)', [
+      p.avisoId,
+      p.storagePath,
+      p.folio,
+    ])
   })
 }
 
@@ -633,4 +649,276 @@ export async function detalleDeAviso(
       pasos.rows as Array<{ evento: string; ocurrido_en: string; actor: string | null }>
     ).map((s) => ({ evento: s.evento, ocurridoEn: s.ocurrido_en, actor: s.actor })),
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// El aviso modificatorio
+// ─────────────────────────────────────────────────────────────────────────
+
+export class ModificatorioInvalido extends Error {
+  constructor(mensaje: string) {
+    super(mensaje)
+    this.name = 'ModificatorioInvalido'
+  }
+}
+
+/**
+ * Corrige un aviso YA PRESENTADO.
+ *
+ * No es volver a generar: es presentar otro archivo que dice cuál corrige —por
+ * su folio del SPPLD— y por qué. El aviso original no se toca ni se marca: a
+ * partir de `aprobado` la fila es inmutable, y así debe ser. Los dos coexisten,
+ * y el historial cuenta que hubo una corrección.
+ *
+ * Solo se corrige lo PRESENTADO. Un aviso que todavía no salió no necesita
+ * modificatorio — necesita corregirse antes de salir, que es otra cosa y no
+ * deja rastro ante la autoridad.
+ *
+ * Un periodo admite varios modificatorios: si el primero también sale con un
+ * dato equivocado hay que corregirlo otra vez, y la base lo permite a
+ * propósito (ver la migración del modificatorio).
+ */
+export async function generarModificatorio(
+  db: EjecutorTransaccional,
+  p: {
+    sesion: ContextoSesion
+    /** El aviso presentado que se corrige. */
+    avisoOriginalId: string
+    /** Qué se corrige y por qué. Va en el XML, así que se normaliza. */
+    descripcion: string
+    granularidad: Granularidad
+  },
+  almacen: AlmacenDocumentos,
+): Promise<ResultadoAviso> {
+  if (p.descripcion.trim().length === 0) {
+    throw new ModificatorioInvalido(
+      'Un modificatorio sin explicación no le dice a la autoridad qué cambió. Describe la ' +
+        'corrección.',
+    )
+  }
+
+  return enTransaccionDeSesion(db, p.sesion, async () => {
+    const orig = await db.query(
+      `select a.id::text, a.actividad_id::text, a.periodo::text, a.estatus::text,
+              a.acuse_folio, a.formato_aviso_id::text,
+              t.rfc, av.clave_sppld,
+              to_char(a.periodo, 'YYYYMM') as mes_reportado
+         from avisos a
+         join tenants t on t.id = a.tenant_id
+         join actividades_vulnerables av on av.id = a.actividad_id
+        where a.id = $1 and a.tenant_id = $2`,
+      [p.avisoOriginalId, p.sesion.tenantId],
+    )
+    if (orig.rows.length === 0) {
+      throw new ModificatorioInvalido(`No existe el aviso ${p.avisoOriginalId} en este obligado.`)
+    }
+    const o = orig.rows[0] as {
+      id: string
+      actividad_id: string
+      periodo: string
+      estatus: string
+      acuse_folio: string | null
+      formato_aviso_id: string
+      rfc: string
+      clave_sppld: string | null
+      mes_reportado: string
+    }
+
+    if (o.estatus !== 'presentado') {
+      throw new ModificatorioInvalido(
+        `Solo se corrige un aviso ya presentado (estatus actual: ${o.estatus}). Uno que ` +
+          'todavía no salió se arregla antes de presentarlo, y eso no es un modificatorio.',
+      )
+    }
+    if (o.acuse_folio === null) {
+      throw new ModificatorioInvalido(
+        'El aviso original no tiene folio del acuse, y el XSD lo exige para decir cuál se ' +
+          'corrige. Regístralo en el acuse antes de poder corregirlo.',
+      )
+    }
+    if (o.clave_sppld === null) {
+      throw new ModificatorioInvalido(
+        `La actividad ${o.actividad_id} no tiene clave_sppld cargada.`,
+      )
+    }
+
+    // El formato es el MISMO del original, no el vigente hoy: se corrige un
+    // aviso que se presentó con cierto esquema, y cambiar de formato a medio
+    // camino produce un archivo que la autoridad no puede casar con el
+    // anterior.
+    const fmt = await db.query(
+      `select version, ruta_xsd from formatos_aviso where id = $1`,
+      [o.formato_aviso_id],
+    )
+    const formato = fmt.rows[0] as { version: string; ruta_xsd: string }
+
+    // Las MISMAS operaciones del aviso original, con sus mismas evaluaciones.
+    // Un modificatorio corrige la presentación, no vuelve a decidir qué era
+    // reportable: eso ya lo resolvió el motor y quedó registrado.
+    const reportables = await db.query(
+      `select o.id::text as operacion_id, ao.evaluacion_id::text,
+              $3::text as tipo_operacion,
+              to_char(o.fecha_operacion, 'YYYYMMDD') as fecha_aportacion,
+              o.instrumento_monetario, o.moneda_codigo,
+              o.monto_total::text as monto_aportacion,
+              o.aportacion_fideicomiso, o.nombre_institucion,
+              d.objeto_aviso_anterior, d.entidad_federativa, d.registro_licencia,
+              d.codigo_postal, d.colonia, d.calle, d.tipo_desarrollo,
+              d.descripcion_desarrollo,
+              d.monto_desarrollo::text, d.unidades_comercializadas::text,
+              d.costo_unidad::text, d.otras_empresas
+         from aviso_operaciones ao
+         join operaciones o on o.tenant_id = ao.tenant_id and o.id = ao.operacion_id
+         join desarrollos_inmobiliarios d
+           on d.tenant_id = o.tenant_id and d.id = o.desarrollo_id
+        where ao.tenant_id = $1 and ao.aviso_id = $2
+        order by o.fecha_operacion, o.id`,
+      [
+        p.sesion.tenantId,
+        p.avisoOriginalId,
+        await codigoDeCatalogo(db, {
+          actividadId: o.actividad_id,
+          catalogo: 'tipo_operacion',
+          descripcion: 'Aportación a Desarrollo',
+          fecha: o.periodo,
+        }),
+      ],
+    )
+
+    const filas = reportables.rows as FilaReportable[]
+    // `modificacion` en SÍ: el bloque del desarrollo también lo declara, y es
+    // lo que distingue este envío del original a nivel de operación.
+    const operaciones = filas.map((f) => {
+      const op = aOperacionDelAviso(f)
+      return { ...op, desarrollo: { ...op.desarrollo, modificacion: 'SI' as const } }
+    })
+
+    const prioridad = await codigoDeCatalogo(db, {
+      actividadId: o.actividad_id,
+      catalogo: 'prioridad',
+      descripcion: 'NORMAL',
+      fecha: o.periodo,
+    })
+    const tipoAlerta = await codigoDeCatalogo(db, {
+      actividadId: o.actividad_id,
+      catalogo: 'tipo_alerta',
+      descripcion: 'Sin alerta',
+      fecha: o.periodo,
+    })
+
+    const modificatorio = {
+      folioModificacion: o.acuse_folio,
+      descripcionModificacion: p.descripcion,
+    }
+
+    const avisos: AvisoDelInforme[] =
+      p.granularidad === 'un_aviso_por_operacion'
+        ? operaciones.map((op, i) => ({
+            referencia: referenciaAviso(o.mes_reportado, i + 1),
+            modificatorio,
+            prioridad,
+            tipoAlerta,
+            operaciones: [op],
+          }))
+        : operaciones.length === 0
+          ? []
+          : [
+              {
+                referencia: referenciaAviso(o.mes_reportado, 1),
+                modificatorio,
+                prioridad,
+                tipoAlerta,
+                operaciones,
+              },
+            ]
+
+    const informe = {
+      mesReportado: o.mes_reportado,
+      claveSujetoObligado: o.rfc,
+      claveActividad: o.clave_sppld,
+      avisos,
+    }
+    const xml = construirInformeXml(informe)
+
+    const validacion = validarContraXsd(xml, formato.ruta_xsd)
+    if (!validacion.valida) {
+      throw new AvisoNoValida(
+        `El modificatorio no valida contra ${formato.version}. No se guardó nada.\n` +
+          validacion.errores.join('\n'),
+        validacion.errores,
+      )
+    }
+
+    const hashXml = createHash('sha256').update(xml, 'utf8').digest('hex')
+    const ins = await db.query(
+      `insert into avisos (tenant_id, actividad_id, periodo, tipo, estatus,
+                           formato_aviso_id, hash_xml, modifica_a)
+       values ($1,$2,$3::date,'modificatorio'::tipo_aviso,'validado'::estatus_aviso,$4,$5,$6)
+       returning id::text`,
+      [p.sesion.tenantId, o.actividad_id, o.periodo, o.formato_aviso_id, hashXml, o.id],
+    )
+    const avisoId = (ins.rows[0] as { id: string }).id
+
+    const fragmentos = fragmentarInforme(informe)
+    const lotes: LoteGenerado[] = []
+    for (const f of fragmentos) {
+      const bytes = new TextEncoder().encode(f.xml)
+      const hashLote = createHash('sha256').update(f.xml, 'utf8').digest('hex')
+      const ruta = `${p.sesion.tenantId}/${avisoId}/lote-${String(f.lote).padStart(3, '0')}.xml`
+      await almacen.subir(ruta, bytes, 'application/xml')
+      await db.query(
+        `insert into aviso_lotes (tenant_id, aviso_id, lote, total_lotes,
+                                  storage_path, hash_sha256, bytes, avisos_en_lote)
+         values ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [p.sesion.tenantId, avisoId, f.lote, f.totalLotes, ruta, hashLote, f.bytes, f.avisos],
+      )
+      lotes.push({
+        lote: f.lote,
+        totalLotes: f.totalLotes,
+        storagePath: ruta,
+        hashSha256: hashLote,
+        bytes: f.bytes,
+      })
+    }
+
+    await db.query(`update avisos set fragmentos = $2, xml_storage_path = $3 where id = $1`, [
+      avisoId,
+      fragmentos.length,
+      lotes[0]?.storagePath ?? null,
+    ])
+
+    for (const f of filas) {
+      await db.query(
+        `insert into aviso_operaciones (tenant_id, aviso_id, operacion_id, evaluacion_id)
+         values ($1,$2,$3,$4)`,
+        [p.sesion.tenantId, avisoId, f.operacion_id, f.evaluacion_id],
+      )
+    }
+
+    await db.query('select app.bitacora_registrar($1,$2,$3,$4,$5::jsonb,$6)', [
+      p.sesion.tenantId,
+      'aviso.modificatorio_generado',
+      'aviso',
+      avisoId,
+      JSON.stringify({
+        periodo: o.periodo,
+        modifica_a: o.id,
+        folio_original: o.acuse_folio,
+        descripcion: p.descripcion,
+        hash_xml: hashXml,
+      }),
+      p.sesion.usuarioId,
+    ])
+
+    return {
+      avisoId,
+      tipo: 'normal',
+      xml,
+      hashXml,
+      operacionesIncluidas: operaciones.length,
+      avisosEnElInforme: avisos.length,
+      formatoVersion: formato.version,
+      lotes,
+    }
+  })
 }

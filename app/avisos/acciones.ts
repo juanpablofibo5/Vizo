@@ -6,10 +6,12 @@ import { almacenAvisos } from '../../src/supabase/almacen'
 import {
   aprobarAviso,
   generarAviso,
+  generarModificatorio,
   marcarListoParaRevision,
   registrarAcuse,
 } from '../../src/persistencia/aviso'
 import { createHash } from 'node:crypto'
+import { PATRON_FOLIO } from '../../src/aviso/informe'
 
 /**
  * Las acciones del pipeline del aviso.
@@ -54,6 +56,9 @@ function legible(bruto: string): string {
   }
   if (/avisos_unico_por_periodo/i.test(bruto)) {
     return 'Este periodo ya tiene un aviso. Corregir uno presentado es un aviso modificatorio, no volver a generarlo.'
+  }
+  if (/forma que el SPPLD asigna|acuse_folio_forma/i.test(bruto)) {
+    return 'El folio no tiene la forma que asigna el SPPLD (AAAA-N, por ejemplo 2026-12345). Cópialo del acuse tal como viene.'
   }
   if (/carpeta del obligado|ruta_del_obligado/i.test(bruto)) {
     return 'La ruta del acuse no pertenece a este obligado.'
@@ -112,10 +117,35 @@ export async function accionRegistrarAcuse(
   datos: FormData,
 ): Promise<Resultado> {
   const avisoId = String(datos.get('avisoId') ?? '')
+  const folio = String(datos.get('folio') ?? '').trim()
   const archivo = datos.get('acuse')
 
   if (!(archivo instanceof File) || archivo.size === 0) {
     return { ok: false, mensaje: 'Adjunta el acuse que te devolvió el portal del SPPLD.' }
+  }
+  if (folio === '') {
+    return {
+      ok: false,
+      mensaje:
+        'Captura el folio que trae el acuse. Es lo que identifica este aviso ante la autoridad si algún día hay que corregirlo.',
+    }
+  }
+
+  // El folio se comprueba ANTES de tocar Storage.
+  //
+  // SALIÓ AL PROBARLO EN EL NAVEGADOR. El archivo se subía primero y el folio
+  // se validaba después, así que un folio mal escrito dejaba el objeto subido
+  // —el bucket no tiene DELETE, a propósito— y el reintento con el folio bueno
+  // moría con "The resource already exists". El usuario quedaba atrapado por su
+  // propia corrección.
+  //
+  // Lo barato y sin efectos va primero. Es la regla general, y aquí se paga.
+  if (!PATRON_FOLIO.test(folio)) {
+    return {
+      ok: false,
+      mensaje:
+        'El folio no tiene la forma que asigna el SPPLD (AAAA-N, por ejemplo 2026-12345). Cópialo del acuse tal como viene.',
+    }
   }
 
   return ejecutar(async ({ db, sesion }) => {
@@ -131,9 +161,54 @@ export async function accionRegistrarAcuse(
     const huella = createHash('sha256').update(bytes).digest('hex')
     const ruta = `${sesion.tenantId}/${avisoId}/acuse-${huella.slice(0, 16)}.pdf`
     const almacen = await almacenAvisos()
-    await almacen.subir(ruta, bytes, 'application/pdf')
 
-    await registrarAcuse(db, { sesion, avisoId, storagePath: ruta })
+    try {
+      await almacen.subir(ruta, bytes, 'application/pdf')
+    } catch (e) {
+      // "Ya existe" NO es un fallo aquí, y solo aquí: la ruta ES el hash del
+      // contenido, así que un objeto en esa ruta tiene por construcción los
+      // mismos bytes. Reintentar con el mismo archivo es idempotente.
+      //
+      // En `documentos` la misma excepción sí es un fallo: allá la ruta no es
+      // el contenido y sobrescribir borraría evidencia.
+      const mensaje = e instanceof Error ? e.message : String(e)
+      if (!/already exists/i.test(mensaje)) throw e
+    }
+
+    await registrarAcuse(db, { sesion, avisoId, storagePath: ruta, folio })
     return 'Acuse registrado. El aviso quedó como presentado.'
+  })
+}
+
+
+/**
+ * Corregir un aviso ya presentado.
+ *
+ * El original no se toca: se genera OTRO archivo que dice cuál corrige, por el
+ * folio que el SPPLD le asignó. Los dos coexisten, que es exactamente lo que la
+ * autoridad necesita para reconciliarlos.
+ */
+export async function accionCorregir(
+  _previo: Resultado | null,
+  datos: FormData,
+): Promise<Resultado> {
+  const avisoOriginalId = String(datos.get('avisoId') ?? '')
+  const descripcion = String(datos.get('descripcion') ?? '').trim()
+
+  if (descripcion === '') {
+    return {
+      ok: false,
+      mensaje:
+        'Explica qué se corrige. Va dentro del archivo: es lo que le dice a la autoridad qué cambió respecto del aviso que ya presentaste.',
+    }
+  }
+
+  return ejecutar(async ({ db, sesion }) => {
+    const r = await generarModificatorio(
+      db,
+      { sesion, avisoOriginalId, descripcion, granularidad: 'un_aviso_por_operacion' },
+      await almacenAvisos(),
+    )
+    return `Modificatorio generado y validado contra el XSD, con ${String(r.operacionesIncluidas)} operación(es).`
   })
 }

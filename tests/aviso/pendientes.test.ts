@@ -165,6 +165,7 @@ describe('Periodos pendientes de presentar', () => {
       sesion,
       avisoId: a.avisoId,
       storagePath: `${sesion.tenantId}/${a.avisoId}/acuse.pdf`,
+      folio: '2026-4471',
     })
 
     expect((await pendientes('2026-06-12')).map((x) => x.periodo)).not.toContain('2026-05-01')

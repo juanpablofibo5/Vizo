@@ -126,8 +126,25 @@ export interface OperacionDelAviso {
   aportacion: Aportacion
 }
 
+/**
+ * Lo que convierte un aviso en modificatorio.
+ *
+ * `folioModificacion` es el folio que el SPPLD asignó al aviso ORIGINAL cuando
+ * lo aceptó — así la autoridad sabe cuál se está corrigiendo. Sin él el bloque
+ * no valida, y por eso el folio se captura junto con el acuse.
+ */
+export interface Modificatorio {
+  /** Folio del acuse del aviso original. Forma \d{4}-\d{1,9}. */
+  folioModificacion: string
+  descripcionModificacion: string
+}
+
+export const PATRON_FOLIO = /^\d{4}-\d{1,9}$/
+
 export interface AvisoDelInforme {
   referencia: string
+  /** Presente solo en un aviso modificatorio. */
+  modificatorio?: Modificatorio
   prioridad: string
   tipoAlerta: string
   descripcionAlerta?: string
@@ -243,8 +260,30 @@ function nodoAviso(a: AvisoDelInforme): Nodo {
     )
   }
 
+  if (a.modificatorio !== undefined && !PATRON_FOLIO.test(a.modificatorio.folioModificacion)) {
+    throw new InformeIncompleto(
+      `El folio "${a.modificatorio.folioModificacion}" no cumple la forma del XSD ` +
+        '(\\d{4}-\\d{1,9}). Es el folio que el SPPLD asignó al aviso original; sin él la ' +
+        'autoridad no sabe cuál se está corrigiendo.',
+    )
+  }
+
   return rama('aviso', [
     texto('referencia_aviso', a.referencia),
+    // El ORDEN lo fija el xsd:sequence de `aviso_type`: la referencia, luego el
+    // modificatorio si lo hay, luego prioridad. Ponerlo en otro sitio falla con
+    // "This element is not expected", que no menciona el orden.
+    ...(a.modificatorio === undefined
+      ? []
+      : [
+          rama('modificatorio', [
+            texto('folio_modificacion', a.modificatorio.folioModificacion),
+            texto(
+              'descripcion_modificacion',
+              normalizarTextoDelAviso(a.modificatorio.descripcionModificacion),
+            ),
+          ]),
+        ]),
     texto('prioridad', a.prioridad),
     rama('alerta', [
       texto('tipo_alerta', a.tipoAlerta),

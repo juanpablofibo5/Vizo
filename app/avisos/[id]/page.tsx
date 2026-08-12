@@ -4,7 +4,12 @@ import { Marco } from '../../componentes/marco'
 import { detalleDeAviso, type PasoDelAviso } from '../../../src/persistencia/aviso'
 import { EstadoAviso, nombreDePeriodo } from '../estados'
 import { tamanoLegible } from '../../../src/dominio/tamano'
-import { BotonAprobar, BotonListoRevision, FormularioAcuse } from '../formularios'
+import {
+  BotonAprobar,
+  BotonListoRevision,
+  FormularioAcuse,
+  FormularioCorregir,
+} from '../formularios'
 
 export const dynamic = 'force-dynamic'
 
@@ -192,13 +197,19 @@ export default async function DetalleAvisoPagina({
             )}
 
             {detalle.estatus === 'presentado' && (
-              <div className="tarjeta">
-                <h3>Presentado</h3>
-                <p className="pequeno" style={{ margin: 0 }}>
-                  El acuse está guardado. Este periodo está cumplido y su evidencia es
-                  verificable.
-                </p>
-              </div>
+              <>
+                <div className="tarjeta">
+                  <h3>Presentado</h3>
+                  <p className="pequeno" style={{ margin: 0 }}>
+                    El acuse está guardado. Este periodo está cumplido y su evidencia es
+                    verificable.
+                  </p>
+                </div>
+                <div className="tarjeta">
+                  <h3>¿Salió con un dato mal?</h3>
+                  <FormularioCorregir avisoId={detalle.id} puede={esAdmin} />
+                </div>
+              </>
             )}
           </div>
         </div>

@@ -3,6 +3,7 @@
 import { useActionState } from 'react'
 import {
   accionAprobar,
+  accionCorregir,
   accionGenerar,
   accionListoRevision,
   accionRegistrarAcuse,
@@ -92,12 +93,54 @@ export function FormularioAcuse({ avisoId, puede }: { avisoId: string; puede: bo
       <Mensaje estado={estado} />
       <label style={{ margin: 0 }}>
         <span>
+          Folio del acuse <span className="pista">como viene, por ejemplo 2026-12345</span>
+        </span>
+        <input type="text" name="folio" placeholder="2026-12345" disabled={!puede} />
+      </label>
+      {/* El folio no es burocracia: es lo ÚNICO que identifica este aviso ante
+          la autoridad, y sin él no se puede presentar un modificatorio el día
+          que haya que corregirlo. */}
+      <span className="tenue pequeno" style={{ marginTop: '-.3rem' }}>
+        Sin el folio no se podrá corregir este aviso más adelante.
+      </span>
+      <label style={{ margin: 0 }}>
+        <span>
           Acuse del SPPLD <span className="pista">PDF que devolvió el portal</span>
         </span>
         <input type="file" name="acuse" accept="application/pdf" disabled={!puede} />
       </label>
       <button type="submit" disabled={!puede || pendiente}>
         {pendiente ? 'Registrando…' : 'Registrar acuse'}
+      </button>
+    </form>
+  )
+}
+
+
+export function FormularioCorregir({ avisoId, puede }: { avisoId: string; puede: boolean }) {
+  const [estado, accion, pendiente] = useActionState(accionCorregir, null)
+  return (
+    <form action={accion} style={{ display: 'grid', gap: '.7rem' }}>
+      <input type="hidden" name="avisoId" value={avisoId} />
+      <Mensaje estado={estado} />
+      <p className="pequeno" style={{ margin: 0 }}>
+        El aviso que ya presentaste <strong>no se modifica</strong>: se genera otro archivo
+        que dice cuál corrige, por su folio. Los dos quedan, que es lo que la autoridad
+        necesita para reconciliarlos.
+      </p>
+      <label style={{ margin: 0 }}>
+        <span>
+          Qué se corrige <span className="pista">va dentro del archivo</span>
+        </span>
+        <textarea
+          name="descripcion"
+          rows={3}
+          placeholder="El monto de la aportación se capturó con un dígito de más"
+          disabled={!puede}
+        />
+      </label>
+      <button type="submit" className="secundario" disabled={!puede || pendiente}>
+        {pendiente ? 'Generando y validando…' : 'Generar aviso modificatorio'}
       </button>
     </form>
   )

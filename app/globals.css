@@ -181,6 +181,7 @@ input, select, textarea {
   border-radius: 5px; font: inherit; background: var(--superficie); color: var(--texto);
 }
 input[type='file'] { padding: .4rem; font-size: .9rem; }
+textarea { resize: vertical; min-height: 4rem; font-family: inherit; }
 .fila { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0 1rem; }
 
 button, .boton {

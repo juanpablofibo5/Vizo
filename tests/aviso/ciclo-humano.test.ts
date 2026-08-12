@@ -141,6 +141,7 @@ describe('Ciclo del aviso con dos roles', () => {
       sesion: admin,
       avisoId,
       storagePath: `${admin.tenantId}/${avisoId}/acuse.pdf`,
+      folio: '2026-4471',
     })
     expect(await estatus()).toBe('presentado')
 
@@ -172,7 +173,7 @@ describe('Ciclo del aviso con dos roles', () => {
     await aprobarAviso(db, { sesion: admin, avisoId })
 
     await expect(
-      registrarAcuse(db, { sesion: capturista, avisoId, storagePath: 'x/y.pdf' }),
+      registrarAcuse(db, { sesion: capturista, avisoId, storagePath: 'x/y.pdf' , folio: '2026-4471'}),
     ).rejects.toThrow(/rol admin/)
     expect(await estatus()).toBe('aprobado')
   })
@@ -187,7 +188,7 @@ describe('Ciclo del aviso con dos roles', () => {
 
   it('no se registra acuse de un aviso que nadie aprobó', async () => {
     await expect(
-      registrarAcuse(db, { sesion: admin, avisoId, storagePath: 'x/y.pdf' }),
+      registrarAcuse(db, { sesion: admin, avisoId, storagePath: 'x/y.pdf' , folio: '2026-4471'}),
     ).rejects.toThrow(/aprobado/)
   })
 
@@ -241,6 +242,7 @@ describe('Ciclo del aviso con dos roles', () => {
         sesion: admin,
         avisoId,
         storagePath: `00000000-0000-0000-0000-000000000000/${avisoId}/acuse.pdf`,
+        folio: '2026-4471',
       }),
     ).rejects.toThrow(/carpeta del obligado|acuse_ruta_del_obligado/)
 
@@ -254,6 +256,7 @@ describe('Ciclo del aviso con dos roles', () => {
       sesion: admin,
       avisoId,
       storagePath: `${admin.tenantId}/${avisoId}/acuse.pdf`,
+      folio: '2026-4471',
     })
 
     const { rows } = await db.query(

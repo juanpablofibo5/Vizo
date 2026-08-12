@@ -11,6 +11,7 @@ import {
   reconstruirExpediente,
 } from '../../src/persistencia/reconstruccion'
 import { enTransaccionDeSesion, type ContextoSesion } from '../../src/persistencia/transaccion'
+import { hoyEnMexico } from '../../src/dominio/fechas'
 
 /**
  * El corte lo pone la BASE, no el reloj de JavaScript.
@@ -230,5 +231,89 @@ describe('Reconstrucción histórica del expediente', () => {
     expect(r.documentos).toHaveLength(1)
     expect(r.documentos[0]?.hashSha256).toBe(ine.hash)
     expect(r.completitud?.estatus).toBe('incompleto')
+  })
+})
+
+/**
+ * Lo que la pantalla de reconstrucción promete.
+ *
+ * La pantalla parte de una idea que hay que sostener: reconstruir HOY tiene que
+ * dar lo mismo que muestra el expediente. Si no coincidieran, ninguna
+ * reconstrucción de una fecha pasada sería creíble — y esas son las que se
+ * enseñan cuando alguien pregunta.
+ */
+describe('La reconstrucción de hoy concuerda con el estado real', () => {
+  let db: Client
+  let sesion: ContextoSesion
+  let expedienteId: string
+
+  beforeAll(async () => {
+    db = await conectar()
+  })
+
+  afterAll(async () => {
+    await db.end()
+  })
+
+  beforeEach(async () => {
+    const marca = String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 900) + 100)
+    sesion = await crearTenantConUsuario(db, marca)
+    await db.query(
+      `insert into actividades_tenant (tenant_id, actividad_id)
+       select $1, id from actividades_vulnerables where fraccion='V_BIS'`,
+      [sesion.tenantId],
+    )
+    const c = await db.query(
+      `insert into clientes_finales (tenant_id,tipo_persona,rfc,nombre_o_razon_social,nacionalidad)
+       values ($1,'moral',$2,'Concordante SA','MX') returning id`,
+      [sesion.tenantId, `CON${marca}`],
+    )
+    const r = await abrirExpediente(db, {
+      sesion,
+      clienteId: (c.rows[0] as { id: string }).id,
+    })
+    expedienteId = r.expedienteId
+  })
+
+  it('los documentos y la completitud son los mismos que en las tablas', async () => {
+    const almacen = almacenComo(sesion)
+    for (const campo of ['identificacion_oficial', 'acta_constitutiva']) {
+      await registrarDocumento(db, almacen, {
+        sesion,
+        expedienteId,
+        documento: {
+          campo,
+          nombreArchivo: `${campo}.pdf`,
+          mime: 'application/pdf',
+          bytes: new Uint8Array(randomBytes(200 + campo.length)),
+        },
+      })
+    }
+    const evaluacion = await recalcularCompletitud(db, {
+      sesion,
+      expedienteId,
+      fecha: '2026-08-11',
+    })
+
+    // La pantalla usa una FECHA (hoy en México), no un instante: es el mismo
+    // camino que recorre un usuario al abrirla sin elegir nada.
+    const reconstruido = await enTransaccionDeSesion(db, sesion, () =>
+      reconstruirExpediente(db, { sesion, expedienteId, hasta: hoyEnMexico() }),
+    )
+
+    const enTablas = await db.query(
+      `select campo, hash_sha256 from documentos
+        where expediente_id = $1 order by campo`,
+      [expedienteId],
+    )
+
+    expect(reconstruido.documentos.map((d) => [d.campo, d.hashSha256])).toEqual(
+      (enTablas.rows as Array<{ campo: string; hash_sha256: string }>).map((r) => [
+        r.campo,
+        r.hash_sha256,
+      ]),
+    )
+    expect(reconstruido.completitud?.estatus).toBe(evaluacion.estatus)
+    expect(reconstruido.completitud?.cubiertos).toBe(String(evaluacion.cubiertos))
   })
 })

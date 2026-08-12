@@ -191,8 +191,11 @@ export default async function Evidencia() {
           <p className="pequeno" style={{ margin: 0 }}>
             &ldquo;¿Cómo estaba este expediente el 15 de mayo?&rdquo; se responde leyendo{' '}
             <strong>solo la bitácora</strong> — sin consultar las tablas de estado, que dicen
-            cómo están las cosas hoy y no cómo estaban entonces. La consulta existe y está
-            probada; su pantalla llega con el expediente del cliente.
+            cómo están las cosas hoy y no cómo estaban entonces.
+          </p>
+          <p className="pequeno" style={{ margin: '.7rem 0 0' }}>
+            Se pregunta desde el expediente de cada cliente, que es donde está el contexto:{' '}
+            <Link href="/clientes">ve a Clientes</Link> y entra al expediente.
           </p>
         </div>
       </Marco>

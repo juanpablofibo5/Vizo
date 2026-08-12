@@ -310,9 +310,12 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
           </table>
         </div>
 
-        <Link href="/clientes" style={{ display: 'inline-block', marginTop: '1.5rem' }}>
-          ← Volver a clientes
-        </Link>
+        <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.5rem' }}>
+          <Link href="/clientes">← Volver a clientes</Link>
+          <Link href={`/clientes/${clienteId}/expediente/historico`}>
+            ¿Cómo estaba en una fecha? →
+          </Link>
+        </div>
       </Marco>
     )
   } finally {

@@ -1,7 +1,10 @@
 import Link from 'next/link'
 import { conBase, leerComoUsuario } from '../src/supabase/conexion'
 import { Marco } from './componentes/marco'
+import { ChecklistDeArranque } from './componentes/arranque'
+import { fraccionLegible } from './componentes/fraccion'
 import { panoramaDePeriodos, type PeriodoPendiente } from '../src/persistencia/calendario'
+import { arranqueDelObligado } from '../src/persistencia/arranque'
 import { hoyEnMexico } from '../src/dominio/fechas'
 import { EstadoAviso, PlazoBadge, nombreDePeriodo } from './avisos/estados'
 
@@ -35,14 +38,21 @@ const TONO_FONDO: Record<string, { borde: string; fondo: string }> = {
 export default async function Inicio() {
   return conBase(async ({ db, sesion, perfil, obligado }) => {
     const datos = await leerComoUsuario(db, sesion, async () => {
+      const arranque = await arranqueDelObligado(db, { sesion })
+
+      // La actividad sale del catálogo, incluido su nombre. Escribirlo en la
+      // pantalla haría que un obligado de arrendamiento leyera "desarrollo
+      // inmobiliario" en su propio portal.
       const act = await db.query(
-        `select av.id::text
+        `select av.id::text, av.fraccion::text, av.nombre
            from actividades_tenant at
            join actividades_vulnerables av on av.id = at.actividad_id
-          where at.tenant_id = $1 limit 1`,
+          where at.tenant_id = $1
+          order by av.fraccion limit 1`,
         [sesion.tenantId],
       )
-      const actividadId = (act.rows[0] as { id: string } | undefined)?.id
+      const actividad = act.rows[0] as { id: string; fraccion: string; nombre: string } | undefined
+      const actividadId = actividad?.id
 
       const periodos =
         actividadId === undefined
@@ -62,6 +72,8 @@ export default async function Inicio() {
       )
 
       return {
+        arranque,
+        actividad: actividad ?? null,
         periodos,
         resumen: resumen.rows[0] as {
           alertas: number
@@ -99,51 +111,88 @@ export default async function Inicio() {
     return (
       <Marco obligado={obligado} perfil={perfil} alertasAbiertas={datos.resumen.alertas}>
         <h1>{obligado.razonSocial}</h1>
-        <p className="sub">Fracción V Bis · desarrollo inmobiliario</p>
-
-        {/* ── La tarjeta que contesta la pregunta ─────────────────────── */}
-        <div
-          className="tarjeta"
-          style={{
-            borderColor: tono?.borde,
-            background: tono?.fondo,
-            borderWidth: '1.5px',
-            padding: '1.5rem 1.6rem',
-          }}
-        >
-          {urgente === null ? (
-            <>
-              <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Todo presentado</h2>
-              <p className="pequeno" style={{ margin: '.4rem 0 0' }}>
-                No hay periodos cerrados pendientes de presentar.
-              </p>
-            </>
+        <p className="sub">
+          {datos.actividad === null ? (
+            'Sin actividad vulnerable contratada'
           ) : (
             <>
-              <div style={{ display: 'flex', gap: '.7rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <h2 style={{ margin: 0, fontSize: '1.25rem', textTransform: 'capitalize' }}>
-                  {nombreDePeriodo(urgente.periodo)}
-                </h2>
-                <PlazoBadge
-                  estado={urgente.plazo.estado}
-                  diasRestantes={urgente.plazo.diasRestantes}
-                  fechaLimite={urgente.plazo.fechaLimite}
-                />
-                <EstadoAviso estatus={urgente.estatusAviso} />
-              </div>
-              <p className="pequeno" style={{ margin: '.6rem 0 1rem' }}>
-                {urgente.operacionesReportables === 0
-                  ? 'Sin operaciones reportables: corresponde un informe en cero, que es una obligación por sí misma.'
-                  : `${String(urgente.operacionesReportables)} operación(es) reportable(s). Fecha límite ${urgente.plazo.fechaLimite}.`}
-                {pendientes.length > 1 &&
-                  ` Hay ${String(pendientes.length - 1)} periodo(s) más pendiente(s).`}
-              </p>
-              <Link href="/avisos" className="boton">
-                Ir a avisos
-              </Link>
+              Fracción {fraccionLegible(datos.actividad.fraccion)} · {datos.actividad.nombre}
             </>
           )}
-        </div>
+        </p>
+
+        {/* ── La tarjeta que contesta la pregunta ─────────────────────── */}
+        {/* Solo si HAY pregunta que contestar. Sin actividad contratada no
+            existe obligación que calcular, y una tarjeta tranquilizadora sobre
+            un obligado del que no se sabe nada es la peor mentira que este
+            producto puede contar. */}
+        {datos.arranque.puedeEvaluar && (
+          <div
+            className="tarjeta"
+            style={{
+              borderColor: tono?.borde,
+              background: tono?.fondo,
+              borderWidth: '1.5px',
+              padding: '1.5rem 1.6rem',
+            }}
+          >
+            {urgente === null ? (
+              <>
+                <h2 style={{ margin: 0, fontSize: '1.25rem' }}>
+                  {datos.arranque.completo ? 'Todo presentado' : 'Sin periodos pendientes todavía'}
+                </h2>
+                <p className="pequeno" style={{ margin: '.4rem 0 0' }}>
+                  {datos.arranque.completo
+                    ? 'No hay periodos cerrados pendientes de presentar.'
+                    : 'No hay periodos cerrados pendientes, pero la cuenta aún está en arranque: mientras falten pasos, esto no equivale a estar al corriente.'}
+                </p>
+              </>
+            ) : (
+              <>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '.7rem',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <h2
+                    style={{
+                      margin: 0,
+                      fontSize: '1.25rem',
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    {nombreDePeriodo(urgente.periodo)}
+                  </h2>
+                  <PlazoBadge
+                    estado={urgente.plazo.estado}
+                    diasRestantes={urgente.plazo.diasRestantes}
+                    fechaLimite={urgente.plazo.fechaLimite}
+                  />
+                  <EstadoAviso estatus={urgente.estatusAviso} />
+                </div>
+                <p className="pequeno" style={{ margin: '.6rem 0 1rem' }}>
+                  {urgente.operacionesReportables === 0
+                    ? 'Sin operaciones reportables: corresponde un informe en cero, que es una obligación por sí misma.'
+                    : `${String(urgente.operacionesReportables)} operación(es) reportable(s). Fecha límite ${urgente.plazo.fechaLimite}.`}
+                  {pendientes.length > 1 &&
+                    ` Hay ${String(pendientes.length - 1)} periodo(s) más pendiente(s).`}
+                </p>
+                <Link href="/avisos" className="boton">
+                  Ir a avisos
+                </Link>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── El arranque, mientras falte algo ─────────────────────────── */}
+        {/* Desaparece solo cuando la cuenta cerró su primer periodo. Un
+            checklist que se queda para siempre en la pantalla principal deja
+            de leerse a la tercera semana. */}
+        {!datos.arranque.completo && <ChecklistDeArranque arranque={datos.arranque} />}
 
         {/* ── Lo que pide una acción ──────────────────────────────────── */}
         <h2>Requiere tu atención</h2>

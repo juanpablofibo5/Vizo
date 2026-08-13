@@ -93,12 +93,12 @@ Modelo comercial reflejado en software: **unidad de cobro = RFC obligado**; impl
 
 Decisión central: **en F1 el backoffice es manual y documentado; el software del backoffice es F2, condicionado al go de viabilidad.** Construir pantallas para operar 1–3 clientes piloto es vanidad; documentar cómo se opera es obligatorio.
 
-### F1 — runbooks (entregable: `docs/runbooks/`)
+### F1 — runbooks (entregable: `docs/runbooks/` ✓ escritos el 12-ago)
 
-1. **Alta de tenant** (obligado + sucursales + usuarios + actividades) — hoy SQL, con checklist.
-2. **Carga de vigencias regulatorias** (UMA, umbrales, campos, formatos/XSD, catálogos SAT, parámetros): migración con **doble revisión contra el DOF** — quien redacta el SQL no es quien lo aprueba. El mismo patrón del aviso, ejercido por personas.
-3. **Monitoreo**: CI, aserciones estructurales, y la consulta de salud (¿algún tenant con periodo vencido sin aviso?).
-4. **Soporte**: qué se puede mirar (solo con el rol elevado y consulta de solo lectura, registrada) y qué jamás (impersonation).
+1. [**Alta de un obligado**](runbooks/01-alta-de-obligado.md) — obligado, actividades, sucursales, usuarios. La verificación del alta es el propio checklist de arranque del portal.
+2. [**Carga de una vigencia regulatoria**](runbooks/02-carga-de-vigencias.md) (UMA, umbrales, campos, formatos/XSD, catálogos SAT, parámetros): migración con **doble revisión contra el DOF** — quien redacta el SQL no es quien lo aprueba. El mismo patrón del aviso, ejercido por personas.
+3. [**Monitoreo de la flota**](runbooks/03-monitoreo.md): CI, aserciones estructurales, y la consulta de salud (¿algún tenant con periodo vencido sin aviso?).
+4. [**Soporte**](runbooks/04-soporte.md): qué se puede mirar (consulta de solo lectura, mínima y anotada) y qué jamás (impersonation).
 
 ### F2 — software (si el go se da)
 
@@ -154,3 +154,11 @@ Cualquier resultado responde la pregunta original del proyecto. Por eso F1 se co
 | Guion de demo + cierre | 0.5 |
 
 Con el ritmo real demostrado, esto es agresivo en calendario humano y holgado en calendario nuestro. La restricción de F1 no es construir: es que las entrevistas y el DOF avancen en paralelo.
+
+### Cierre de F1 — 12 de agosto de 2026
+
+Los doce bloques están entregados. Además se construyeron tres piezas que el presupuesto no contemplaba, cada una porque el trabajo destapó que faltaba: el **flujo de aprobación del expediente**, la **reconstrucción histórica con pantalla**, y el **aviso modificatorio** —que era F2, y se adelantó porque exige el folio del acuse, un dato que no se estaba guardando y que sin él habría que migrar avisos ya presentados—.
+
+**Lo que queda es la compuerta, y ninguna de sus tres entradas es código.** Cualquier semana adicional de construcción antes del contraste contra el DOF es una semana apostada a que las reglas implementadas son las correctas — que es exactamente la pregunta que la compuerta existe para responder.
+
+> **Pendiente de despliegue, descubierto al cerrar F1:** el proyecto remoto va **9 migraciones atrás** del repositorio y sus usuarios no tienen contraseña, así que `app.vizo.mx` no es demostrable. Detalle e implicaciones en el issue #8.

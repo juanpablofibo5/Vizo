@@ -43,7 +43,9 @@ Deja abiertas dos pestañas: el portal, y `/login` en ventana privada para el se
 
 Estás en `/`. Señala la tarjeta grande, en rojo.
 
-> "Lo primero que ves no es un tablero de métricas. Es la única pregunta que importa: **marzo de 2026 lleva 116 días vencido**. Y fíjate en algo — marzo no tiene ni una operación capturada."
+> "Lo primero que ves no es un tablero de métricas. Es la única pregunta que importa: **marzo de 2026 lleva N días vencido**. Y fíjate en algo — marzo no tiene ni una operación capturada."
+
+**Lee el número de la pantalla, no de aquí.** Marzo venció el 17 de abril y la cuenta sube cada día: el 13 de agosto de 2026 iban 118. Un guion con la cifra escrita se desincroniza solo, y decir un número que la pantalla contradice cuesta más que no decirlo.
 
 **El punto:** el sistema sabe que el obligado se dio de alta ante la autoridad en marzo, así que **debe informes en cero desde entonces**, haya operado o no.
 
@@ -177,4 +179,6 @@ Y sigue. La única falla que **sí** aborta la demo es que el veredicto de acumu
 
 ---
 
-*Escenario y cifras verificados contra la aplicación el 11 de agosto de 2026. Los umbrales salen del catálogo con la UMA de 2026 ($117.31), contrastada contra la tabla oficial del SPPLD.*
+*Escenario y cifras verificados contra la aplicación el 11 de agosto de 2026, y contra el ambiente desplegado (`app.vizo.mx`) el 13 de agosto. Los umbrales salen del catálogo con la UMA de 2026 ($117.31), contrastada contra la tabla oficial del SPPLD.*
+
+**Lo verificado contra producción, para no repetirlo a mano:** los cinco periodos en pantalla · marzo sin operaciones · los tres pagos con sus veredictos · el texto íntegro del veredicto de acumulación · el expediente en 3 de 13 · y todo lo que `generarAviso` exige y que, si faltara, lo detendría a media demo: clave `DIN`, formato `din-sppld-2026-08`, y los tres catálogos del SAT resolviendo a un solo código cada uno.

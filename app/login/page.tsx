@@ -22,7 +22,11 @@ export default function Login() {
       setEnviando(false)
       return
     }
-    router.push('/clientes')
+    // Al dashboard, que es la única pantalla que responde la pregunta con la
+    // que alguien abre este portal: ¿estoy en regla hoy? Aterrizar en la lista
+    // de clientes obligaba a buscar los periodos vencidos, que es justo lo que
+    // el semáforo existe para no tener que buscar.
+    router.push('/')
     router.refresh()
   }
 

@@ -2,7 +2,11 @@
 
 import { revalidatePath } from 'next/cache'
 import { conBase } from '../../src/supabase/conexion'
-import { enTransaccionDeSesion } from '../../src/persistencia/transaccion'
+import {
+  FechaDeAltaInvalida,
+  NoAutorizado,
+  registrarFechaAlta,
+} from '../../src/persistencia/obligado'
 
 /**
  * Configuración del obligado.
@@ -24,41 +28,21 @@ export async function guardarFechaAlta(
 ): Promise<Resultado> {
   const fecha = String(datos.get('fechaAlta') ?? '').trim()
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-    return { ok: false, mensaje: 'La fecha debe tener la forma AAAA-MM-DD.' }
-  }
-
   try {
-    const mensaje = await conBase(async ({ db, sesion }) =>
-      enTransaccionDeSesion(db, sesion, async () => {
-        const r = (await db.query(
-          `update tenants set fecha_alta_autoridad = $2::date where id = $1`,
-          [sesion.tenantId, fecha],
-        )) as unknown as { rowCount: number }
+    const guardada = await conBase(({ db, sesion }) => registrarFechaAlta(db, { sesion, fecha }))
 
-        if (r.rowCount !== 1) {
-          throw new Error(
-            'No se pudo actualizar el obligado. Solo un administrador puede cambiar su configuración.',
-          )
-        }
-
-        await db.query('select app.bitacora_registrar($1,$2,$3,$4,$5::jsonb,$6)', [
-          sesion.tenantId,
-          'obligado.fecha_alta_registrada',
-          'tenant',
-          sesion.tenantId,
-          JSON.stringify({ fecha_alta_autoridad: fecha }),
-          sesion.usuarioId,
-        ])
-
-        return `Fecha de alta registrada: ${fecha}. Los periodos pendientes se recalculan desde ahí.`
-      }),
-    )
     revalidatePath('/configuracion')
     revalidatePath('/avisos')
     revalidatePath('/')
-    return { ok: true, mensaje }
+    return {
+      ok: true,
+      mensaje: `Fecha de alta registrada: ${guardada}. Los periodos pendientes se recalculan desde ahí.`,
+    }
   } catch (e) {
+    if (e instanceof FechaDeAltaInvalida || e instanceof NoAutorizado) {
+      return { ok: false, mensaje: e.message }
+    }
+
     const bruto = e instanceof Error ? e.message : String(e)
     if (/fecha_alta_autoridad_plausible/.test(bruto)) {
       return {

@@ -89,6 +89,13 @@ begin
   -- revoke (las tablas son de supabase_storage_admin) y la protección es un
   -- trigger. Ahí vive la evidencia documental del expediente.
   perform 1 from app.verificar_privilegios_storage() limit 1; if found then raise exception 'FALLA 1f: storage.objects sin guardia de TRUNCATE'; end if;
+  -- 1f-bis: la otra mitad de 1e. INSERT, UPDATE y DELETE no se pueden prohibir
+  -- en bloque —algunos son legítimos—, así que se declaran uno por uno y esto
+  -- falla ante cualquier privilegio de escritura que nadie haya declarado.
+  -- Producción tenía ~170 contra los 28 del proyecto, incluidos los del
+  -- catálogo regulatorio; RLS los contenía, pero la primera política de UPDATE
+  -- que se escribió los despertó.
+  perform 1 from app.verificar_privilegios_declarados() limit 1; if found then raise exception 'FALLA 1f-bis: privilegios de escritura sin declarar'; end if;
 
   -- Una vista que enumera columnas se queda atrás cuando la tabla crece, y
   -- quien la consulte creerá que el dato no existe — o tomará uno parecido.

@@ -95,9 +95,12 @@ export async function generarManifiesto(
            select resultado_aviso from evaluaciones_umbral x
             where x.operacion_id = o.id order by x.evaluado_en desc limit 1
          ) ev on true
-        where o.cliente_id = $1
+        -- El tenant va explícito además de RLS: el manifiesto es el objeto que
+        -- se defiende ante la autoridad, y una operación ajena dentro de él
+        -- sería una firma sobre datos de otro obligado.
+        where o.tenant_id = $2 and o.cliente_id = $1
         order by o.fecha_operacion, o.id`,
-      [e.cliente_id],
+      [e.cliente_id, p.sesion.tenantId],
     )
 
     const cabeza = await db.query(`select app.bitacora_cabeza($1) as h`, [p.sesion.tenantId])

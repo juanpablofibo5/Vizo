@@ -36,8 +36,8 @@ export default async function Operaciones() {
                 s.nombre as sucursal,
                 e.resultado_aviso::text, e.alerta_proximidad
            from operaciones_vigentes o
-           join clientes_finales c on c.id = o.cliente_id
-           join sucursales s on s.id = o.sucursal_id
+           join clientes_finales c on c.tenant_id = o.tenant_id and c.id = o.cliente_id
+           join sucursales s on s.tenant_id = o.tenant_id and s.id = o.sucursal_id
            left join lateral (
              select resultado_aviso, alerta_proximidad
                from evaluaciones_umbral ev
@@ -45,10 +45,17 @@ export default async function Operaciones() {
               order by ev.evaluado_en desc
               limit 1
            ) e on true
+          -- Explícito además de RLS. Esta lista se salvó por accidente de la
+          -- fuga de la vista —los joins contra tablas que sí aplican RLS
+          -- descartaban las filas ajenas—, y salvarse por accidente no es
+          -- salvarse.
+          where o.tenant_id = $1
           order by o.fecha_operacion desc, o.registrado_en desc`,
+        [sesion.tenantId],
       )
       const a = await db.query(
-        `select count(*)::int as n from alertas where estado = 'abierta'`,
+        `select count(*)::int as n from alertas where tenant_id = $1 and estado = 'abierta'`,
+        [sesion.tenantId],
       )
       const operaciones = r.rows as Fila[]
       // El veredicto completo, con sus insumos. NO se recalcula nada aquí: se

@@ -94,7 +94,12 @@ begin
   -- quien la consulte creerá que el dato no existe — o tomará uno parecido.
   -- `moneda` y `moneda_codigo` son catálogos DISTINTOS y viven en esa tabla.
   perform app.verificar_vista_operaciones_vigentes();
-  raise notice '✓ 1. Aserciones estructurales (RLS, append-only, tenancy, grants, privilegios en public y storage)';
+  -- 1g: una vista de public sin `security_invoker` evalúa RLS como su DUEÑO,
+  -- que es postgres y se salta RLS. `operaciones_vigentes` llevaba meses así:
+  -- un obligado con 1 operación veía 298, de 246 obligados distintos. Una vista
+  -- nueva nace sin la opción, así que el agujero se reabre solo.
+  perform app.verificar_vistas_invocador();
+  raise notice '✓ 1. Aserciones estructurales (RLS, append-only, tenancy, grants, privilegios en public y storage, vistas con invocador)';
 
   -- 2. La bitácora encadena --------------------------------------------------
   perform app.bitacora_registrar(v_tenant_a, 'catalogo.seed_aplicado', 'catalogo');

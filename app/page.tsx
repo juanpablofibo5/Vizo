@@ -59,16 +59,24 @@ export default async function Inicio() {
           ? []
           : await panoramaDePeriodos(db, { sesion, actividadId, hoy: hoyEnMexico() })
 
+      // El filtro por tenant va EXPLÍCITO además de RLS. Estas cuatro cuentas
+      // se apoyaban solo en RLS, y `operaciones_vigentes` resultó ser una vista
+      // sin `security_invoker`: evaluaba las políticas como su dueño, que se
+      // las salta. Este número contaba las operaciones de todos los obligados.
+      // La vista ya está corregida; la segunda capa se pone porque la primera
+      // falló en silencio durante meses.
       const resumen = await db.query(
         `select
-           (select count(*)::int from alertas where estado = 'abierta') as alertas,
+           (select count(*)::int from alertas
+             where tenant_id = $2 and estado = 'abierta') as alertas,
            (select count(*)::int from avisos
-             where estatus = 'listo_revision') as esperan_aprobacion,
+             where tenant_id = $2 and estatus = 'listo_revision') as esperan_aprobacion,
            (select count(*)::int from clientes_finales
-             where requiere_revision_identidad) as identidad_por_revisar,
+             where tenant_id = $2 and requiere_revision_identidad) as identidad_por_revisar,
            (select count(*)::int from operaciones_vigentes
-             where fecha_operacion >= date_trunc('month', $1::date)) as operaciones_del_mes`,
-        [hoyEnMexico()],
+             where tenant_id = $2
+               and fecha_operacion >= date_trunc('month', $1::date)) as operaciones_del_mes`,
+        [hoyEnMexico(), sesion.tenantId],
       )
 
       return {

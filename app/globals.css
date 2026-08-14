@@ -353,7 +353,15 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 /* ── Tablas ─────────────────────────────────────────────────────────── */
 .tabla-envoltura { overflow-x: auto; border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); }
 table { width: 100%; border-collapse: collapse; background: var(--superficie); }
-th, td { text-align: left; padding: .58rem .75rem; border-bottom: 1px solid var(--linea); }
+/* `vertical-align: top` y no el centrado por omisión: en Operaciones, abrir
+   «Por qué» hace crecer una sola celda hasta varias veces la altura del
+   renglón, y con el centrado la fecha, el aportante y el monto quedaban
+   flotando a media altura, lejos del dato que describen. Arriba, la fila se
+   lee como lo que es: una operación, y debajo su explicación. */
+th, td {
+  text-align: left; padding: .58rem .75rem;
+  border-bottom: 1px solid var(--linea); vertical-align: top;
+}
 th {
   font-size: .72rem; text-transform: uppercase; letter-spacing: .07em;
   color: var(--texto-tenue); font-weight: 500; white-space: nowrap;

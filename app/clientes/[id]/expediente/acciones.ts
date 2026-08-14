@@ -10,6 +10,10 @@ import {
   aprobarExpediente,
   recalcularCompletitud,
 } from '../../../../src/persistencia/expediente'
+import {
+  CampoNoDeclarado,
+  guardarDatosDeCaptura,
+} from '../../../../src/persistencia/datos-expediente'
 import { DocumentoInvalido } from '../../../../src/dominio/documentos'
 import { hoyEnMexico } from '../../../../src/dominio/fechas'
 
@@ -146,6 +150,78 @@ export async function accionAprobarExpediente(
       }
     }
     return { ok: false, mensaje: bruto }
+  } finally {
+    await db.end()
+  }
+}
+
+/**
+ * Los datos de captura que no se resuelven subiendo un archivo.
+ *
+ * Existe porque sin ella el expediente nunca llegaba a «completo»: domicilio y
+ * giro mercantil los exige el catálogo y no había dónde escribirlos. Vive en
+ * la pantalla del expediente —y no en el alta del cliente— por dos razones:
+ * arregla también a los clientes que YA existen, y pone el formulario justo
+ * donde la pantalla acaba de decir qué falta.
+ */
+export interface EstadoDatos {
+  ok: boolean
+  mensaje: string
+}
+
+export async function guardarDatos(
+  _previo: EstadoDatos | null,
+  form: FormData,
+): Promise<EstadoDatos> {
+  const sesion = await sesionRequerida()
+  const ctx = { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol }
+  const clienteId = String(form.get('clienteId') ?? '')
+  const expedienteId = String(form.get('expedienteId') ?? '')
+
+  // Todo lo que no sea un identificador se trata como un campo del catálogo, y
+  // el catálogo decide cuáles existen: `guardarDatosDeCaptura` rechaza los que
+  // no declara. Aquí no hay lista que mantener sincronizada.
+  const valores: Record<string, string> = {}
+  for (const [clave, valor] of form.entries()) {
+    if (clave === 'clienteId' || clave === 'expedienteId') continue
+    if (typeof valor === 'string') valores[clave] = valor
+  }
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    const guardados = await guardarDatosDeCaptura(db, {
+      sesion: ctx,
+      expedienteId,
+      valores,
+      fecha: hoy(),
+    })
+    if (guardados.length === 0) {
+      return { ok: false, mensaje: 'No capturaste ningún dato.' }
+    }
+
+    // Recalcular aquí y no en el guardado: es lo que hace que la pantalla
+    // refleje el cambio, y deja el registro de la evaluación donde ya vivía.
+    const completitud = await recalcularCompletitud(db, {
+      sesion: ctx,
+      expedienteId,
+      fecha: hoy(),
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+
+    return {
+      ok: true,
+      mensaje:
+        completitud.estatus === 'completo'
+          ? `Datos guardados. El expediente quedó completo: ${String(completitud.cubiertos)} de ${String(completitud.totalObligatorios)} requisitos. Falta que alguien lo apruebe.`
+          : `Datos guardados. Van ${String(completitud.cubiertos)} de ${String(completitud.totalObligatorios)} requisitos.`,
+    }
+  } catch (e) {
+    if (e instanceof CampoNoDeclarado) return { ok: false, mensaje: e.message }
+    return {
+      ok: false,
+      mensaje: e instanceof Error ? e.message : 'Error inesperado al guardar los datos.',
+    }
   } finally {
     await db.end()
   }

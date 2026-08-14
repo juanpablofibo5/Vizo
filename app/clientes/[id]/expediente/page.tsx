@@ -8,6 +8,9 @@ import { obligadoDeSesion, sesionRequerida } from '../../../../src/supabase/sesi
 import type { Completitud } from '../../../../src/dominio/expediente'
 import { abrir } from './acciones'
 import { FormularioSubida } from './subir'
+import { FormularioDatos, type CampoPendiente } from './datos'
+import { camposCapturables } from '../../../../src/persistencia/datos-expediente'
+import { hoyEnMexico } from '../../../../src/dominio/fechas'
 
 export const dynamic = 'force-dynamic'
 
@@ -130,6 +133,28 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       `select distinct campo, etiqueta from campos_expediente where actividad_id = $1`,
       [expediente.actividad_id],
     )
+    // Los campos de captura que el catálogo declara para este expediente, y
+    // los códigos del SAT de los que son de catálogo. Va DENTRO de la
+    // transacción por la misma razón que el historial de abajo.
+    const capturables = await camposCapturables(db, {
+      actividadId: expediente.actividad_id,
+      tipoPersona: cliente.tipo_persona,
+      fecha: hoyEnMexico(),
+    })
+    const catalogosNecesarios = [
+      ...new Set(capturables.flatMap((c) => (c.catalogo === undefined ? [] : [c.catalogo]))),
+    ]
+    const opcionesRows =
+      catalogosNecesarios.length === 0
+        ? { rows: [] }
+        : await db.query(
+            `select catalogo, codigo, descripcion from catalogos_sat
+              where actividad_id = $1 and catalogo = any($2::text[])
+                and daterange(vigente_desde, vigente_hasta, '[]') @> $3::date
+              order by descripcion`,
+            [expediente.actividad_id, catalogosNecesarios, hoyEnMexico()],
+          )
+
     // DENTRO de la transacción, a propósito.
     //
     // Estaba después del `rollback` y reventaba con "permission denied for
@@ -155,6 +180,33 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       .filter((f) => f.tipoDato === 'documento')
       .map((f) => ({ campo: f.campo, etiqueta: f.etiqueta }))
     const faltantesDeDato = faltantes.filter((f) => f.tipoDato !== 'documento')
+
+    // Lo que el formulario va a pintar: los faltantes que SÍ son capturables,
+    // cada uno con las opciones de su catálogo si las necesita.
+    const porCatalogo = new Map<string, Array<{ codigo: string; descripcion: string }>>()
+    for (const o of opcionesRows.rows as Array<{
+      catalogo: string
+      codigo: string
+      descripcion: string
+    }>) {
+      const lista = porCatalogo.get(o.catalogo) ?? []
+      lista.push({ codigo: o.codigo, descripcion: o.descripcion })
+      porCatalogo.set(o.catalogo, lista)
+    }
+    const capturablesPorCampo = new Map(capturables.map((c) => [c.campo, c]))
+    const pendientesDeDato: CampoPendiente[] = faltantesDeDato.flatMap((f) => {
+      const c = capturablesPorCampo.get(f.campo)
+      if (c === undefined) return []
+      return [
+        {
+          campo: c.campo,
+          etiqueta: c.etiqueta,
+          tipoDato: c.tipoDato,
+          compuesto: c.compuesto,
+          ...(c.catalogo === undefined ? {} : { opciones: porCatalogo.get(c.catalogo) ?? [] }),
+        },
+      ]
+    })
 
 
     return (
@@ -197,10 +249,23 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
           </div>
         )}
 
-        {faltantesDeDato.length > 0 && (
+        <FormularioDatos
+          clienteId={clienteId}
+          expedienteId={expediente.id}
+          pendientes={pendientesDeDato}
+        />
+
+        {/* Un faltante que el catálogo no declara como capturable no tiene
+            formulario donde escribirse. No debería pasar —el catálogo es el
+            mismo de los dos lados—, y si pasa hay que verlo, no esconderlo. */}
+        {faltantesDeDato.length > pendientesDeDato.length && (
           <div className="aviso">
-            <strong>Faltan datos de captura</strong> (no se resuelven subiendo un archivo):{' '}
-            {faltantesDeDato.map((f) => f.etiqueta).join(', ')}.
+            <strong>Faltan datos que esta pantalla no sabe capturar</strong>:{' '}
+            {faltantesDeDato
+              .filter((f) => !pendientesDeDato.some((p) => p.campo === f.campo))
+              .map((f) => f.etiqueta)
+              .join(', ')}
+            . El catálogo los exige pero no declara en qué columna van.
           </div>
         )}
 

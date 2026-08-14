@@ -18,6 +18,8 @@
     "db:reset": "supabase db reset",
     "db:migrate": "supabase db push",
     "db:types": "supabase gen types typescript --local > src/tipos/supabase.ts",
+    "demo:datos": "node --import tsx scripts/datos-demo.ts",
+    "demo:datos:remoto": "node --env-file=.env.produccion --import tsx scripts/datos-demo.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start"

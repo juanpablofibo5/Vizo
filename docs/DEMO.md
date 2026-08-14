@@ -7,13 +7,23 @@
 
 ## Antes de empezar (5 minutos, a solas)
 
+**En local:**
+
 ```bash
-pnpm db:reset && pnpm exec tsx scripts/datos-demo.ts && pnpm dev
+pnpm db:reset && pnpm demo:datos && pnpm dev
 ```
 
-Debe imprimir `mayo → no`, `junio → no`, `junio → acumulacion`. Si el tercero no dice `acumulacion`, **no demuestres**: algo cambió y el momento clave no va a ocurrir.
+**Contra el ambiente desplegado** (`app.vizo.mx`), una sola vez: copia `.env.produccion.ejemplo` a `.env.produccion`, pega ahí la cadena de conexión admin del panel de Supabase, y corre
 
-Entra a `http://localhost:3000` con `admin@vizo.mx` / `vizo-demo-2026`. Ten a la mano **un PDF cualquiera** para arrastrarlo al expediente.
+```bash
+pnpm demo:datos:remoto
+```
+
+Es idempotente: si el obligado ya tiene operaciones, no toca nada.
+
+Los dos deben imprimir `mayo → no`, `junio → no`, `junio → acumulacion`. Si el tercero no dice `acumulacion`, **no demuestres**: algo cambió y el momento clave no va a ocurrir.
+
+Entra con `admin@vizo.mx`. Ten a la mano **un PDF cualquiera** para arrastrarlo al expediente.
 
 Deja abiertas dos pestañas: el portal, y `/login` en ventana privada para el segundo usuario si vas a enseñar la separación de roles.
 

@@ -11,6 +11,9 @@ dist/
 .env
 .env.*
 !.env.example
+# Las plantillas SÍ se versionan: son instrucciones, no valores. Van después de
+# `.env.*` porque en git gana la última regla que coincide.
+!.env.produccion.ejemplo
 
 # TypeScript / vitest
 coverage/

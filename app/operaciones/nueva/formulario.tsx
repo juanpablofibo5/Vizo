@@ -20,13 +20,24 @@ const FORMAS_PAGO: Array<{ codigo: string; nombre: string }> = [
   { codigo: '28', nombre: 'Tarjeta de débito' },
 ]
 
+export interface CodigoDeCatalogo {
+  codigo: string
+  descripcion: string
+}
+
 export function FormularioOperacion({
   clientes,
   sucursales,
+  desarrollos,
+  instrumentos,
+  monedas,
   hoy,
 }: {
   clientes: Opcion[]
   sucursales: Opcion[]
+  desarrollos: Opcion[]
+  instrumentos: CodigoDeCatalogo[]
+  monedas: CodigoDeCatalogo[]
   hoy: string
 }) {
   const [estado, accion, enviando] = useActionState(crearOperacion, INICIAL)
@@ -84,6 +95,69 @@ export function FormularioOperacion({
           </select>
         </label>
       </div>
+
+      {/* Lo que el AVISO necesita describir. No es burocracia de captura: sin
+          estos tres campos la operación no se puede reportar, y hasta hace poco
+          se guardaba igual y desaparecía del aviso sin que nada fallara. */}
+      <div className="fila">
+        <label>
+          <span>
+            Desarrollo inmobiliario{' '}
+            <span className="pista">— el aviso lo describe</span>
+          </span>
+          <select name="desarrolloId" required defaultValue={previo('desarrolloId')}>
+            <option value="">Elige…</option>
+            {desarrollos.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.etiqueta}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Instrumento monetario</span>
+          <select
+            name="instrumentoMonetario"
+            required
+            defaultValue={previo('instrumentoMonetario', '1')}
+          >
+            {instrumentos.map((i) => (
+              <option key={i.codigo} value={i.codigo}>
+                {i.descripcion}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="fila">
+        <label>
+          <span>Moneda</span>
+          <select name="monedaCodigo" required defaultValue={previo('monedaCodigo', '1')}>
+            {monedas.map((m) => (
+              <option key={m.codigo} value={m.codigo}>
+                {m.descripcion}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>
+            Institución <span className="pista">(si el pago pasó por una)</span>
+          </span>
+          <input name="nombreInstitucion" defaultValue={previo('nombreInstitucion')} />
+        </label>
+      </div>
+
+      <label className="casilla">
+        <input
+          type="checkbox"
+          name="aportacionFideicomiso"
+          value="si"
+          defaultChecked={previo('aportacionFideicomiso') === 'si'}
+        />
+        <span>La aportación se hizo a través de un fideicomiso</span>
+      </label>
 
       <div className="fila">
         <label>

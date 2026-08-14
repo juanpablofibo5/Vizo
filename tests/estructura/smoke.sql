@@ -54,6 +54,18 @@ from tenants where rfc='SMK010101AAA';
 insert into sucursales (tenant_id, nombre, clave)
 select id, 'Norte', 'NTE' from tenants where rfc='SMK010101AAA';
 
+-- Un desarrollo del tenant A. La Fr. V Bis lo exige desde
+-- `operaciones_exigen_desarrollo`, y sin él los dos INSERT de abajo morirían
+-- por FALTA DE DESARROLLO en vez de por lo que cada uno pretende probar — uno
+-- reventaría el smoke test y el otro pasaría por la razón equivocada.
+insert into desarrollos_inmobiliarios
+  (tenant_id, nombre, registro_licencia, entidad_federativa, codigo_postal, colonia, calle,
+   tipo_desarrollo, monto_desarrollo, unidades_comercializadas, costo_unidad,
+   otras_empresas, objeto_aviso_anterior)
+select id, 'Torre del Smoke', 'LICSMK00001', '31', '97000', 'CENTRO', 'CALLE 60', '5',
+       50000000.00, 120.00, 941412.75, false, false
+from tenants where rfc='SMK010101AAA';
+
 -- Los UUID quedan en variables de sesión: el bloque de ataque (§12) corre
 -- dentro de la sesión del atacante, donde RLS ya no deja leerlos.
 select set_config('vizo.tenant_a',  (select id::text from tenants where rfc='SMK010101AAA'), false),
@@ -61,6 +73,7 @@ select set_config('vizo.tenant_a',  (select id::text from tenants where rfc='SMK
        set_config('vizo.cliente_b', (select id::text from clientes_finales
                                       where nombre_o_razon_social like '%tenant B%'), false),
        set_config('vizo.sucursal_a',(select id::text from sucursales limit 1), false),
+       set_config('vizo.desarrollo_a',(select id::text from desarrollos_inmobiliarios limit 1), false),
        set_config('vizo.actividad', (select id::text from actividades_vulnerables
                                       where fraccion='V_BIS'), false);
 
@@ -166,12 +179,13 @@ begin
   -- 6. El monto total tiene que cuadrar --------------------------------------
   begin
     insert into operaciones (tenant_id, sucursal_id, cliente_id, actividad_id, fecha_operacion,
-                             monto_base, iva, monto_total, forma_pago)
+                             monto_base, iva, monto_total, forma_pago, desarrollo_id)
     values (v_tenant_a,
             (select id from sucursales where tenant_id = v_tenant_a limit 1),
             (select id from clientes_finales where tenant_id = v_tenant_a limit 1),
-            (select id from actividades_vulnerables limit 1),
-            '2026-03-15', 100000, 16000, 100000, '03');
+            (select id from actividades_vulnerables where fraccion = 'V_BIS'),
+            '2026-03-15', 100000, 16000, 100000, '03',
+            (select id from desarrollos_inmobiliarios where tenant_id = v_tenant_a limit 1));
     raise exception 'FALLA 6: se aceptó una operación con monto_total descuadrado';
   exception when check_violation or not_null_violation then null;
   end;
@@ -327,6 +341,7 @@ begin;
     v_a   uuid;
     v_suc uuid;
     v_act uuid;
+    v_des uuid;
   begin
     -- El atacante conoce los UUID del otro tenant: es el escenario realista
     -- (circulan en URLs, exports y tickets de soporte). Se leen como el rol
@@ -336,6 +351,7 @@ begin;
     select current_setting('vizo.tenant_a')::uuid into v_a;
     select current_setting('vizo.sucursal_a')::uuid into v_suc;
     select current_setting('vizo.actividad')::uuid into v_act;
+    select current_setting('vizo.desarrollo_a')::uuid into v_des;
 
     -- ATAQUE 1: escribir en la bitácora de otro tenant
     begin
@@ -354,8 +370,9 @@ begin;
     -- ATAQUE 3: operación propia que apunta a un cliente de otro tenant
     begin
       insert into operaciones (tenant_id, sucursal_id, cliente_id, actividad_id,
-                               fecha_operacion, monto_base, iva, monto_total, forma_pago)
-      values (v_a, v_suc, v_bc, v_act, '2026-03-15', 500000, 0, 500000, '03');
+                               fecha_operacion, monto_base, iva, monto_total, forma_pago,
+                               desarrollo_id)
+      values (v_a, v_suc, v_bc, v_act, '2026-03-15', 500000, 0, 500000, '03', v_des);
       raise exception 'FALLA 12c: FUGA — una operación referenció a un cliente de otro tenant';
     exception when foreign_key_violation then null;
     end;

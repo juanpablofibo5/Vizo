@@ -44,6 +44,23 @@ export class CatalogoDelAvisoIncompleto extends Error {
   }
 }
 
+/**
+ * Hay operaciones reportables que el aviso no puede describir.
+ *
+ * Existe para que el generador se DETENGA en vez de omitirlas. Omitir produce
+ * un informe en cero sobre un periodo que sí tuvo obligación: el peor resultado
+ * posible, porque se presenta y se acusa, y queda archivado como cumplimiento.
+ */
+export class AvisoIncompleto extends Error {
+  constructor(
+    mensaje: string,
+    readonly operaciones: string[],
+  ) {
+    super(mensaje)
+    this.name = 'AvisoIncompleto'
+  }
+}
+
 export interface LoteGenerado {
   lote: number
   totalLotes: number
@@ -249,6 +266,47 @@ export async function generarAviso(
     )
 
     const filas = reportables.rows as FilaReportable[]
+
+    // ────────────────────────────────────────────────────────────────────────
+    // LA RED: ninguna operación reportable se queda fuera en silencio
+    // ────────────────────────────────────────────────────────────────────────
+    // La consulta de arriba une contra `desarrollos_inmobiliarios`. Una
+    // operación reportable sin desarrollo NO produce un error: desaparece del
+    // resultado, y el periodo sale como informe en cero. El obligado
+    // presentaría «no operé» habiendo operado.
+    //
+    // El trigger `operaciones_exigen_desarrollo` ya impide guardarlas, así que
+    // esto cubre lo que entró ANTES de que existiera —y cualquier camino futuro
+    // que lo esquive—. Detenerse es la única respuesta correcta: un aviso que
+    // omite una operación reportable es peor que no generarlo, porque se
+    // presenta, se acusa, y el incumplimiento queda archivado como cumplimiento.
+    const huerfanas = await db.query(
+      `select o.id::text
+         from operaciones_vigentes o
+         join lateral (
+           select x.resultado_aviso from evaluaciones_umbral x
+            where x.operacion_id = o.id order by x.evaluado_en desc limit 1
+         ) ev on true
+        where o.tenant_id = $3
+          and o.actividad_id = $1
+          and o.fecha_operacion >= $2::date
+          and o.fecha_operacion < ($2::date + interval '1 month')
+          and ev.resultado_aviso <> 'no'
+          and o.desarrollo_id is null`,
+      [p.actividadId, p.periodo, p.sesion.tenantId],
+    )
+
+    if (huerfanas.rows.length > 0) {
+      const ids = (huerfanas.rows as Array<{ id: string }>).map((r) => r.id)
+      throw new AvisoIncompleto(
+        `El periodo ${p.periodo} tiene ${String(ids.length)} operación(es) que el motor marcó ` +
+          'reportables y que no se pueden describir en el aviso porque no tienen desarrollo ' +
+          'inmobiliario asignado. No se generó nada: un aviso sin ellas diría que no hubo qué ' +
+          'reportar. Asigna el desarrollo a estas operaciones y vuelve a generar.',
+        ids,
+      )
+    }
+
     const operaciones = filas.map(aOperacionDelAviso)
 
     const prioridad = await codigoDeCatalogo(db, {

@@ -318,6 +318,13 @@ input[type='file'] { padding: .4rem; font-size: .9rem; }
 textarea { resize: vertical; min-height: 4rem; font-family: inherit; }
 .fila { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0 1rem; }
 
+/* Una casilla se lee al revés que un campo: primero la marca, después qué
+   significa. El `label span` de arriba pone el rótulo en bloque, que aquí
+   partiría el renglón en dos. */
+label.casilla { display: flex; align-items: center; gap: .5rem; }
+label.casilla input[type='checkbox'] { width: auto; margin: 0; flex-shrink: 0; }
+label.casilla span { display: inline; margin: 0; font-size: .9rem; color: var(--texto); }
+
 button, .boton {
   font: inherit; padding: .5rem 1rem; border-radius: 5px; cursor: pointer;
   border: 1px solid var(--acento); background: var(--acento); color: #fff;

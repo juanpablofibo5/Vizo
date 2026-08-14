@@ -48,6 +48,16 @@ export async function crearOperacion(
           isai: montoCapturado(texto('isai'), 'ISAI'),
           otrosAccesorios: montoCapturado(texto('otrosAccesorios'), 'Otros accesorios'),
           formaPago: texto('formaPago'),
+          // Lo que el AVISO describe. Va aquí y no en un valor por omisión del
+          // servidor: adivinar el desarrollo o la moneda sería inventar un dato
+          // que se le declara a la autoridad.
+          desarrolloId: texto('desarrolloId') === '' ? undefined : texto('desarrolloId'),
+          instrumentoMonetario:
+            texto('instrumentoMonetario') === '' ? undefined : texto('instrumentoMonetario'),
+          monedaCodigo: texto('monedaCodigo') === '' ? undefined : texto('monedaCodigo'),
+          aportacionFideicomiso: texto('aportacionFideicomiso') === 'si',
+          nombreInstitucion:
+            texto('nombreInstitucion') === '' ? undefined : texto('nombreInstitucion'),
           descripcionBien: texto('descripcionBien') === '' ? undefined : texto('descripcionBien'),
           corrigeA: texto('corrigeA') === '' ? undefined : texto('corrigeA'),
         },

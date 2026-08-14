@@ -36,6 +36,7 @@ describe('Registro de evaluaciones', () => {
   let sesion: ContextoSesion
   let tenantId: string
   let clienteId: string
+  let desarrolloId: string
   let sucursalId: string
   let actividadId: string
 
@@ -69,14 +70,26 @@ describe('Registro de evaluaciones', () => {
       [tenantId, `XAX${marca}`],
     )
     clienteId = (c.rows[0] as { id: string }).id
+
+    const des = await db.query(
+      `insert into desarrollos_inmobiliarios
+         (tenant_id,nombre,registro_licencia,entidad_federativa,codigo_postal,colonia,calle,
+          tipo_desarrollo,monto_desarrollo,unidades_comercializadas,costo_unidad,
+          otras_empresas,objeto_aviso_anterior)
+       values ($1,'Torre de prueba',$2,'31','97000','CENTRO','CALLE 60','5',
+               50000000.00,120.00,941412.75,false,false) returning id`,
+      [tenantId, `LIC${marca}`],
+    )
+    desarrolloId = (des.rows[0] as { id: string }).id
   })
 
   async function insertarOperacion(base: string, total: string, fecha: string): Promise<string> {
     const r = await db.query(
       `insert into operaciones (tenant_id, sucursal_id, cliente_id, actividad_id,
-                                fecha_operacion, monto_base, iva, monto_total, forma_pago)
-       values ($1,$2,$3,$4,$5,$6::numeric,$7::numeric,$8::numeric,'03') returning id`,
-      [tenantId, sucursalId, clienteId, actividadId, fecha, base, (Number(total) - Number(base)).toFixed(2), total],
+                                fecha_operacion, monto_base, iva, monto_total, forma_pago,
+                                desarrollo_id)
+       values ($1,$2,$3,$4,$5,$6::numeric,$7::numeric,$8::numeric,'03',$9) returning id`,
+      [tenantId, sucursalId, clienteId, actividadId, fecha, base, (Number(total) - Number(base)).toFixed(2), total, desarrolloId],
     )
     return (r.rows[0] as { id: string }).id
   }
@@ -241,13 +254,26 @@ describe('La evaluación se sella con su operación', () => {
         )
       ).rows[0] as { id: string }
     ).id
+    const desOtra = (
+      (
+        await db.query(
+          `insert into desarrollos_inmobiliarios
+             (tenant_id,nombre,registro_licencia,entidad_federativa,codigo_postal,colonia,calle,
+              tipo_desarrollo,monto_desarrollo,unidades_comercializadas,costo_unidad,
+              otras_empresas,objeto_aviso_anterior)
+           values ($1,'Torre ajena',$2,'31','97000','CENTRO','CALLE 60','5',
+                   50000000.00,120.00,941412.75,false,false) returning id`,
+          [tid, `LICO${marca}`],
+        )
+      ).rows[0] as { id: string }
+    ).id
     const op = (
       (
         await db.query(
           `insert into operaciones (tenant_id,sucursal_id,cliente_id,actividad_id,fecha_operacion,
-                                    monto_base,iva,monto_total,forma_pago)
-           values ($1,$2,$3,$4,'2026-02-15',950000,0,950000,'03') returning id`,
-          [tid, suc, cli, act],
+                                    monto_base,iva,monto_total,forma_pago,desarrollo_id)
+           values ($1,$2,$3,$4,'2026-02-15',950000,0,950000,'03',$5) returning id`,
+          [tid, suc, cli, act, desOtra],
         )
       ).rows[0] as { id: string }
     ).id

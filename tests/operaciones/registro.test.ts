@@ -21,6 +21,7 @@ describe('Registro de operaciones con el motor en vivo', () => {
   let db: Client
   let sesion: ContextoSesion
   let clienteId: string
+  let desarrolloId: string
   let sucursalNorte: string
   let sucursalCentro: string
 
@@ -59,11 +60,25 @@ describe('Registro de operaciones con el motor en vivo', () => {
       [sesion.tenantId, `APO${marca}`],
     )
     clienteId = (c.rows[0] as { id: string }).id
+
+    const des = await db.query(
+      `insert into desarrollos_inmobiliarios
+         (tenant_id,nombre,registro_licencia,entidad_federativa,codigo_postal,colonia,calle,
+          tipo_desarrollo,monto_desarrollo,unidades_comercializadas,costo_unidad,
+          otras_empresas,objeto_aviso_anterior)
+       values ($1,'Torre de prueba',$2,'31','97000','CENTRO','CALLE 60','5',
+               50000000.00,120.00,941412.75,false,false) returning id`,
+      [sesion.tenantId, `LIC${marca}`],
+    )
+    desarrolloId = (des.rows[0] as { id: string }).id
   })
 
   const pago = (fecha: string, base: number, sucursal?: string): DatosOperacion => ({
     sucursalId: sucursal ?? sucursalNorte,
     clienteId,
+    // La Fr. V Bis exige desarrollo desde `operaciones_exigen_desarrollo`: sin
+    // él la operación saldría del aviso sin que nada falle.
+    desarrolloId,
     fechaOperacion: fecha,
     montoBase: pesos(base),
     iva: pesos(0),

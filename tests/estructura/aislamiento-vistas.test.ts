@@ -63,11 +63,24 @@ describe('Las vistas no se saltan RLS', () => {
        values ($1,'moral',$2,'Cliente de B','MX') returning id`,
       [b.tenantId, `VIS${marca}`],
     )
+    // La Fr. V Bis exige desarrollo desde `operaciones_exigen_desarrollo`: una
+    // operación sin él saldría del aviso en silencio.
+    const des = await db.query(
+      `insert into desarrollos_inmobiliarios
+         (tenant_id,nombre,registro_licencia,entidad_federativa,codigo_postal,colonia,calle,
+          tipo_desarrollo,monto_desarrollo,unidades_comercializadas,costo_unidad,
+          otras_empresas,objeto_aviso_anterior)
+       values ($1,'Torre B','LICVIS0001','31','97000','CENTRO','CALLE 60','5',
+               50000000.00,120.00,941412.75,false,false) returning id`,
+      [b.tenantId],
+    )
     await db.query(
       `insert into operaciones (tenant_id,sucursal_id,cliente_id,actividad_id,fecha_operacion,
-                                monto_base,iva,isai,otros_accesorios,monto_total,forma_pago)
-       values ($1,$2,$3,$4,current_date,1000.00,0,0,0,1000.00,'03')`,
-      [b.tenantId, (suc.rows[0] as { id: string }).id, (cli.rows[0] as { id: string }).id, actividadId],
+                                monto_base,iva,isai,otros_accesorios,monto_total,forma_pago,
+                                desarrollo_id)
+       values ($1,$2,$3,$4,current_date,1000.00,0,0,0,1000.00,'03',$5)`,
+      [b.tenantId, (suc.rows[0] as { id: string }).id, (cli.rows[0] as { id: string }).id,
+       actividadId, (des.rows[0] as { id: string }).id],
     )
   })
 

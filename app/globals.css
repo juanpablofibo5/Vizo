@@ -98,26 +98,63 @@ h3 { font-size: .95rem; margin: 0 0 .3rem; }
   position: sticky; top: 0; height: 100vh;
 }
 
+/* Solo aparece en pantalla angosta. */
+.barra-movil { display: none; }
+.sr-solo {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+
 .marca {
   padding: 1.15rem 1.25rem 1rem;
   border-bottom: 1px solid var(--linea);
   display: flex; flex-direction: column; gap: .15rem;
+  flex-shrink: 0;
 }
 .marca .logo { font-weight: 680; letter-spacing: .16em; font-size: .95rem; }
-.marca .obligado { font-size: .8rem; color: var(--texto-suave); line-height: 1.35; }
+.marca .obligado {
+  font-size: .8rem; color: var(--texto-suave); line-height: 1.35;
+  /* La razón social de una PM es larga; dos renglones y el resto al title. */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 .marca .rfc { font-family: var(--mono); font-size: .72rem; color: var(--texto-tenue); }
 
-nav.areas { padding: .7rem .6rem; display: flex; flex-direction: column; gap: 1px; flex: 1; overflow-y: auto; }
-
-nav.areas a, nav.areas span.pendiente {
-  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
-  padding: .48rem .65rem; border-radius: 5px;
-  font-size: .91rem; color: var(--texto-suave); text-decoration: none;
+/* ── Navegación: grupos, áreas y sub-enlaces ────────────────────────── */
+nav.areas {
+  padding: .55rem .55rem 1rem; flex: 1; overflow-y: auto;
+  /* La barra de scroll aparece al usarla y no roba ancho al reposo. */
+  scrollbar-width: thin; scrollbar-color: var(--linea-fuerte) transparent;
 }
-nav.areas a:hover { background: var(--superficie-2); color: var(--texto); }
-nav.areas a[aria-current='page'] {
+nav.areas ul { list-style: none; margin: 0; padding: 0; }
+nav.areas .grupo + .grupo { margin-top: .9rem; }
+nav.areas .grupo-titulo {
+  font-size: .66rem; font-weight: 620; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--texto-tenue); margin: 0 0 .3rem; padding: 0 .7rem;
+}
+
+nav.areas .area > a, nav.areas span.pendiente {
+  position: relative;
+  display: flex; align-items: center; gap: .58rem;
+  padding: .46rem .7rem; border-radius: 6px;
+  font-size: .9rem; color: var(--texto-suave); text-decoration: none;
+  transition: background-color .13s ease, color .13s ease;
+}
+nav.areas .rotulo { flex: 1; min-width: 0; }
+nav.areas .icono { flex-shrink: 0; opacity: .72; transition: opacity .13s ease; }
+
+nav.areas .area > a:hover { background: var(--superficie-2); color: var(--texto); }
+nav.areas .area > a:hover .icono { opacity: 1; }
+
+nav.areas .area > a[aria-current='page'] {
   background: var(--acento-suave); color: var(--acento); font-weight: 580;
 }
+nav.areas .area > a[aria-current='page'] .icono { opacity: 1; }
+/* El riel: dice cuál es el área activa aun si el fondo no se distingue. */
+nav.areas .area > a[aria-current='page']::before {
+  content: ''; position: absolute; left: -.55rem; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 1.05rem; border-radius: 0 2px 2px 0; background: var(--acento);
+}
+
 nav.areas span.pendiente { color: var(--texto-tenue); cursor: default; }
 nav.areas .marca-pendiente {
   font-family: var(--mono); font-size: .6rem; letter-spacing: .08em;
@@ -125,21 +162,118 @@ nav.areas .marca-pendiente {
   border: 1px solid var(--linea-fuerte); border-radius: 3px; padding: .05rem .3rem;
 }
 
-.usuario {
-  border-top: 1px solid var(--linea); padding: .85rem 1.25rem;
-  display: flex; flex-direction: column; gap: .15rem;
+/* Se despliega con grid en vez de max-height: la altura real la calcula el
+   navegador, así que no hay número mágico que se quede corto si un rótulo
+   pasa a dos renglones. */
+nav.areas .sub-envoltura {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows .18s ease, opacity .18s ease;
+  opacity: 0;
 }
-.usuario .nombre { font-size: .88rem; font-weight: 560; }
-.usuario .correo { font-size: .76rem; color: var(--texto-tenue); word-break: break-all; }
+nav.areas .sub-envoltura[data-abierta='sí'] { grid-template-rows: 1fr; opacity: 1; }
+nav.areas .sub-envoltura > ul { overflow: hidden; }
+
+/* Sin margen ni relleno VERTICAL, a propósito: con `grid-template-rows: 0fr`
+   el navegador colapsa el contenido, pero los márgenes del hijo quedan fuera
+   del cálculo y el relleno tiene mínimo propio en `border-box`. Cualquiera de
+   los dos deja unos pixeles de aire bajo cada área plegada —medidos: 4— que se
+   leen como un renglón vacío. El respiro va DENTRO, en el relleno de los
+   enlaces, que sí se recorta al plegar. */
+nav.areas ul.sub { position: relative; margin: 0; padding: 0 0 0 1.62rem; }
+nav.areas ul.sub li:first-child a { padding-top: .4rem; }
+nav.areas ul.sub li:last-child a { padding-bottom: .42rem; }
+/* La guía vertical ata los sub-enlaces a su área. `position: relative` arriba
+   no es adorno: sin él la línea se posiciona contra el panel entero y baja de
+   punta a punta. */
+nav.areas ul.sub::before {
+  content: ''; position: absolute; left: 1.62rem; top: .3rem; bottom: .3rem;
+  width: 1px; background: var(--linea);
+}
+nav.areas ul.sub a {
+  display: block; padding: .28rem .7rem .28rem .78rem;
+  font-size: .845rem; color: var(--texto-tenue); text-decoration: none;
+  border-radius: 5px;
+  transition: color .13s ease, background-color .13s ease;
+}
+nav.areas ul.sub a:hover { color: var(--texto); background: var(--superficie-2); }
+nav.areas ul.sub a[aria-current='page'] { color: var(--acento); font-weight: 560; }
+
+/* ── El usuario y la salida ─────────────────────────────────────────── */
+.usuario {
+  border-top: 1px solid var(--linea); padding: .8rem 1.25rem .9rem;
+  display: flex; flex-direction: column; gap: .12rem; flex-shrink: 0;
+}
+.usuario .quien { display: flex; align-items: center; gap: .1rem; min-width: 0; }
+.usuario .nombre {
+  font-size: .88rem; font-weight: 560;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.usuario .correo {
+  font-size: .76rem; color: var(--texto-tenue);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.usuario .salir {
+  margin-top: .55rem; align-self: flex-start;
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: none; border: 0; padding: .25rem .4rem .25rem 0;
+  font: inherit; font-size: .82rem; color: var(--texto-tenue);
+  cursor: pointer; border-radius: 5px;
+  transition: color .13s ease;
+}
+.usuario .salir:hover:not(:disabled) { color: var(--critico); }
+.usuario .salir:disabled { cursor: progress; opacity: .6; }
 
 .contenido { min-width: 0; }
 main { max-width: 64rem; margin: 0 auto; padding: 2rem 2rem 5rem; }
+/* Para que un enlace con ancla no deje el encabezado pegado al borde. */
+:target { scroll-margin-top: 1.5rem; }
 
+/* ── Pantalla angosta: el panel se pliega ───────────────────────────── */
+/* Decisión de F1: el portal es de escritorio (docs/ALCANCE.md). Esto no
+   pretende ser una app móvil — evita que el panel se coma la pantalla en una
+   laptop chica o una tableta. */
 @media (max-width: 860px) {
   .portal { grid-template-columns: 1fr; }
-  .lateral { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--linea); }
-  nav.areas { flex-direction: row; flex-wrap: wrap; }
+
+  .barra-movil {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .7rem 1.1rem;
+    background: var(--superficie); border-bottom: 1px solid var(--linea);
+    position: sticky; top: 0; z-index: 30;
+  }
+  .barra-movil .logo { font-weight: 680; letter-spacing: .16em; font-size: .9rem; }
+  .barra-movil .alternar {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2.1rem; height: 2.1rem; padding: 0;
+    background: none; border: 1px solid var(--linea); border-radius: 6px;
+    color: var(--texto-suave); cursor: pointer;
+  }
+
+  .velo {
+    position: fixed; inset: 0; z-index: 35;
+    background: rgb(0 0 0 / .32);
+  }
+
+  .lateral {
+    position: fixed; top: 0; left: 0; z-index: 40;
+    width: min(17rem, 84vw); height: 100dvh;
+    transform: translateX(-100%);
+    transition: transform .2s ease;
+    box-shadow: 0 0 0 rgb(0 0 0 / 0);
+  }
+  .lateral[data-abierto='sí'] {
+    transform: translateX(0);
+    box-shadow: 0 8px 30px rgb(0 0 0 / .18);
+  }
+
   main { padding: 1.25rem 1.1rem 4rem; }
+}
+
+/* Quien pidió menos movimiento no debería recibir ninguno. */
+@media (prefers-reduced-motion: reduce) {
+  nav.areas .sub-envoltura, .lateral, nav.areas .area > a, nav.areas ul.sub a {
+    transition: none;
+  }
 }
 
 /* ── Chips y estados ────────────────────────────────────────────────── */

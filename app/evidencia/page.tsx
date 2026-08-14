@@ -91,7 +91,7 @@ export default async function Evidencia() {
           Lo que se enseña cuando alguien pregunta si estos registros son confiables.
         </p>
 
-        <h2>Integridad de la bitácora</h2>
+        <h2 id="cadena">Integridad de la bitácora</h2>
         <div
           className="tarjeta"
           style={{
@@ -143,7 +143,7 @@ export default async function Evidencia() {
           </p>
         </div>
 
-        <h2>Manifiestos</h2>
+        <h2 id="manifiestos">Manifiestos</h2>
         <p className="pequeno tenue" style={{ marginTop: '-.2rem' }}>
           La foto sellable de un expediente: qué documentos lo integraban y con qué huella. Se
           generan desde el expediente del cliente.
@@ -186,7 +186,7 @@ export default async function Evidencia() {
           </div>
         )}
 
-        <h2>Reconstrucción histórica</h2>
+        <h2 id="reconstruccion">Reconstrucción histórica</h2>
         <div className="tarjeta">
           <p className="pequeno" style={{ margin: 0 }}>
             &ldquo;¿Cómo estaba este expediente el 15 de mayo?&rdquo; se responde leyendo{' '}

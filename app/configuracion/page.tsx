@@ -74,7 +74,7 @@ export default async function Configuracion() {
         <h1>Configuración</h1>
         <p className="sub">Quién es el obligado, desde cuándo debe informar, y con qué opera.</p>
 
-        <h2>El obligado</h2>
+        <h2 id="obligado">El obligado</h2>
         <div className="tarjeta" style={{ display: 'grid', gap: '1.2rem' }}>
           <div className="rejilla" style={{ gap: '.9rem' }}>
             <div>
@@ -92,7 +92,7 @@ export default async function Configuracion() {
           </div>
         </div>
 
-        <h2>Actividades contratadas</h2>
+        <h2 id="actividades">Actividades contratadas</h2>
         <div className="tabla-envoltura">
           <table>
             <thead>
@@ -129,7 +129,7 @@ export default async function Configuracion() {
           </table>
         </div>
 
-        <h2>Usuarios</h2>
+        <h2 id="usuarios">Usuarios</h2>
         <div className="tabla-envoltura">
           <table>
             <thead>
@@ -164,7 +164,7 @@ export default async function Configuracion() {
           separación la impone la base de datos, no la pantalla.
         </p>
 
-        <h2>Sucursales y desarrollos</h2>
+        <h2 id="sucursales">Sucursales y desarrollos</h2>
         <div className="rejilla">
           <div className="tarjeta">
             <h3>Sucursales</h3>

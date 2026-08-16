@@ -1,11 +1,14 @@
 import { conBase, leerComoUsuario } from '../../src/supabase/conexion'
+import { estadoDelRec, type EstadoRec } from '../../src/persistencia/rec'
 import { Marco } from '../componentes/marco'
 import { FormularioFechaAlta } from './formulario'
+import { SeccionRec } from './rec'
 
 export const dynamic = 'force-dynamic'
 
 interface Datos {
   fechaAlta: string | null
+  rec: EstadoRec
   actividades: Array<{ fraccion: string; nombre: string; claveSppld: string | null }>
   usuarios: Array<{ nombre: string; email: string; rol: string; activo: boolean }>
   sucursales: Array<{ nombre: string; clave: string }>
@@ -56,6 +59,7 @@ export default async function Configuracion() {
       return {
         fechaAlta: (t.rows[0] as { fecha_alta_autoridad: string | null } | undefined)
           ?.fecha_alta_autoridad ?? null,
+        rec: await estadoDelRec(db, { sesion }),
         actividades: (
           act.rows as Array<{ fraccion: string; nombre: string; clave_sppld: string | null }>
         ).map((a) => ({ fraccion: a.fraccion, nombre: a.nombre, claveSppld: a.clave_sppld })),
@@ -91,6 +95,13 @@ export default async function Configuracion() {
             <FormularioFechaAlta valor={datos.fechaAlta} puede={esAdmin} />
           </div>
         </div>
+
+        {/* La designación del REC va aquí y no en «Usuarios» a propósito: el REC
+            no es un rol de la aplicación, es una figura con exposición personal
+            ante la autoridad. Ponerlo junto a admin y capturista sugeriría que
+            se resuelve dando de alta a alguien en el portal, y no. */}
+        <h2 id="rec">Responsable del cumplimiento</h2>
+        <SeccionRec estado={datos.rec} puede={esAdmin} />
 
         <h2 id="actividades">Actividades contratadas</h2>
         <div className="tabla-envoltura">

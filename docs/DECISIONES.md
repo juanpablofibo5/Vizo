@@ -166,6 +166,23 @@ RLS no filtra TRUNCATE y los triggers `for each row` no lo ven, así que las dos
 
 ---
 
+## ADR-19 · La compuerta se pospone: se sigue construyendo contra el DOF, no contra el mercado — 2026-08-15
+
+**Contexto:** `ALCANCE.md §3` cerró F1 diciendo que *«cualquier semana adicional de construcción antes del contraste contra el DOF es una semana apostada a que las reglas implementadas son las correctas»*. Era cierto el 12 de agosto. Dejó de serlo tres días después, por dos hechos verificables:
+
+1. **El contraste se hizo.** El Acuerdo 115/2026 está contrastado contra el texto oficial del DOF en lo que tocaba al núcleo: fideicomisos, fecha del acto, consolidación de avisos, y —lo que importaba— **que el Acuerdo no toca el cálculo de umbrales**. Ver `ACUERDO-115-2026.md §0`. Lo que quedó sin resolver está marcado y no se sembró.
+2. **La pregunta cara no bloquea el build.** La base del umbral con o sin IVA es la columna `umbrales.base`, que el motor lee (`src/dominio/motor.ts`). La respuesta del especialista cuesta un `UPDATE`, no una reescritura. Bloquea **afirmar** que el número es correcto — que es de lo que trata esta sección, y por eso su título ya decía «bloquea afirmaciones, no el build».
+
+**Decisión:** se construyen las obligaciones **con fundamento verificado en el DOF** antes de levantar las entrevistas. En orden: aceptación del REC (#12, Art. 10), vigencia del expediente (#11, Art. 21) y fecha del acto por fracción (#10, Art. 24 Bis).
+
+**Lo que esta decisión NO dice:** que el riesgo de mercado desapareció. Sigue intacto y ahora se acumula: cada semana de construcción es una semana más apostada a que alguien lo quiera. La diferencia con la apuesta anterior es que **esta es visible y aquella era silenciosa** — una regla mal implementada se descubre en una multa; un producto que nadie quiere se descubre el día que se pregunta, cuando se pregunte.
+
+**Criterio para volver a la compuerta:** cuando el trabajo pendiente deje de tener fundamento citable en el DOF. El primer punto donde eso pasa es el **Manual de Cumplimiento** (Art. 37 Bis): el artículo dice qué debe contener, no cómo debe generarse, y generarlo roza la frontera de «VIZO no da asesoría legal». Esa pieza no se empieza sin decidir la frontera primero.
+
+**Alternativas descartadas:** (a) parar y entrevistar, que era el plan — se pospone, no se cancela; (b) construir el Manual ya, que es la superficie de producto más grande y la de fecha más lejana (1 mar 2027) — se hace después de lo que vence el 30 de noviembre.
+
+---
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 1. **Sellado del manifiesto** (ADR-10): ¿una constancia NOM-151 sobre el manifiesto con los hashes de todos los documentos satisface la exigencia de fecha cierta, o la autoridad espera constancia por documento?

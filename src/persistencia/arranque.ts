@@ -36,7 +36,15 @@ import { exigirSesionActiva, type ContextoSesion } from './transaccion'
  */
 
 export type ClaveDePaso =
-  'actividad' | 'fecha_alta' | 'sucursal' | 'desarrollo' | 'expediente' | 'operacion' | 'periodo'
+  | 'actividad'
+  | 'fecha_alta'
+  | 'tipo_persona'
+  | 'rec'
+  | 'sucursal'
+  | 'desarrollo'
+  | 'expediente'
+  | 'operacion'
+  | 'periodo'
 
 /**
  * Quién ejecuta el paso en F1.
@@ -68,18 +76,24 @@ export interface Arranque {
 interface Fila {
   actividad: boolean
   fecha_alta: boolean
+  tipo_persona: boolean
+  rec: boolean
   sucursal: boolean
   desarrollo: boolean
   expediente: boolean
   operacion: boolean
   periodo: boolean
   fracciones: string[]
+  /** null mientras no se sepa. Decide si el paso del REC siquiera aparece. */
+  tipo: 'fisica' | 'moral' | 'fideicomiso' | null
 }
 
 /** El orden es el del arranque real: configurar, luego operar. */
 const RESPONSABLE: Record<ClaveDePaso, Responsable> = {
   actividad: 'vizo',
   fecha_alta: 'obligado',
+  tipo_persona: 'obligado',
+  rec: 'obligado',
   sucursal: 'vizo',
   desarrollo: 'vizo',
   expediente: 'obligado',
@@ -101,6 +115,14 @@ export async function arranqueDelObligado(
        exists (select 1 from actividades_tenant where tenant_id = $1) as actividad,
        exists (select 1 from tenants
                 where id = $1 and fecha_alta_autoridad is not null) as fecha_alta,
+       exists (select 1 from tenants
+                where id = $1 and tipo_persona is not null) as tipo_persona,
+       -- Art. 20 LFPIORPI ¶2: una designación PENDIENTE no cuenta. Mientras no
+       -- sea aceptada, las obligaciones siguen recayendo en el órgano de
+       -- administración, así que este paso solo se marca con 'aceptada'.
+       exists (select 1 from designaciones_rec
+                where tenant_id = $1 and estado = 'aceptada') as rec,
+       (select tipo_persona::text from tenants where id = $1) as tipo,
        exists (select 1 from sucursales where tenant_id = $1 and activa) as sucursal,
        exists (select 1 from desarrollos_inmobiliarios
                 where tenant_id = $1 and activo) as desarrollo,
@@ -125,13 +147,24 @@ export async function arranqueDelObligado(
 
   const f = rows[0] as Fila
 
-  const aplica = (clave: ClaveDePaso): boolean =>
-    clave === 'desarrollo' ? f.fracciones.includes('V_BIS') : true
+  const aplica = (clave: ClaveDePaso): boolean => {
+    if (clave === 'desarrollo') return f.fracciones.includes('V_BIS')
+    // El REC lo designan las personas morales y las figuras jurídicas, no las
+    // físicas (Art. 20 LFPIORPI ¶1). Mientras no se sepa qué clase de persona
+    // es el obligado, el paso NO se muestra — y no porque no aplique, sino
+    // porque el paso anterior es justo averiguarlo. Enseñarlo antes sería
+    // reclamar una obligación que quizá no existe; darlo por cumplido sería
+    // esconder una que quizá sí.
+    if (clave === 'rec') return f.tipo === 'moral' || f.tipo === 'fideicomiso'
+    return true
+  }
 
   const pasos: PasoDeArranque[] = (
     [
       'actividad',
       'fecha_alta',
+      'tipo_persona',
+      'rec',
       'sucursal',
       'desarrollo',
       'expediente',

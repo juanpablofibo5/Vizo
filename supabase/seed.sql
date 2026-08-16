@@ -16,12 +16,29 @@
 -- `fecha_alta_autoridad` en marzo, DOS MESES antes de la primera operación de
 -- la demo: así se ve el caso que ese campo desbloquea —marzo y abril deben un
 -- informe en cero aunque no haya nada capturado— en vez de esconderlo.
-insert into tenants (id, rfc, razon_social, fecha_alta_autoridad, domicilio) values (
+insert into tenants (id, rfc, razon_social, fecha_alta_autoridad, tipo_persona, domicilio) values (
   '00000000-0000-4000-8000-000000000001',
   'DPE010101AAA',
   'Desarrollos Península SA de CV',
   date '2026-03-09',
+  'moral',
   '{"calle":"Prolongación Montejo","numero":"120","colonia":"Campestre","cp":"97120","municipio":"Mérida","estado":"Yucatán"}'::jsonb
+);
+
+-- El REC, con su designación ACEPTADA.
+--
+-- Aceptada y no pendiente a propósito: el obligado demo es el que hace las
+-- cosas bien, y así el estado pendiente —que es el que enseña la consecuencia
+-- del Art. 20 ¶2— se alcanza usando el portal, no viene precargado. Las fechas
+-- son coherentes con el alta de marzo: se designa al darse de alta y el SAT
+-- notifica dentro de los diez días hábiles del Art. 10 ¶3.
+insert into designaciones_rec
+  (tenant_id, rfc, nombre, estado, fecha_designacion, fecha_respuesta, fecha_notificacion_sat)
+values (
+  '00000000-0000-4000-8000-000000000001',
+  -- CALM = Canto (C,A) + Lizárraga (L) + María (M), la regla del SAT.
+  'CALM850312HN4', 'María Fernanda Canto Lizárraga',
+  'aceptada', date '2026-03-09', date '2026-03-12', date '2026-03-20'
 );
 
 insert into sucursales (tenant_id, nombre, clave) values

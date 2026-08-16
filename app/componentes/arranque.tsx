@@ -38,6 +38,18 @@ const COPIA: Record<ClaveDePaso, Copia> = {
       'Marca desde qué mes corre la obligación. Sin ella no se puede saber si faltan informes en cero de meses anteriores.',
     ruta: '/configuracion',
   },
+  tipo_persona: {
+    titulo: 'Persona física, moral o fideicomiso',
+    porQue:
+      'De esto depende si hay que designar un Representante Encargado de Cumplimiento: la Ley se lo pide a las morales y a las figuras jurídicas, no a las personas físicas.',
+    ruta: '/configuracion',
+  },
+  rec: {
+    titulo: 'Designación del REC aceptada',
+    porQue:
+      'Mientras la persona designada no acepte en el Portal del SAT, el cumplimiento sigue recayendo personalmente en el órgano de administración o en el administrador único (Art. 20 de la Ley). Designar no basta: hace falta la aceptación.',
+    ruta: '/configuracion',
+  },
   sucursal: {
     titulo: 'Al menos una sucursal',
     porQue: 'Toda operación se registra en una sucursal, y el aviso la reporta.',

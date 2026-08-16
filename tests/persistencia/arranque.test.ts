@@ -171,6 +171,19 @@ describe('Arranque del obligado', () => {
     await db.query(`update tenants set fecha_alta_autoridad = '2024-03-01' where id = $1`, [
       sesion.tenantId,
     ])
+
+    // Persona MORAL a propósito: es el camino más exigente, porque es a quien
+    // el Art. 20 le pide designar REC. Con 'fisica' el paso ni aparecería y
+    // este caso dejaría de vigilarlo — «completo» saldría verde por ser corto.
+    await db.query(`update tenants set tipo_persona = 'moral' where id = $1`, [sesion.tenantId])
+    await db.query(
+      `insert into designaciones_rec
+         (tenant_id, rfc, nombre, fecha_designacion, estado, fecha_respuesta)
+       values ($1,'PEGJ800101AB1','Persona Designada',
+               current_date - 30, 'aceptada', current_date - 25)`,
+      [sesion.tenantId],
+    )
+
     const s = await db.query(
       `insert into sucursales (tenant_id,nombre,clave) values ($1,'Matriz','MTZ') returning id`,
       [sesion.tenantId],

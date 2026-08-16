@@ -72,3 +72,63 @@ export async function registrarFechaAlta(
     return p.fecha
   })
 }
+
+export type TipoPersonaObligado = 'fisica' | 'moral' | 'fideicomiso'
+
+const TIPOS: readonly TipoPersonaObligado[] = ['fisica', 'moral', 'fideicomiso']
+
+export class TipoDePersonaInvalido extends Error {
+  constructor(mensaje: string) {
+    super(mensaje)
+    this.name = 'TipoDePersonaInvalido'
+  }
+}
+
+/**
+ * Qué clase de persona es el obligado.
+ *
+ * Es el segundo dato más consecuente del portal, por la misma razón que el
+ * primero: decide una obligación. El Art. 20 de la LFPIORPI pide designar un
+ * Representante Encargado del Cumplimiento **solo** a las personas morales y a
+ * quienes actúen por fideicomiso u otra figura jurídica. Una persona física
+ * responde ella misma.
+ *
+ * Mientras no se sepa, VIZO no reclama la designación ni la da por innecesaria:
+ * pide el dato. Suponer «moral» inventaría una obligación y suponer «física»
+ * escondería una — y esconderla es la que se paga en la Ley.
+ */
+export async function registrarTipoPersona(
+  db: Client,
+  p: { sesion: ContextoSesion; tipo: string },
+): Promise<TipoPersonaObligado> {
+  if (!TIPOS.includes(p.tipo as TipoPersonaObligado)) {
+    throw new TipoDePersonaInvalido(
+      `El obligado es persona física, moral o fideicomiso, y llegó "${p.tipo}".`,
+    )
+  }
+  const tipo = p.tipo as TipoPersonaObligado
+
+  return enTransaccionDeSesion(db, p.sesion, async () => {
+    const r = await db.query(`update tenants set tipo_persona = $2::tipo_persona where id = $1`, [
+      p.sesion.tenantId,
+      tipo,
+    ])
+
+    if (r.rowCount !== 1) {
+      throw new NoAutorizado(
+        'Solo un administrador puede cambiar la configuración del obligado.',
+      )
+    }
+
+    await db.query('select app.bitacora_registrar($1,$2,$3,$4,$5::jsonb,$6)', [
+      p.sesion.tenantId,
+      'obligado.tipo_persona_registrado',
+      'tenant',
+      p.sesion.tenantId,
+      JSON.stringify({ tipo_persona: tipo }),
+      p.sesion.usuarioId,
+    ])
+
+    return tipo
+  })
+}

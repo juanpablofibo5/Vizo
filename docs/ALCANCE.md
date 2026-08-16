@@ -161,4 +161,6 @@ Los doce bloques están entregados. Además se construyeron tres piezas que el p
 
 **Lo que queda es la compuerta, y ninguna de sus tres entradas es código.** Cualquier semana adicional de construcción antes del contraste contra el DOF es una semana apostada a que las reglas implementadas son las correctas — que es exactamente la pregunta que la compuerta existe para responder.
 
+> **Corregido el 15 de agosto de 2026 (ADR-19).** La primera entrada de la compuerta —el contraste contra el DOF— **ya se hizo**, y con ella cayó el argumento del párrafo anterior: lo que se construya sobre reglas marcadas ✅ DOF en `ACUERDO-115-2026.md §0` ya no es una apuesta. Las entrevistas se posponen y el build continúa con las obligaciones verificadas (#12, #11, #10). **La compuerta no se cancela: se mueve**, y vuelve a mandar en cuanto el trabajo pendiente deje de tener fundamento citable — el primer punto donde eso pasa es el Manual de Cumplimiento. El riesgo de mercado sigue intacto y ahora se acumula a la vista.
+
 > **Pendiente de despliegue, descubierto al cerrar F1:** el proyecto remoto va **9 migraciones atrás** del repositorio y sus usuarios no tienen contraseña, así que `app.vizo.mx` no es demostrable. Detalle e implicaciones en el issue #8.

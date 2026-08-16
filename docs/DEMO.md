@@ -23,6 +23,18 @@ Es idempotente: si el obligado ya tiene operaciones, no toca nada.
 
 Los dos deben imprimir `mayo → no`, `junio → no`, `junio → acumulacion`. Si el tercero no dice `acumulacion`, **no demuestres**: algo cambió y el momento clave no va a ocurrir.
 
+**El ensayo sin navegador**, para correr antes de cada entrevista:
+
+```bash
+pnpm db:reset && pnpm demo:datos && pnpm demo:ensayo && pnpm db:reset && pnpm demo:datos
+```
+
+Ejercita los cinco pasos con el MISMO código que usa la pantalla —incluido
+generar y aprobar el aviso— y comprueba cada afirmación del guion contra la
+base. No sustituye hacer clic: no prueba que un botón esté donde debe. Prueba lo
+otro, que es lo que se rompe en silencio. El segundo `db:reset` deja el
+escenario intacto, porque el ensayo aprueba el aviso de junio.
+
 Entra con `admin@vizo.mx`. Ten a la mano **un PDF cualquiera** para arrastrarlo al expediente.
 
 Deja abiertas dos pestañas: el portal, y `/login` en ventana privada para el segundo usuario si vas a enseñar la separación de roles.

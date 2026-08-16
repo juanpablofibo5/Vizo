@@ -20,6 +20,7 @@
     "db:types": "supabase gen types typescript --local > src/tipos/supabase.ts",
     "demo:datos": "node --import tsx scripts/datos-demo.ts",
     "demo:datos:remoto": "node --env-file=.env.produccion --import tsx scripts/datos-demo.ts",
+    "demo:ensayo": "node --import tsx scripts/ensayo-demo.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start"

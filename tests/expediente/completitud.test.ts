@@ -31,19 +31,19 @@ describe('Completitud del expediente', () => {
       // expediente saldría "completo", de ahí a aprobado y de ahí a un aviso
       // sobre un expediente que nunca se integró. Un catálogo que no cargó se
       // ve idéntico a un expediente genuinamente completo.
-      expect(() => calcularCompletitud([], { rfc: 'X' }, new Set())).toThrow(
+      expect(() => calcularCompletitud([], { rfc: 'X' }, new Map(), HOY)).toThrow(
         CatalogoDeExpedienteVacio,
       )
     })
 
     it('un campo de dato sin columna de origen revienta en vez de adivinar', () => {
       expect(() =>
-        calcularCompletitud([campo({ columna: undefined })], {}, new Set()),
+        calcularCompletitud([campo({ columna: undefined })], {}, new Map(), HOY),
       ).toThrow(CampoSinOrigen)
     })
 
     it('la cadena vacía no cuenta como capturado', () => {
-      const r = calcularCompletitud([campo()], { rfc: '   ' }, new Set())
+      const r = calcularCompletitud([campo()], { rfc: '   ' }, new Map(), HOY)
       expect(r.estatus).toBe('incompleto')
     })
 
@@ -51,7 +51,8 @@ describe('Completitud del expediente', () => {
       const r = calcularCompletitud(
         [campo({ campo: 'domicilio', columna: 'domicilio' })],
         { domicilio: {} },
-        new Set(),
+        new Map(),
+        HOY,
       )
       expect(r.estatus).toBe('incompleto')
     })
@@ -60,7 +61,8 @@ describe('Completitud del expediente', () => {
       const r = calcularCompletitud(
         [campo(), campo({ campo: 'curp', columna: 'curp', obligatorio: false })],
         { rfc: 'RANJ800101AB1', curp: null },
-        new Set(),
+        new Map(),
+        HOY,
       )
       expect(r.estatus).toBe('completo')
       expect(r.totalObligatorios).toBe(1)

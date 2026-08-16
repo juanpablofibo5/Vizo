@@ -4,6 +4,7 @@ import {
   calcularCompletitud,
   type CampoExpediente,
   type Completitud,
+  type DocumentoDelCampo,
 } from '../dominio/expediente'
 
 /**
@@ -42,7 +43,9 @@ export async function camposVigentes(
 
   const { rows } = await db.query(
     `select campo, etiqueta, tipo_dato::text as tipo_dato, obligatorio,
-            validacion->>'columna' as columna, orden
+            validacion->>'columna' as columna,
+            (validacion->>'antiguedad_maxima_meses')::int as antiguedad_maxima_meses,
+            orden
        from campos_expediente
       where actividad_id = $1
         and aplica_a::text in ('ambas', $2)
@@ -58,31 +61,45 @@ export async function camposVigentes(
     tipoDato: r['tipo_dato'] as CampoExpediente['tipoDato'],
     obligatorio: r['obligatorio'] as boolean,
     columna: (r['columna'] as string | null) ?? undefined,
+    antiguedadMaximaMeses: (r['antiguedad_maxima_meses'] as number | null) ?? undefined,
     orden: r['orden'] as number,
   }))
 }
 
 /**
- * Campos que YA tienen documento.
+ * El documento vigente de cada campo, con su fecha de emisión.
  *
  * Excluye los documentos reemplazados: si un comprobante de domicilio se
  * sustituyó por uno nuevo, el viejo sigue en la tabla —es append-only— pero no
  * es el que cubre el campo.
+ *
+ * Cuando un mismo campo tiene varios documentos vigentes —posible, porque nada
+ * obliga a reemplazar en vez de subir otro— gana **el más reciente por fecha de
+ * emisión**. Es la lectura que favorece al obligado sin inventar nada: si tiene
+ * un comprobante que cumple, cumple.
  */
-export async function camposConDocumento(
+export async function documentosDelExpediente(
   db: EjecutorSql,
   expedienteId: string,
-): Promise<Set<string>> {
+): Promise<Map<string, DocumentoDelCampo>> {
   const { rows } = await db.query(
-    `select distinct d.campo
+    `select distinct on (d.campo)
+            d.campo, d.fecha_emision::text as fecha_emision
        from documentos d
       where d.expediente_id = $1
         and not exists (
           select 1 from documentos nuevo where nuevo.reemplaza_a = d.id
-        )`,
+        )
+      order by d.campo, d.fecha_emision desc nulls last, d.created_at desc`,
     [expedienteId],
   )
-  return new Set((rows as Array<{ campo: string }>).map((r) => r.campo))
+
+  return new Map(
+    (rows as Array<{ campo: string; fecha_emision: string | null }>).map((r) => [
+      r.campo,
+      { fechaEmision: r.fecha_emision },
+    ]),
+  )
 }
 
 /**
@@ -171,8 +188,8 @@ export async function recalcularCompletitud(
     }
 
     const campos = await camposVigentes(db, fila.actividad_id, fila.tipo_persona, p.fecha)
-    const conDocumento = await camposConDocumento(db, p.expedienteId)
-    const resultado = calcularCompletitud(campos, fila.cliente, conDocumento)
+    const documentos = await documentosDelExpediente(db, p.expedienteId)
+    const resultado = calcularCompletitud(campos, fila.cliente, documentos, p.fecha)
 
     // Un expediente ya aprobado no se degrada solo: la aprobación es un acto
     // humano registrado y quitarla en silencio borraría esa firma. Si cambia

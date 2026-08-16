@@ -62,6 +62,16 @@ export interface AltaDocumentoParams {
   documento: DocumentoRecibido
   /** Id del documento al que reemplaza. Corregir es una fila nueva, nunca un UPDATE. */
   reemplazaA?: string | undefined
+  /**
+   * Cuándo lo emitió quien lo expide, 'AAAA-MM-DD'. No es cuándo se sube.
+   *
+   * Opcional porque la mayoría de los documentos no tiene regla de antigüedad.
+   * Para los que sí —hoy el comprobante de domicilio desde el 30-nov-2026,
+   * Art. 21— omitirla NO deja el campo cubierto: la completitud lo reporta
+   * como `sin_fecha_emision`, porque un documento del que no se sabe la fecha
+   * no se puede afirmar que cumpla.
+   */
+  fechaEmision?: string | undefined
 }
 
 export interface ResultadoDocumento {
@@ -118,11 +128,17 @@ export async function registrarDocumento(
     const documentoId = (idRows[0] as { id: string }).id
     const ruta = rutaDocumento(p.sesion.tenantId, p.expedienteId, documentoId)
 
+    if (p.fechaEmision !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(p.fechaEmision)) {
+      throw new DocumentoInvalido(
+        `La fecha de emisión debe tener la forma AAAA-MM-DD y llegó "${p.fechaEmision}".`,
+      )
+    }
+
     await db.query(
       `insert into documentos (
          id, tenant_id, expediente_id, campo, storage_path,
-         hash_sha256, tamano_bytes, mime, reemplaza_a, subido_por
-       ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+         hash_sha256, tamano_bytes, mime, reemplaza_a, subido_por, fecha_emision
+       ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::date)`,
       [
         documentoId,
         p.sesion.tenantId,
@@ -134,6 +150,7 @@ export async function registrarDocumento(
         listo.mime,
         p.reemplazaA ?? null,
         p.sesion.usuarioId,
+        p.fechaEmision ?? null,
       ],
     )
 

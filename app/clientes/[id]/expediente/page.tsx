@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Marco } from '../../../componentes/marco'
 import { BotonAprobarExpediente } from './aprobar'
-import { historialDelExpediente } from '../../../../src/persistencia/expediente'
+import { camposVigentes, historialDelExpediente } from '../../../../src/persistencia/expediente'
 import { tamanoLegible } from '../../../../src/dominio/tamano'
 import { Client } from 'pg'
 import { obligadoDeSesion, sesionRequerida } from '../../../../src/supabase/sesion'
@@ -141,6 +141,14 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       tipoPersona: cliente.tipo_persona,
       fecha: hoyEnMexico(),
     })
+    // El catálogo vigente completo —documentos incluidos—, que es de donde sale
+    // la regla de antigüedad. `camposCapturables` solo trae los de captura.
+    const camposDelExpediente = await camposVigentes(
+      db,
+      expediente.actividad_id,
+      cliente.tipo_persona,
+      hoyEnMexico(),
+    )
     const catalogosNecesarios = [
       ...new Set(capturables.flatMap((c) => (c.catalogo === undefined ? [] : [c.catalogo]))),
     ]
@@ -176,9 +184,23 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
         r.etiqueta,
       ]),
     )
+    // La regla de antigüedad sale del catálogo VIGENTE, no de los faltantes:
+    // el faltante dice qué campo y por qué, y el catálogo dice cuántos meses.
+    const antiguedadPorCampo = new Map(
+      camposDelExpediente.flatMap((c) =>
+        c.antiguedadMaximaMeses === undefined ? [] : [[c.campo, c.antiguedadMaximaMeses] as const],
+      ),
+    )
     const pendientesDocumentales = faltantes
       .filter((f) => f.tipoDato === 'documento')
-      .map((f) => ({ campo: f.campo, etiqueta: f.etiqueta }))
+      .map((f) => ({
+        campo: f.campo,
+        etiqueta: f.etiqueta,
+        motivo: f.motivo,
+        ...(antiguedadPorCampo.has(f.campo)
+          ? { antiguedadMaximaMeses: antiguedadPorCampo.get(f.campo) }
+          : {}),
+      }))
     const faltantesDeDato = faltantes.filter((f) => f.tipoDato !== 'documento')
 
     // Lo que el formulario va a pintar: los faltantes que SÍ son capturables,

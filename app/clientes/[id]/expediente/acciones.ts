@@ -72,6 +72,9 @@ export async function subirDocumento(
   const clienteId = String(form.get('clienteId') ?? '')
   const expedienteId = String(form.get('expedienteId') ?? '')
   const campo = String(form.get('campo') ?? '')
+  // Solo llega cuando el catálogo la exige: el formulario pinta el campo únicamente
+  // para los documentos con regla de antigüedad.
+  const fechaEmision = String(form.get('fechaEmision') ?? '').trim()
   const archivo = form.get('archivo')
 
   if (!(archivo instanceof File) || archivo.size === 0) {
@@ -90,6 +93,7 @@ export async function subirDocumento(
       sesion: ctx,
       expedienteId,
       documento: { campo, nombreArchivo: archivo.name, mime: archivo.type, bytes },
+      ...(fechaEmision === '' ? {} : { fechaEmision }),
     })
     await recalcularCompletitud(db, { sesion: ctx, expedienteId, fecha: hoy() })
     revalidatePath(`/clientes/${clienteId}/expediente`)

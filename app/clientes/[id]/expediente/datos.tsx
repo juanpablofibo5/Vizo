@@ -64,11 +64,12 @@ export function FormularioDatos({
             <div className="fila">
               {PARTES_DEL_DOMICILIO.map((parte) => (
                 <label key={parte.clave}>
-                  <span>
-                    {parte.etiqueta}
-                    {!parte.obligatoria && <span className="pista"> (opcional)</span>}
-                  </span>
-                  <input name={`${p.campo}.${parte.clave}`} required={parte.obligatoria} />
+                  <span>{parte.etiqueta}</span>
+                  <input
+                    name={`${p.campo}.${parte.clave}`}
+                    required={parte.obligatoria}
+                    {...(parte.pista === '' ? {} : { placeholder: parte.pista })}
+                  />
                 </label>
               ))}
             </div>

@@ -53,14 +53,17 @@ export class CampoNoDeclarado extends Error {
  * runbook de alta de obligado para `tenants.domicilio`.
  */
 export const PARTES_DEL_DOMICILIO = [
-  { clave: 'calle', etiqueta: 'Calle', obligatoria: true },
+  { clave: 'calle', etiqueta: 'Calle', obligatoria: true, pista: '' },
   // Un predio sin número existe —«S/N» es la convención—, así que exigirlo
-  // dejaría expedientes legítimos incompletos para siempre.
-  { clave: 'numero', etiqueta: 'Número', obligatoria: false },
-  { clave: 'colonia', etiqueta: 'Colonia', obligatoria: true },
-  { clave: 'cp', etiqueta: 'Código postal', obligatoria: true },
-  { clave: 'municipio', etiqueta: 'Municipio', obligatoria: true },
-  { clave: 'estado', etiqueta: 'Estado', obligatoria: true },
+  // dejaría expedientes legítimos incompletos para siempre. La pista va de
+  // marcador de posición y no en el rótulo: «Número (opcional)» no cabe en una
+  // columna de esa rejilla, se parte en dos renglones y deja su campo más abajo
+  // que los otros cinco.
+  { clave: 'numero', etiqueta: 'Número', obligatoria: false, pista: 'S/N si no tiene' },
+  { clave: 'colonia', etiqueta: 'Colonia', obligatoria: true, pista: '' },
+  { clave: 'cp', etiqueta: 'Código postal', obligatoria: true, pista: '' },
+  { clave: 'municipio', etiqueta: 'Municipio', obligatoria: true, pista: '' },
+  { clave: 'estado', etiqueta: 'Estado', obligatoria: true, pista: '' },
 ] as const
 
 export class DomicilioIncompleto extends Error {

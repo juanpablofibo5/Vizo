@@ -16,6 +16,11 @@ import {
   guardarDatosDeCaptura,
   valoresCapturados,
 } from '../../../../src/persistencia/datos-expediente'
+import {
+  VerificacionImposible,
+  declararRelacionDeNegocios,
+  verificarExpediente,
+} from '../../../../src/persistencia/reverificacion'
 import { DocumentoInvalido } from '../../../../src/dominio/documentos'
 import { hoyEnMexico } from '../../../../src/dominio/fechas'
 
@@ -23,6 +28,12 @@ export interface EstadoSubida {
   problemas: string[]
   /** Hash del último documento subido: es lo que hace verificable el expediente. */
   ultimoHash?: string | undefined
+}
+
+/** `ok: null` = todavía no se ha intentado nada, que no es lo mismo que fallar. */
+export interface EstadoRevision {
+  ok: boolean | null
+  mensaje: string
 }
 
 function cadenaDeConexion(): string {
@@ -102,6 +113,73 @@ export async function subirDocumento(
     if (e instanceof DocumentoInvalido) return { problemas: [e.message] }
     if (e instanceof FalloDeAlmacen) return { problemas: [e.message] }
     return { problemas: [e instanceof Error ? e.message : 'Error inesperado al subir.'] }
+  } finally {
+    await db.end()
+  }
+}
+
+export async function declararRelacion(
+  _previo: EstadoRevision,
+  form: FormData,
+): Promise<EstadoRevision> {
+  const sesion = await sesionRequerida()
+  const ctx = { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol }
+  const clienteId = String(form.get('clienteId') ?? '')
+  const hay = String(form.get('hay') ?? '')
+
+  if (hay !== 'true' && hay !== 'false') {
+    return { ok: false, mensaje: 'Elige una respuesta antes de guardar.' }
+  }
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await declararRelacionDeNegocios(db, { sesion: ctx, clienteId, hay: hay === 'true' })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    revalidatePath('/')
+    return {
+      ok: true,
+      mensaje:
+        hay === 'true'
+          ? 'Guardado. Este expediente entra al ciclo de revisión anual del Art. 21.'
+          : 'Guardado como acto ocasional: el Art. 21 excluye estos casos del ciclo anual.',
+    }
+  } catch (e) {
+    return { ok: false, mensaje: e instanceof Error ? e.message : 'No se pudo guardar.' }
+  } finally {
+    await db.end()
+  }
+}
+
+export async function registrarRevisionAnual(
+  _previo: EstadoRevision,
+  form: FormData,
+): Promise<EstadoRevision> {
+  const sesion = await sesionRequerida()
+  const ctx = { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol }
+  const clienteId = String(form.get('clienteId') ?? '')
+  const expedienteId = String(form.get('expedienteId') ?? '')
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    const r = await verificarExpediente(db, { sesion: ctx, expedienteId, hoy: hoy() })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    revalidatePath('/')
+    return {
+      ok: true,
+      mensaje: `Revisión registrada: ${String(r.cubiertos)} de ${String(r.totalObligatorios)} requisitos, todos cubiertos con las reglas vigentes hoy.`,
+    }
+  } catch (e) {
+    // El mensaje de VerificacionImposible ya trae la lista de lo que falta: es
+    // la respuesta útil, no un fallo que traducir.
+    if (e instanceof VerificacionImposible) return { ok: false, mensaje: e.message }
+
+    const bruto = e instanceof Error ? e.message : String(e)
+    if (/insufficient_privilege|admin/i.test(bruto)) {
+      return { ok: false, mensaje: 'Solo un administrador registra la revisión anual.' }
+    }
+    return { ok: false, mensaje: bruto }
   } finally {
     await db.end()
   }

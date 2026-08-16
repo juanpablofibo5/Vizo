@@ -75,7 +75,13 @@ export default async function Inicio() {
              where tenant_id = $2 and requiere_revision_identidad) as identidad_por_revisar,
            (select count(*)::int from operaciones_vigentes
              where tenant_id = $2
-               and fecha_operacion >= date_trunc('month', $1::date)) as operaciones_del_mes`,
+               and fecha_operacion >= date_trunc('month', $1::date)) as operaciones_del_mes,
+           -- Art. 21: la revisión anual del expediente. Se avisa treinta días
+           -- antes de que venza, no el día que vence: conseguir un comprobante
+           -- de domicilio nuevo depende de un tercero.
+           (select count(*)::int from expedientes_por_reverificar
+             where tenant_id = $2
+               and vence <= ($1::date + interval '30 days')) as revisiones_pendientes`,
         [hoyEnMexico(), sesion.tenantId],
       )
 
@@ -88,6 +94,7 @@ export default async function Inicio() {
           esperan_aprobacion: number
           identidad_por_revisar: number
           operaciones_del_mes: number
+          revisiones_pendientes: number
         },
       }
     })
@@ -112,6 +119,12 @@ export default async function Inicio() {
     if (datos.resumen.identidad_por_revisar > 0) {
       atencion.push({
         texto: `${String(datos.resumen.identidad_por_revisar)} cliente(s) sin RFC ni CURP: la acumulación no puede resolverlos`,
+        ruta: '/clientes',
+      })
+    }
+    if (datos.resumen.revisiones_pendientes > 0) {
+      atencion.push({
+        texto: `${String(datos.resumen.revisiones_pendientes)} expediente(s) con revisión anual por vencer (Art. 21)`,
         ruta: '/clientes',
       })
     }

@@ -66,9 +66,12 @@ async function main(): Promise<void> {
 
     // Un comprador persona moral, además del que ya trae el seed.
     const cli = await db.query(
+      // `relacion_negocios`: una compradora que aporta mes a mes en preventa es
+      // el caso típico de relación formal y habitual (Art. 3 fr. XIV), así que
+      // entra al ciclo de revisión anual del Art. 21 y la pantalla lo enseña.
       `insert into clientes_finales
-         (tenant_id, tipo_persona, rfc, nombre_o_razon_social, nacionalidad)
-       values ($1, 'moral', 'IPM180312QK4', 'Inversiones Palma Maya SA de CV', 'MX')
+         (tenant_id, tipo_persona, rfc, nombre_o_razon_social, nacionalidad, relacion_negocios)
+       values ($1, 'moral', 'IPM180312QK4', 'Inversiones Palma Maya SA de CV', 'MX', true)
        returning id::text`,
       [TENANT],
     )

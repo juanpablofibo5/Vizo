@@ -8,6 +8,7 @@ import { obligadoDeSesion, sesionRequerida } from '../../../../src/supabase/sesi
 import type { Completitud } from '../../../../src/dominio/expediente'
 import { abrir } from './acciones'
 import { FormularioSubida } from './subir'
+import { SeccionRevisionAnual } from './revision'
 import { FormularioDatos, type CampoPendiente } from './datos'
 import { camposCapturables } from '../../../../src/persistencia/datos-expediente'
 import { hoyEnMexico } from '../../../../src/dominio/fechas'
@@ -54,7 +55,8 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
     await db.query('set local role authenticated')
 
     const cli = await db.query(
-      `select id, nombre_o_razon_social, tipo_persona::text as tipo_persona, rfc
+      `select id, nombre_o_razon_social, tipo_persona::text as tipo_persona, rfc,
+              relacion_negocios
          from clientes_finales where id = $1`,
       [clienteId],
     )
@@ -69,11 +71,16 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       nombre_o_razon_social: string
       tipo_persona: string
       rfc: string | null
+      relacion_negocios: boolean | null
     }
 
     const exp = await db.query(
-      `select id, estatus::text as estatus, actividad_id, completitud
-         from expedientes where cliente_id = $1 order by version desc limit 1`,
+      `select e.id, e.estatus::text as estatus, e.actividad_id, e.completitud,
+              e.verificado_en::text as verificado_en,
+              r.vence::text as vence
+         from expedientes e
+         left join expedientes_por_reverificar r on r.expediente_id = e.id
+        where e.cliente_id = $1 order by e.version desc limit 1`,
       [clienteId],
     )
 
@@ -97,6 +104,8 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       estatus: string
       actividad_id: string
       completitud: Completitud | Record<string, never>
+      verificado_en: string | null
+      vence: string | null
     }
 
     /**
@@ -290,6 +299,19 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
             . El catálogo los exige pero no declara en qué columna van.
           </div>
         )}
+
+        {/* El ciclo anual del Art. 21. Va antes de «Subir documento» porque
+            cuando algo vence, lo primero que hay que saber es que venció. */}
+        <h2 id="revision">Revisión anual</h2>
+        <SeccionRevisionAnual
+          clienteId={clienteId}
+          expedienteId={expediente.id}
+          relacionNegocios={cliente.relacion_negocios}
+          verificadoEn={expediente.verificado_en}
+          venceEn={expediente.vence}
+          aprobado={expediente.estatus === 'aprobado'}
+          puede={sesion.rol === 'admin'}
+        />
 
         <h2>Subir documento</h2>
         {/*

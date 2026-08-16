@@ -6,6 +6,7 @@ import {
   camposCapturables,
   DomicilioIncompleto,
   guardarDatosDeCaptura,
+  valoresCapturados,
 } from '../../src/persistencia/datos-expediente'
 import { recalcularCompletitud } from '../../src/persistencia/expediente'
 import type { ContextoSesion } from '../../src/persistencia/transaccion'
@@ -194,6 +195,33 @@ describe('Datos de captura del expediente', () => {
       clienteId,
     ])
     expect((rows[0] as { domicilio: Record<string, string> }).domicilio).toEqual({})
+  })
+
+  it('la fontanería de Next no llega al catálogo', () => {
+    // DEFECTO DE PRODUCCIÓN, invisible en desarrollo. Next inyecta sus propios
+    // campos en el FormData de una Server Action para saber a cuál llamar. En
+    // dev viajan por cabecera; en el build de producción llegan mezclados con
+    // los del formulario, y el guardado moría con «Estos campos no los declara
+    // el catálogo: $ACTION_4:0, $ACTION_KEY». Los nombres de aquí son los que
+    // aparecieron en pantalla.
+    const valores = valoresCapturados(
+      [
+        ['clienteId', 'abc'],
+        ['expedienteId', 'def'],
+        ['$ACTION_KEY', 'k'],
+        ['$ACTION_4:0', '0'],
+        ['$ACTION_4:1', '1'],
+        ['$ACTION_ID_7f3a', 'x'],
+        ['domicilio.calle', 'CALLE 21'],
+        ['giro_mercantil', '8370023'],
+      ],
+      ['clienteId', 'expedienteId'],
+    )
+
+    expect(valores).toEqual({
+      'domicilio.calle': 'CALLE 21',
+      giro_mercantil: '8370023',
+    })
   })
 
   it('deja en la bitácora QUÉ campos se capturaron, nunca sus valores', async () => {

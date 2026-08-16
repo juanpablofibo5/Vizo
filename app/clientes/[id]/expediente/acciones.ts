@@ -12,7 +12,9 @@ import {
 } from '../../../../src/persistencia/expediente'
 import {
   CampoNoDeclarado,
+  DomicilioIncompleto,
   guardarDatosDeCaptura,
+  valoresCapturados,
 } from '../../../../src/persistencia/datos-expediente'
 import { DocumentoInvalido } from '../../../../src/dominio/documentos'
 import { hoyEnMexico } from '../../../../src/dominio/fechas'
@@ -178,14 +180,10 @@ export async function guardarDatos(
   const clienteId = String(form.get('clienteId') ?? '')
   const expedienteId = String(form.get('expedienteId') ?? '')
 
-  // Todo lo que no sea un identificador se trata como un campo del catálogo, y
-  // el catálogo decide cuáles existen: `guardarDatosDeCaptura` rechaza los que
-  // no declara. Aquí no hay lista que mantener sincronizada.
-  const valores: Record<string, string> = {}
-  for (const [clave, valor] of form.entries()) {
-    if (clave === 'clienteId' || clave === 'expedienteId') continue
-    if (typeof valor === 'string') valores[clave] = valor
-  }
+  // Todo lo que no sea un identificador —ni fontanería de Next— se trata como
+  // campo del catálogo, y el catálogo decide cuáles existen. Aquí no hay lista
+  // que mantener sincronizada.
+  const valores = valoresCapturados(form.entries(), ['clienteId', 'expedienteId'])
 
   const db = new Client({ connectionString: cadenaDeConexion() })
   await db.connect()
@@ -218,6 +216,7 @@ export async function guardarDatos(
     }
   } catch (e) {
     if (e instanceof CampoNoDeclarado) return { ok: false, mensaje: e.message }
+    if (e instanceof DomicilioIncompleto) return { ok: false, mensaje: e.message }
     return {
       ok: false,
       mensaje: e instanceof Error ? e.message : 'Error inesperado al guardar los datos.',

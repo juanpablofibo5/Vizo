@@ -34,6 +34,36 @@ import { enTransaccionDeSesion, type ContextoSesion } from './transaccion'
  * nuevo, la pantalla y esta función lo aceptan sin tocar código.
  */
 
+/**
+ * Lo que el usuario capturó, sin la fontanería del framework.
+ *
+ * DEFECTO ENCONTRADO EN PRODUCCIÓN, y solo ahí.
+ *
+ * Next inyecta sus propios campos en el `FormData` de una Server Action para
+ * saber a cuál llamar: `$ACTION_KEY`, `$ACTION_4:0`, `$ACTION_ID_…`. En
+ * desarrollo viajan por cabecera y no aparecen; en el build de producción
+ * llegan mezclados con los del formulario. La acción los tomaba por campos del
+ * catálogo y el guardado moría con «Estos campos no los declara el catálogo:
+ * $ACTION_4:0, $ACTION_KEY».
+ *
+ * El prefijo `$` es la frontera: ningún campo del catálogo empieza así —son
+ * identificadores en snake_case— y Next reserva ese espacio de nombres. Vive
+ * aquí, y no dentro de la acción, para que se pueda probar sin navegador: la
+ * lección de esta misma tarde.
+ */
+export function valoresCapturados(
+  entradas: Iterable<[string, unknown]>,
+  ignorar: readonly string[] = [],
+): Record<string, string> {
+  const valores: Record<string, string> = {}
+  for (const [clave, valor] of entradas) {
+    if (clave.startsWith('$')) continue // fontanería de Next
+    if (ignorar.includes(clave)) continue
+    if (typeof valor === 'string') valores[clave] = valor
+  }
+  return valores
+}
+
 export class CampoNoDeclarado extends Error {
   constructor(readonly campos: string[]) {
     super(

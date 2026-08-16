@@ -92,7 +92,14 @@ export function VeredictoExplicable({ v }: { v: Veredicto }) {
               {formatearPesosTexto(umbralAviso.enPesos)}
               <br />
               <span className="tenue" style={{ fontSize: '.75rem' }}>
-                {umbralAviso.valorUma} UMA · {umbralAviso.base === 'sin_iva' ? 'sin IVA' : 'con IVA'}
+                {/* «sin IVA» decía menos que la norma: el Art. 6 del Reglamento
+                    excluye «las contribuciones y demás accesorios», y el ISAI es
+                    una contribución que no es IVA. En una pantalla que explica
+                    un veredicto, la palabra corta es la que confunde. */}
+                {umbralAviso.valorUma} UMA ·{' '}
+                {umbralAviso.base === 'sin_contribuciones'
+                  ? 'sin contribuciones ni accesorios'
+                  : 'con contribuciones y accesorios'}
               </span>
             </Dato>
           )}

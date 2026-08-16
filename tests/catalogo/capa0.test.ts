@@ -90,9 +90,9 @@ describe('Capa 0 — catálogo regulatorio', () => {
       const porTipo = Object.fromEntries(filas.map((f) => [f.tipo, f.base]))
       // Art. 32 (efectivo) se evalúa CON IVA; Art. 17 sin IVA es la postura
       // provisional — ver POR CONFIRMAR-4 en docs/DECISIONES.md.
-      expect(porTipo['efectivo']).toBe('con_iva')
-      expect(porTipo['aviso']).toBe('sin_iva')
-      expect(porTipo['identificacion']).toBe('sin_iva')
+      expect(porTipo['efectivo']).toBe('con_contribuciones')
+      expect(porTipo['aviso']).toBe('sin_contribuciones')
+      expect(porTipo['identificacion']).toBe('sin_contribuciones')
     })
   })
 

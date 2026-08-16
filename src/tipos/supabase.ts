@@ -75,25 +75,31 @@ export type Database = {
       }
       actividades_vulnerables: {
         Row: {
+          clave_sppld: string | null
           created_at: string
           descripcion: string | null
           fraccion: string
           id: string
           nombre: string
+          requiere_desarrollo: boolean
         }
         Insert: {
+          clave_sppld?: string | null
           created_at?: string
           descripcion?: string | null
           fraccion: string
           id?: string
           nombre: string
+          requiere_desarrollo?: boolean
         }
         Update: {
+          clave_sppld?: string | null
           created_at?: string
           descripcion?: string | null
           fraccion?: string
           id?: string
           nombre?: string
+          requiere_desarrollo?: boolean
         }
         Relationships: []
       }
@@ -178,6 +184,60 @@ export type Database = {
           },
         ]
       }
+      aviso_lotes: {
+        Row: {
+          aviso_id: string
+          avisos_en_lote: number
+          bytes: number
+          created_at: string
+          hash_sha256: string
+          id: string
+          lote: number
+          storage_path: string
+          tenant_id: string
+          total_lotes: number
+        }
+        Insert: {
+          aviso_id: string
+          avisos_en_lote: number
+          bytes: number
+          created_at?: string
+          hash_sha256: string
+          id?: string
+          lote: number
+          storage_path: string
+          tenant_id: string
+          total_lotes: number
+        }
+        Update: {
+          aviso_id?: string
+          avisos_en_lote?: number
+          bytes?: number
+          created_at?: string
+          hash_sha256?: string
+          id?: string
+          lote?: number
+          storage_path?: string
+          tenant_id?: string
+          total_lotes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aviso_lotes_aviso_fk"
+            columns: ["tenant_id", "aviso_id"]
+            isOneToOne: false
+            referencedRelation: "avisos"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "aviso_lotes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aviso_operaciones: {
         Row: {
           aviso_id: string
@@ -244,16 +304,19 @@ export type Database = {
       avisos: {
         Row: {
           actividad_id: string
+          acuse_folio: string | null
           acuse_registrado_en: string | null
           acuse_storage_path: string | null
           aprobado_en: string | null
           aprobado_por: string | null
           created_at: string
           estatus: Database["public"]["Enums"]["estatus_aviso"]
+          fecha_acto: string | null
           formato_aviso_id: string
           fragmentos: number
           hash_xml: string | null
           id: string
+          modifica_a: string | null
           periodo: string
           tenant_id: string
           tipo: Database["public"]["Enums"]["tipo_aviso"]
@@ -261,16 +324,19 @@ export type Database = {
         }
         Insert: {
           actividad_id: string
+          acuse_folio?: string | null
           acuse_registrado_en?: string | null
           acuse_storage_path?: string | null
           aprobado_en?: string | null
           aprobado_por?: string | null
           created_at?: string
           estatus?: Database["public"]["Enums"]["estatus_aviso"]
+          fecha_acto?: string | null
           formato_aviso_id: string
           fragmentos?: number
           hash_xml?: string | null
           id?: string
+          modifica_a?: string | null
           periodo: string
           tenant_id: string
           tipo: Database["public"]["Enums"]["tipo_aviso"]
@@ -278,16 +344,19 @@ export type Database = {
         }
         Update: {
           actividad_id?: string
+          acuse_folio?: string | null
           acuse_registrado_en?: string | null
           acuse_storage_path?: string | null
           aprobado_en?: string | null
           aprobado_por?: string | null
           created_at?: string
           estatus?: Database["public"]["Enums"]["estatus_aviso"]
+          fecha_acto?: string | null
           formato_aviso_id?: string
           fragmentos?: number
           hash_xml?: string | null
           id?: string
+          modifica_a?: string | null
           periodo?: string
           tenant_id?: string
           tipo?: Database["public"]["Enums"]["tipo_aviso"]
@@ -295,11 +364,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "avisos_actividad_id_fkey"
-            columns: ["actividad_id"]
+            foreignKeyName: "avisos_actividad_contratada_fk"
+            columns: ["tenant_id", "actividad_id"]
             isOneToOne: false
-            referencedRelation: "actividades_vulnerables"
-            referencedColumns: ["id"]
+            referencedRelation: "actividades_tenant"
+            referencedColumns: ["tenant_id", "actividad_id"]
           },
           {
             foreignKeyName: "avisos_aprobado_por_fk"
@@ -314,6 +383,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "formatos_aviso"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avisos_modifica_fk"
+            columns: ["tenant_id", "modifica_a"]
+            isOneToOne: false
+            referencedRelation: "avisos"
+            referencedColumns: ["tenant_id", "id"]
           },
           {
             foreignKeyName: "avisos_tenant_id_fkey"
@@ -442,6 +518,7 @@ export type Database = {
           campo: string
           created_at: string
           etiqueta: string
+          fuente: string | null
           id: string
           obligatorio: boolean
           orden: number
@@ -456,6 +533,7 @@ export type Database = {
           campo: string
           created_at?: string
           etiqueta: string
+          fuente?: string | null
           id?: string
           obligatorio?: boolean
           orden?: number
@@ -470,6 +548,7 @@ export type Database = {
           campo?: string
           created_at?: string
           etiqueta?: string
+          fuente?: string | null
           id?: string
           obligatorio?: boolean
           orden?: number
@@ -604,6 +683,7 @@ export type Database = {
           nombre_o_razon_social: string
           nombre_pila: string | null
           persona_id: string | null
+          relacion_negocios: boolean | null
           requiere_revision_identidad: boolean
           rfc: string | null
           telefono_numero: string | null
@@ -634,6 +714,7 @@ export type Database = {
           nombre_o_razon_social: string
           nombre_pila?: string | null
           persona_id?: string | null
+          relacion_negocios?: boolean | null
           requiere_revision_identidad?: boolean
           rfc?: string | null
           telefono_numero?: string | null
@@ -664,6 +745,7 @@ export type Database = {
           nombre_o_razon_social?: string
           nombre_pila?: string | null
           persona_id?: string | null
+          relacion_negocios?: boolean | null
           requiere_revision_identidad?: boolean
           rfc?: string | null
           telefono_numero?: string | null
@@ -871,11 +953,56 @@ export type Database = {
           },
         ]
       }
+      designaciones_rec: {
+        Row: {
+          created_at: string
+          estado: Database["public"]["Enums"]["estado_designacion_rec"]
+          fecha_designacion: string
+          fecha_notificacion_sat: string | null
+          fecha_respuesta: string | null
+          id: string
+          nombre: string
+          rfc: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          estado?: Database["public"]["Enums"]["estado_designacion_rec"]
+          fecha_designacion: string
+          fecha_notificacion_sat?: string | null
+          fecha_respuesta?: string | null
+          id?: string
+          nombre: string
+          rfc: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          estado?: Database["public"]["Enums"]["estado_designacion_rec"]
+          fecha_designacion?: string
+          fecha_notificacion_sat?: string | null
+          fecha_respuesta?: string | null
+          id?: string
+          nombre?: string
+          rfc?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "designaciones_rec_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documentos: {
         Row: {
           campo: string
           created_at: string
           expediente_id: string
+          fecha_emision: string | null
           hash_sha256: string
           id: string
           mime: string
@@ -890,6 +1017,7 @@ export type Database = {
           campo: string
           created_at?: string
           expediente_id: string
+          fecha_emision?: string | null
           hash_sha256: string
           id?: string
           mime: string
@@ -904,6 +1032,7 @@ export type Database = {
           campo?: string
           created_at?: string
           expediente_id?: string
+          fecha_emision?: string | null
           hash_sha256?: string
           id?: string
           mime?: string
@@ -923,6 +1052,13 @@ export type Database = {
             referencedColumns: ["tenant_id", "id"]
           },
           {
+            foreignKeyName: "documentos_expediente_fk"
+            columns: ["tenant_id", "expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes_por_reverificar"
+            referencedColumns: ["tenant_id", "expediente_id"]
+          },
+          {
             foreignKeyName: "documentos_persona_fk"
             columns: ["persona_id"]
             isOneToOne: false
@@ -935,6 +1071,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "documentos"
             referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "documentos_reemplaza_mismo_campo"
+            columns: ["tenant_id", "expediente_id", "campo", "reemplaza_a"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["tenant_id", "expediente_id", "campo", "id"]
           },
           {
             foreignKeyName: "documentos_subido_por_fk"
@@ -1061,6 +1204,9 @@ export type Database = {
           estatus: Database["public"]["Enums"]["estatus_expediente"]
           id: string
           tenant_id: string
+          verificado_completitud: Json | null
+          verificado_en: string | null
+          verificado_por: string | null
           version: number
         }
         Insert: {
@@ -1073,6 +1219,9 @@ export type Database = {
           estatus?: Database["public"]["Enums"]["estatus_expediente"]
           id?: string
           tenant_id: string
+          verificado_completitud?: Json | null
+          verificado_en?: string | null
+          verificado_por?: string | null
           version?: number
         }
         Update: {
@@ -1085,6 +1234,9 @@ export type Database = {
           estatus?: Database["public"]["Enums"]["estatus_expediente"]
           id?: string
           tenant_id?: string
+          verificado_completitud?: Json | null
+          verificado_en?: string | null
+          verificado_por?: string | null
           version?: number
         }
         Relationships: [
@@ -1114,6 +1266,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expedientes_verificado_por_fkey"
+            columns: ["verificado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
         ]
@@ -1248,6 +1407,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "expedientes"
             referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "manifiestos_expediente_fk"
+            columns: ["tenant_id", "expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes_por_reverificar"
+            referencedColumns: ["tenant_id", "expediente_id"]
           },
           {
             foreignKeyName: "manifiestos_tenant_id_fkey"
@@ -1631,25 +1797,31 @@ export type Database = {
           activo: boolean
           created_at: string
           domicilio: Json
+          fecha_alta_autoridad: string | null
           id: string
           razon_social: string
           rfc: string
+          tipo_persona: Database["public"]["Enums"]["tipo_persona"] | null
         }
         Insert: {
           activo?: boolean
           created_at?: string
           domicilio?: Json
+          fecha_alta_autoridad?: string | null
           id?: string
           razon_social: string
           rfc: string
+          tipo_persona?: Database["public"]["Enums"]["tipo_persona"] | null
         }
         Update: {
           activo?: boolean
           created_at?: string
           domicilio?: Json
+          fecha_alta_autoridad?: string | null
           id?: string
           razon_social?: string
           rfc?: string
+          tipo_persona?: Database["public"]["Enums"]["tipo_persona"] | null
         }
         Relationships: []
       }
@@ -1687,6 +1859,7 @@ export type Database = {
           created_at: string
           fuente: string
           id: string
+          inclusivo: boolean
           siempre: boolean
           tipo: Database["public"]["Enums"]["tipo_umbral"]
           valor_uma: number | null
@@ -1699,6 +1872,7 @@ export type Database = {
           created_at?: string
           fuente: string
           id?: string
+          inclusivo?: boolean
           siempre?: boolean
           tipo: Database["public"]["Enums"]["tipo_umbral"]
           valor_uma?: number | null
@@ -1711,6 +1885,7 @@ export type Database = {
           created_at?: string
           fuente?: string
           id?: string
+          inclusivo?: boolean
           siempre?: boolean
           tipo?: Database["public"]["Enums"]["tipo_umbral"]
           valor_uma?: number | null
@@ -1805,6 +1980,13 @@ export type Database = {
             referencedColumns: ["tenant_id", "id"]
           },
           {
+            foreignKeyName: "verificaciones_kyc_expediente_fk"
+            columns: ["tenant_id", "expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes_por_reverificar"
+            referencedColumns: ["tenant_id", "expediente_id"]
+          },
+          {
             foreignKeyName: "verificaciones_kyc_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -1815,66 +1997,122 @@ export type Database = {
       }
     }
     Views: {
+      expedientes_por_reverificar: {
+        Row: {
+          cliente_id: string | null
+          desde: string | null
+          expediente_id: string | null
+          tenant_id: string | null
+          vence: string | null
+          verificado_en: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expedientes_cliente_fk"
+            columns: ["tenant_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_finales"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "expedientes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       operaciones_vigentes: {
         Row: {
           actividad_id: string | null
+          aportacion_fideicomiso: boolean | null
           cfdi_uuid: string | null
           cliente_id: string | null
           corrige_a: string | null
+          desarrollo_id: string | null
           descripcion_bien: string | null
           fecha_operacion: string | null
+          forma: Database["public"]["Enums"]["forma_aportacion"] | null
           forma_pago: string | null
           id: string | null
+          instrumento_monetario: string | null
           isai: number | null
           iva: number | null
+          modalidad: Database["public"]["Enums"]["modalidad_aportacion"] | null
           moneda: string | null
+          moneda_codigo: string | null
           monto_base: number | null
+          monto_estimado_especie: number | null
           monto_total: number | null
+          nombre_institucion: string | null
           otros_accesorios: number | null
           registrado_en: string | null
           registrado_por: string | null
           sucursal_id: string | null
           tenant_id: string | null
+          tipo_tercero: string | null
+          valor_inmueble_preventa: number | null
         }
         Insert: {
           actividad_id?: string | null
+          aportacion_fideicomiso?: boolean | null
           cfdi_uuid?: string | null
           cliente_id?: string | null
           corrige_a?: string | null
+          desarrollo_id?: string | null
           descripcion_bien?: string | null
           fecha_operacion?: string | null
+          forma?: Database["public"]["Enums"]["forma_aportacion"] | null
           forma_pago?: string | null
           id?: string | null
+          instrumento_monetario?: string | null
           isai?: number | null
           iva?: number | null
+          modalidad?: Database["public"]["Enums"]["modalidad_aportacion"] | null
           moneda?: string | null
+          moneda_codigo?: string | null
           monto_base?: number | null
+          monto_estimado_especie?: number | null
           monto_total?: number | null
+          nombre_institucion?: string | null
           otros_accesorios?: number | null
           registrado_en?: string | null
           registrado_por?: string | null
           sucursal_id?: string | null
           tenant_id?: string | null
+          tipo_tercero?: string | null
+          valor_inmueble_preventa?: number | null
         }
         Update: {
           actividad_id?: string | null
+          aportacion_fideicomiso?: boolean | null
           cfdi_uuid?: string | null
           cliente_id?: string | null
           corrige_a?: string | null
+          desarrollo_id?: string | null
           descripcion_bien?: string | null
           fecha_operacion?: string | null
+          forma?: Database["public"]["Enums"]["forma_aportacion"] | null
           forma_pago?: string | null
           id?: string | null
+          instrumento_monetario?: string | null
           isai?: number | null
           iva?: number | null
+          modalidad?: Database["public"]["Enums"]["modalidad_aportacion"] | null
           moneda?: string | null
+          moneda_codigo?: string | null
           monto_base?: number | null
+          monto_estimado_especie?: number | null
           monto_total?: number | null
+          nombre_institucion?: string | null
           otros_accesorios?: number | null
           registrado_en?: string | null
           registrado_por?: string | null
           sucursal_id?: string | null
           tenant_id?: string | null
+          tipo_tercero?: string | null
+          valor_inmueble_preventa?: number | null
         }
         Relationships: [
           {
@@ -1903,6 +2141,13 @@ export type Database = {
             columns: ["tenant_id", "corrige_a"]
             isOneToOne: false
             referencedRelation: "operaciones_vigentes"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "operaciones_desarrollo_fk"
+            columns: ["tenant_id", "desarrollo_id"]
+            isOneToOne: false
+            referencedRelation: "desarrollos_inmobiliarios"
             referencedColumns: ["tenant_id", "id"]
           },
           {
@@ -1935,10 +2180,15 @@ export type Database = {
     Enums: {
       ambito_domicilio: "nacional" | "extranjero"
       aplica_persona: "persona_fisica" | "persona_moral" | "ambas"
-      base_calculo: "sin_iva" | "con_iva"
+      base_calculo: "sin_contribuciones" | "con_contribuciones"
       control_beneficiario: "participacion" | "control_efectivo"
       estado_alerta: "abierta" | "atendida"
       estado_caso: "abierto" | "en_revision" | "cerrado"
+      estado_designacion_rec:
+        | "designado"
+        | "aceptada"
+        | "rechazada"
+        | "sustituida"
       estatus_aviso:
         | "borrador"
         | "generado"
@@ -2104,10 +2354,16 @@ export const Constants = {
     Enums: {
       ambito_domicilio: ["nacional", "extranjero"],
       aplica_persona: ["persona_fisica", "persona_moral", "ambas"],
-      base_calculo: ["sin_iva", "con_iva"],
+      base_calculo: ["sin_contribuciones", "con_contribuciones"],
       control_beneficiario: ["participacion", "control_efectivo"],
       estado_alerta: ["abierta", "atendida"],
       estado_caso: ["abierto", "en_revision", "cerrado"],
+      estado_designacion_rec: [
+        "designado",
+        "aceptada",
+        "rechazada",
+        "sustituida",
+      ],
       estatus_aviso: [
         "borrador",
         "generado",

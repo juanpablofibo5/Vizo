@@ -128,7 +128,7 @@ describe('Registro de evaluaciones', () => {
     const aviso = umbrales.find((u) => u['tipo'] === 'aviso')
     expect(aviso?.['valor_uma']).toBe('8025.00')
     expect(aviso?.['en_pesos']).toBe('941412.75')
-    expect(aviso?.['base']).toBe('sin_iva')
+    expect(aviso?.['base']).toBe('sin_contribuciones')
 
     // Y los parámetros, que también son datos del catálogo
     expect(f['parametros_aplicados']).toMatchObject({

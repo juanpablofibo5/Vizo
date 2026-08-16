@@ -189,12 +189,32 @@ RLS no filtra TRUNCATE y los triggers `for each row` no lo ven, así que las dos
 2. **Identidad de comprador extranjero sin RFC** (caso A-05): ¿qué criterio de identidad resiste una verificación? Mientras tanto el sistema acumula conservadoramente por documento de identidad y escala a revisión humana.
 3. **Expediente y umbrales de V Bis:** ¿qué campos son obligatorios más allá de lo que exige el XSD?, y validación formal de la tabla de umbrales/vigencias cargada al catálogo (8,025 UMA, vigencia 1 de febrero, bases de IVA).
 
-4. **⚠️ CONTRADICCIÓN ABIERTA — la base del umbral: ¿sin impuestos o con impuestos?** Es la pregunta más cara de la lista y hay dos fuentes propias en conflicto:
+4. **✅ RESUELTA el 16 de agosto de 2026 — la base del umbral.** Contrastada contra el **Art. 6 del Reglamento de la LFPIORPI** (`regulatorio/leyes/Reg_LFPIORPI.pdf`, SHA-256 `8072a83e…`), que la contesta en dos párrafos y define **tres** reglas sobre el mismo dinero:
+
+   | Regla | Qué monto | Fundamento |
+   |---|---|---|
+   | Umbral del **Art. 17** (identificación y aviso) | **Sin** contribuciones ni demás accesorios | Art. 6 ¶1, reformado DOF 27-03-2026 |
+   | Monto que se **reporta en el Aviso** | El **total**, incluidas las contribuciones, **sin desglosar** | Art. 6 ¶1, segunda oración |
+   | Restricción de **efectivo del Art. 32** | **Con** contribuciones y demás accesorios | Art. 6 ¶3, adicionado DOF 27-03-2026 |
+
+   **La postura provisional del MVP era la correcta**, así que no se movió ningún umbral ni ninguna comparación: lo que cambió es que ahora se puede citar de dónde sale. Tres de las cuatro fuentes propias acertaban; `docs/referencia/VIZO-flujo-multiparte.pdf §7` decía lo contrario y **se equivocaba**.
+
+   Lo que sí cambió es el **nombre**: el enum `base_calculo` decía `sin_iva`/`con_iva` y el Art. 6 habla de «contribuciones y demás accesorios», que es más amplio — el ISAI es una contribución y no es IVA. Ahora dice `sin_contribuciones`/`con_contribuciones`. El comportamiento era correcto; el nombre decía menos que la ley, y de ahí a concluir «el ISAI no es IVA, luego cuenta para el umbral» hay un paso.
+
+   Fijado con casos en `tests/umbrales/base-del-calculo.test.ts`, construidos para que las tres reglas den respuestas **distintas** sobre la misma operación.
+
+   <details><summary>El registro de la contradicción, tal como estuvo abierta</summary>
+
+   **⚠️ CONTRADICCIÓN (cerrada) — ¿sin impuestos o con impuestos?** Era la pregunta más cara de la lista y había dos fuentes propias en conflicto:
    - `01_ARQUITECTURA_V4.md`, `00_PLAN_MAESTRO.md §1.5`, la skill `umbrales-lfpiorpi` y el prompt de esta sesión: **Art. 17 sin IVA**, Art. 32 con IVA, el aviso reporta el total. Los tres citan el Art. 6 del Reglamento reformado (DOF 27/03/2026).
    - `docs/referencia/VIZO-flujo-multiparte.pdf §7`: *"Reforma al Reglamento del 27 de marzo de 2026. El umbral se calcula con impuestos incluidos. El motor debe sumar IVA, ISAI y accesorios al valor de la operación."* — citando **la misma reforma** para la conclusión contraria. El propio documento marca esto como pendiente de confirmar en el DOF antes de configurar el motor.
    - **Postura provisional del MVP:** se mantiene `sin_iva` para Art. 17 (es lo que dicen tres de las cuatro fuentes y lo que fija el prompt de la sesión). **No es una conclusión legal.**
    - **Por qué no bloquea el build:** la base es la columna `umbrales.base`. Si la confirmación dice "con impuestos", el cambio es cerrar la vigencia e insertar la fila nueva — cero código. Los casos V-01 y V-02 de `PRUEBAS.md` se recalculan cambiando el fixture del catálogo, no el motor. **Esta contradicción es, de hecho, la mejor demostración de por qué la Capa 0 existe.**
    - **Lo que sí hay que hacer desde el día 1** (y por eso está aquí y no solo en la lista de dudas): capturar **ISAI y accesorios como columnas propias** de la operación. Si no se capturan y después se confirma que cuentan, las operaciones viejas no tienen el dato y no hay forma de reevaluarlas. Ver ARQUITECTURA.md §3.3.
+
+   </details>
+
+   **La lección, que vale más que la respuesta:** el argumento «no bloquea el build porque la base es un dato del catálogo» resultó cierto de punta a punta. La confirmación llegó cuatro meses después de sembrar el catálogo y costó **un renombre y una fuente** — cero cambios en el motor, cero recálculos, cero migraciones de datos. Y el punto sobre capturar ISAI y accesorios por separado desde el día 1 se cobró solo: sin esas columnas, la regla 3 del Art. 6 no sería expresable hoy.
 
 6. **¿El portal SPPLD valida estrictamente contra el XSD?** El ejemplo oficial de XML publicado por el SAT para Fr. V Bis **no valida contra su propio XSD** (trae `caractersiticas_desarrollo` donde el esquema declara `caracteristicas_desarrollo`; ver `regulatorio/README.md`). Si el portal es estricto, el ejemplo publicado induce a error a quien lo copie. **Postura del MVP, que no depende de la respuesta:** VIZO genera y valida según el **XSD**, nunca según el ejemplo. Validar más duro que la autoridad no produce avisos rechazados; lo contrario sí.
 

@@ -239,9 +239,9 @@ begin
   -- Art. 32 se evalúa con IVA
   perform 1 from umbrales u
   join actividades_vulnerables a on a.id = u.actividad_id
-  where a.fraccion = 'V_BIS' and u.tipo = 'efectivo' and u.base = 'con_iva';
+  where a.fraccion = 'V_BIS' and u.tipo = 'efectivo' and u.base = 'con_contribuciones';
   if not found then
-    raise exception 'FALLA 8f: el umbral de efectivo (Art. 32) debe tener base con_iva';
+    raise exception 'FALLA 8f: el umbral de efectivo (Art. 32) debe tener base con_contribuciones';
   end if;
 
   raise notice '✓ 8-bis. Catálogo = tabla oficial del SAT: 8,025 UMA = $941,412.75, identificación siempre, efectivo con IVA';

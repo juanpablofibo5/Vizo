@@ -10,7 +10,7 @@ import type { Centavos, UmaCentavos } from './dinero'
  */
 
 export type TipoUmbral = 'identificacion' | 'aviso' | 'efectivo'
-export type BaseCalculo = 'sin_iva' | 'con_iva'
+export type BaseCalculo = 'sin_contribuciones' | 'con_contribuciones'
 export type ResultadoAviso = 'no' | 'individual' | 'acumulacion'
 
 /** Un umbral vigente, ya resuelto a pesos con la UMA de la fecha evaluada. */
@@ -72,9 +72,13 @@ export interface OperacionPrevia {
   readonly fechaOperacion: string
   readonly montoBase: Centavos
   /**
-   * Total con IVA y accesorios. Opcional porque solo se usa si el umbral de
-   * aviso llegara a evaluarse `con_iva` (POR CONFIRMAR-4): así el cambio de
-   * base no obliga a rehacer el historial.
+   * Total con contribuciones y demás accesorios.
+   *
+   * Opcional porque el umbral de aviso del Art. 17 se evalúa SIN ellos —Art. 6
+   * ¶1 del Reglamento, contrastado el 16-ago-2026— así que casi nunca hace
+   * falta. Se conserva opcional y no se elimina: la ventana de acumulación
+   * puede tener que compararse contra un umbral `con_contribuciones` si alguna
+   * fracción futura lo pide, y entonces el historial ya trae el dato.
    */
   readonly montoTotal?: Centavos | undefined
   /** Si la operación cae por sí sola en el supuesto de identificación. */

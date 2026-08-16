@@ -69,7 +69,7 @@ export async function historialParaAcumulacion(
             coalesce(
               u.siempre
               or (u.valor_uma is not null
-                  and (case when u.base = 'con_iva' then o.monto_total else o.monto_base end)
+                  and (case when u.base = 'con_contribuciones' then o.monto_total else o.monto_base end)
                       >= u.valor_uma * app.uma_vigente(o.fecha_operacion)),
               false
             ) as cae_en_identificacion

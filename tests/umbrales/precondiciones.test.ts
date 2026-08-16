@@ -138,7 +138,7 @@ describe('Acumulación: precondiciones y decisiones', () => {
     ).toThrow(/se contaría dos veces/)
   })
 
-  it('con umbral "con_iva", exige el monto total de cada operación previa', async () => {
+  it('con umbral "con_contribuciones", exige el monto total de cada operación previa', async () => {
     // Escenario de POR CONFIRMAR-4: si la base del Art. 17 cambia a "con
     // impuestos", sumar solo la base de las previas omitiría parte de la
     // acumulación — en silencio, que es la peor forma.
@@ -146,7 +146,7 @@ describe('Acumulación: precondiciones y decisiones', () => {
     const configConIva = {
       ...base,
       umbrales: base.umbrales.map((u) =>
-        u.tipo === 'aviso' ? { ...u, base: 'con_iva' as const } : u,
+        u.tipo === 'aviso' ? { ...u, base: 'con_contribuciones' as const } : u,
       ),
     }
     const caso = casoPara(configConIva, { fecha: '2026-05-15', base: 500_000, iva: 80_000 }, [

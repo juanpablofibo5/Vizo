@@ -60,8 +60,8 @@ describe('Cargador del catálogo', () => {
 
     it('efectivo (Art. 32) se evalúa con IVA', async () => {
       const c = await cargarConfigActividad(db, 'V_BIS', '2026-02-15')
-      expect(umbralDe(c, 'efectivo')?.base).toBe('con_iva')
-      expect(umbralDe(c, 'aviso')?.base).toBe('sin_iva')
+      expect(umbralDe(c, 'efectivo')?.base).toBe('con_contribuciones')
+      expect(umbralDe(c, 'aviso')?.base).toBe('sin_contribuciones')
     })
   })
 

@@ -300,20 +300,33 @@ function exigeMonto(u: Umbral): Centavos {
  * Qué monto de la operación se compara contra este umbral.
  *
  * Aquí vive la trampa que el mercado suele fallar: sobre el MISMO número hay
- * tres reglas. El Art. 17 (identificación y aviso) mide sin IVA; el Art. 32
- * (efectivo) mide con IVA y accesorios; y el aviso reporta el total. Las dos
- * primeras las decide esta función leyendo `umbral.base`, que es un dato del
- * catálogo: si la confirmación de POR CONFIRMAR-4 cambia la base del Art. 17,
- * se actualiza el catálogo y este código no se toca.
+ * tres reglas, y el Art. 6 del Reglamento (reformado DOF 27-03-2026) las dice
+ * en dos párrafos:
+ *
+ *   1. Art. 17 (identificación y aviso) → «no deberán considerar las
+ *      contribuciones y demás accesorios»
+ *   2. El Aviso → «reportar los montos TOTALES […] incluidos los relacionados
+ *      con las contribuciones, sin necesidad de desglosarlos»
+ *   3. Art. 32 (efectivo) → «deberán considerarse las contribuciones y demás
+ *      accesorios»
+ *
+ * Las reglas 1 y 3 las decide esta función leyendo `umbral.base`, dato del
+ * catálogo. La 2 no vive aquí: la aplica el generador del aviso, que reporta
+ * `monto_total`. Contrastado contra el texto el 16 de agosto de 2026 — era la
+ * pregunta abierta más cara del proyecto, y la respuesta confirmó la postura
+ * provisional. Ver `docs/DECISIONES.md`.
+ *
+ * «Contribuciones y demás accesorios» es más amplio que «IVA»: el ISAI es una
+ * contribución. Por eso el enum dice `sin_contribuciones` y no `sin_iva`.
  */
 function montoContra(operacion: Operacion, umbral: Umbral): Centavos {
-  return umbral.base === 'con_iva' ? operacion.montoTotal : operacion.montoBase
+  return umbral.base === 'con_contribuciones' ? operacion.montoTotal : operacion.montoBase
 }
 
 /**
  * El monto de una operación del historial, en la misma base que el umbral.
  *
- * Si el umbral se evalúa `con_iva` y la operación previa no trae total, el
+ * Si el umbral se evalúa `con_contribuciones` y la operación previa no trae total, el
  * motor SE DETIENE. La auditoría de la semana 4 mostró que el fallback
  * anterior —usar la base— sumaba de menos en silencio, y sumar de menos en la
  * acumulación es exactamente cómo se omite un aviso.
@@ -322,7 +335,7 @@ function montoContra(operacion: Operacion, umbral: Umbral): Centavos {
  * fallar ruidosamente en vez de calcular con un supuesto.
  */
 function montoDePrevia(previa: OperacionPrevia, umbral: Umbral): Centavos {
-  if (umbral.base !== 'con_iva') {
+  if (umbral.base !== 'con_contribuciones') {
     return previa.montoBase
   }
   if (previa.montoTotal === undefined) {

@@ -24,6 +24,22 @@ import { dentroDeVentana, inicioVentana } from './fechas'
  * Cubre identificación, aviso individual, acumulación en ventana deslizante,
  * restricción de efectivo del Art. 32 y alerta de proximidad.
  */
+/**
+ * ¿El monto alcanza este umbral?
+ *
+ * ISSUE #17. Antes esto era `>=` escrito cuatro veces, y el Art. 17 no usa una
+ * sola fórmula: la identificación de la Fr. XV dice «por un valor mensual
+ * SUPERIOR a», mientras que casi todo lo demás dice «igual o superior». En el
+ * valor exacto del umbral las dos redacciones dan respuestas distintas.
+ *
+ * La diferencia vive en el catálogo (`umbrales.inclusivo`), no aquí: una
+ * fracción nueva trae la suya y esta función no cambia.
+ */
+function alcanza(monto: Centavos, umbral: Umbral): boolean {
+  const exigido = exigeMonto(umbral)
+  return umbral.inclusivo ? monto >= exigido : monto > exigido
+}
+
 export function evaluar(entrada: EntradaEvaluacion, config: ConfigActividad): Evaluacion {
   const { operacion, cliente } = entrada
 
@@ -38,14 +54,14 @@ export function evaluar(entrada: EntradaEvaluacion, config: ConfigActividad): Ev
   // cada aportante sin importar el monto.
   const requiereIdentificacion = uIdentificacion.siempre
     ? true
-    : montoContra(operacion, uIdentificacion) >= exigeMonto(uIdentificacion)
+    : alcanza(montoContra(operacion, uIdentificacion), uIdentificacion)
 
   // ── 2. Aviso individual ────────────────────────────────────────────────
   // La base (con o sin IVA) sale de la columna `base` del umbral. Es la
   // diferencia entre el Art. 17 y el Art. 32, y es un DATO, no un `if`.
   const montoParaAviso = montoContra(operacion, uAviso)
   const umbralAviso = exigeMonto(uAviso)
-  const avisoIndividual = montoParaAviso >= umbralAviso
+  const avisoIndividual = alcanza(montoParaAviso, uAviso)
 
   // ── 3. Acumulación en ventana deslizante ───────────────────────────────
   // Confirmado por el SAT en el webinar del 20/06/2026:
@@ -85,13 +101,13 @@ export function evaluar(entrada: EntradaEvaluacion, config: ConfigActividad): Ev
   // El marco no lo resuelve explícitamente. Se implementa (a) porque un aviso
   // de más se corrige; uno omitido se sanciona. Pendiente de validar con el
   // especialista PLD antes del piloto.
-  const avisoPorAcumulacion = !avisoIndividual && sumaVentana >= umbralAviso
+  const avisoPorAcumulacion = !avisoIndividual && alcanza(sumaVentana, uAviso)
 
   // ── 4. Restricción de efectivo (Art. 32) ───────────────────────────────
   // Solo aplica cuando el pago fue en efectivo, y se mide sobre el total
   // CON IVA y accesorios.
   const montoParaEfectivo = montoContra(operacion, uEfectivo)
-  const efectivoRestringido = operacion.esEfectivo && montoParaEfectivo >= exigeMonto(uEfectivo)
+  const efectivoRestringido = operacion.esEfectivo && alcanza(montoParaEfectivo, uEfectivo)
 
   // ── 5. Alerta de proximidad ────────────────────────────────────────────
   // Decisión de producto, no obligación legal: avisar cuando falta poco.

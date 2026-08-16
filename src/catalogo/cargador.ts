@@ -28,6 +28,7 @@ export class CatalogoIncompleto extends Error {
 interface FilaUmbral {
   tipo: string
   siempre: boolean
+  inclusivo: boolean
   valor_uma: string | null
   base: string
 }
@@ -75,7 +76,7 @@ export async function cargarConfigActividad(
 
   const filas = await varias<FilaUmbral>(
     db,
-    `select tipo::text, siempre, valor_uma::text, base::text
+    `select tipo::text, siempre, inclusivo, valor_uma::text, base::text
        from umbrales
       where actividad_id = $1
         and daterange(vigente_desde, vigente_hasta, '[]') @> $2::date`,
@@ -93,6 +94,7 @@ export async function cargarConfigActividad(
     valorUma: f.valor_uma,
     enCentavos: f.siempre || f.valor_uma === null ? null : umaACentavos(f.valor_uma, umaEnCentavos),
     base: f.base as Umbral['base'],
+    inclusivo: f.inclusivo,
   }))
 
   const ventanaMeses = await parametroEntero(db, actividad.id, 'ventana_acumulacion_meses', fechaOperacion)

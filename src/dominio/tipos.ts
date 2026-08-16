@@ -24,6 +24,17 @@ export interface Umbral {
   readonly enCentavos: Centavos | null
   /** Contra qué base se compara. Es un DATO del catálogo, no un `if` del motor. */
   readonly base: BaseCalculo
+  /**
+   * Si el umbral se alcanza CON su propio valor.
+   *
+   * `true` = «igual o superior» (>=), la fórmula habitual del Art. 17.
+   * `false` = «superior a» (>), como la identificación de la Fr. XV.
+   *
+   * Sale del VERBO de la Ley, no de una convención del motor: el Art. 17 no
+   * usa una sola fórmula, y suponer que sí desplaza la frontera un peso — que
+   * es exactamente donde una frontera importa (issue #17).
+   */
+  readonly inclusivo: boolean
 }
 
 /**

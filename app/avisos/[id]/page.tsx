@@ -112,6 +112,16 @@ export default async function DetalleAvisoPagina({
           Formato <span className="mono">{detalle.formatoVersion}</span>.
         </p>
 
+        {/* La fecha del acto no es decoración: de ella cuelga el día 17. Se
+            enseña cuando existe y se calla cuando no, en vez de pintar un
+            guion que se leería como «no aplica». */}
+        {detalle.fechaActo !== null && (
+          <p className="pequeno tenue" style={{ margin: '-1rem 0 1.6rem' }}>
+            El plazo corre desde el <span className="mono">{detalle.fechaActo}</span>, la última
+            aportación del mes calendario (Art. 24 Bis, fracción IV del Acuerdo 115/2026).
+          </p>
+        )}
+
         <div className="rejilla" style={{ gridTemplateColumns: 'minmax(0,1.15fr) minmax(0,1fr)' }}>
           {/* ── Columna izquierda: el ciclo y la frontera ─────────────── */}
           <div style={{ display: 'grid', gap: '1rem', alignContent: 'start' }}>

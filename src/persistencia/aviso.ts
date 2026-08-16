@@ -13,6 +13,44 @@ import {
   type Granularidad,
   type OperacionDelAviso,
 } from '../aviso/informe'
+import { fechaDelActo, SinReglaDeFechaDelActo } from '../dominio/fecha-del-acto'
+
+/**
+ * La regla de fecha del acto vigente para una actividad, o `null` si todavía no
+ * se exige.
+ *
+ * Devuelve `null` en un solo caso: que el Art. 24 Bis aún no esté en vigor para
+ * ese periodo. Si YA se exige y la fracción no tiene regla —la Fr. XV, que el
+ * artículo no enumera— se detiene, porque entonces sí hay una respuesta que
+ * VIZO debería saber dar y no sabe.
+ *
+ * Las dos cosas —la regla y desde cuándo se exige— son filas de
+ * `parametros_motor` con su vigencia y su fuente. Ninguna está en este archivo.
+ */
+export async function reglaFechaDelActo(
+  db: { query(sql: string, parametros?: unknown[]): Promise<{ rows: unknown[] }> },
+  p: { actividadId: string; fecha: string },
+): Promise<string | null> {
+  const { rows } = await db.query(
+    `select
+       (select p.valor #>> '{}' from parametros_motor p
+         where p.clave = 'fecha_del_acto' and p.actividad_id = $1
+           and daterange(p.vigente_desde, p.vigente_hasta, '[]') @> $2::date) as regla,
+       exists (select 1 from parametros_motor g
+                where g.clave = 'exige_fecha_del_acto' and g.actividad_id is null
+                  and daterange(g.vigente_desde, g.vigente_hasta, '[]') @> $2::date) as exige,
+       (select a.fraccion::text from actividades_vulnerables a where a.id = $1) as fraccion`,
+    [p.actividadId, p.fecha],
+  )
+  const f = rows[0] as { regla: string | null; exige: boolean; fraccion: string }
+
+  if (f.regla === null && f.exige) throw new SinReglaDeFechaDelActo(f.fraccion)
+  return f.regla
+}
+
+/** 'AAAAMMDD' del XSD a 'AAAA-MM-DD', que es como razona el dominio. */
+const aIso = (compacta: string): string =>
+  `${compacta.slice(0, 4)}-${compacta.slice(4, 6)}-${compacta.slice(6, 8)}`
 
 /**
  * De operaciones reportables a un XML validado.
@@ -252,10 +290,12 @@ export async function generarAviso(
     // a decidirlo en esta consulta abriría la puerta a que las dos respuestas
     // difieran, y el aviso se defiende con la evaluación.
     //
-    // PENDIENTE #10: el periodo se acota con `fecha_operacion`. El Art. 24 Bis
-    // del Acuerdo 115/2026 definiría, fracción por fracción, qué fecha cuenta
-    // como la del acto. Cuando se contraste contra el DOF, esa regla es un dato
-    // del Layer 0 y esta consulta la lee — no cambia de forma.
+    // El periodo se acota con `fecha_operacion`, y eso NO cambió al contrastar
+    // el Art. 24 Bis contra el DOF (issue #10, 16-ago-2026): la fecha del acto
+    // de la Fr. V Bis es «la última aportación […] en el mes calendario», que
+    // cae dentro del mismo mes que estas operaciones. Lo que sí cambió es que
+    // el aviso ahora DECLARA esa fecha —abajo, `fechaActo`— porque de ella
+    // cuelga el plazo del Art. 23, y antes no se guardaba en ningún lado.
     const reportables = await db.query(
       `select o.id::text as operacion_id, ev.id::text as evaluacion_id,
               o.desarrollo_id::text as desarrollo_id,
@@ -413,12 +453,32 @@ export async function generarAviso(
     const tipo = operaciones.length === 0 ? 'cero' : 'normal'
     const hashXml = createHash('sha256').update(xml, 'utf8').digest('hex')
 
+    // La fecha desde la que corre el plazo del Art. 23, resuelta con la regla
+    // del catálogo (Art. 24 Bis). Se guarda con el aviso porque después no es
+    // derivable: una corrección agrega operaciones nuevas, y lo que hay que
+    // poder defender es la fecha con la que se computó el plazo de ESTE aviso.
+    //
+    // El informe en cero no la tiene, y no es un hueco: no hubo acto.
+    const regla =
+      operaciones.length === 0
+        ? null
+        : await reglaFechaDelActo(db, { actividadId: p.actividadId, fecha: p.periodo })
+
+    const fechaActo =
+      regla === null
+        ? null
+        : fechaDelActo(
+            regla,
+            filas.map((f) => aIso(f.fecha_aportacion)),
+            p.periodo,
+          )
+
     const ins = await db.query(
       `insert into avisos (tenant_id, actividad_id, periodo, tipo, estatus,
-                           formato_aviso_id, hash_xml)
-       values ($1,$2,$3::date,$4::tipo_aviso,'validado'::estatus_aviso,$5,$6)
+                           formato_aviso_id, hash_xml, fecha_acto)
+       values ($1,$2,$3::date,$4::tipo_aviso,'validado'::estatus_aviso,$5,$6,$7::date)
        returning id::text`,
-      [p.sesion.tenantId, p.actividadId, p.periodo, tipo, formato.id, hashXml],
+      [p.sesion.tenantId, p.actividadId, p.periodo, tipo, formato.id, hashXml, fechaActo],
     )
     const avisoId = (ins.rows[0] as { id: string }).id
 
@@ -645,6 +705,12 @@ export interface DetalleAviso {
   hashXml: string | null
   fragmentos: number
   operaciones: number
+  /**
+   * La fecha del acto del Art. 24 Bis, desde la que corre el plazo del Art. 23.
+   * `null` en los informes en cero —no hubo acto— y en los periodos anteriores
+   * al 30 de noviembre de 2026, cuando el artículo todavía no regía.
+   */
+  fechaActo: string | null
   lotes: Array<{
     lote: number
     totalLotes: number
@@ -672,7 +738,7 @@ export async function detalleDeAviso(
 ): Promise<DetalleAviso | null> {
   const cab = await db.query(
     `select a.id::text, a.periodo::text, a.tipo::text, a.estatus::text,
-            a.hash_xml, a.fragmentos, a.acuse_storage_path,
+            a.hash_xml, a.fragmentos, a.acuse_storage_path, a.fecha_acto::text,
             f.version as formato_version,
             (select count(*)::int from aviso_operaciones ao where ao.aviso_id = a.id) as operaciones
        from avisos a
@@ -690,6 +756,7 @@ export async function detalleDeAviso(
     hash_xml: string | null
     fragmentos: number
     acuse_storage_path: string | null
+    fecha_acto: string | null
     formato_version: string
     operaciones: number
   }
@@ -720,6 +787,7 @@ export async function detalleDeAviso(
     hashXml: a.hash_xml,
     fragmentos: a.fragmentos,
     operaciones: a.operaciones,
+    fechaActo: a.fecha_acto,
     acuseStoragePath: a.acuse_storage_path,
     lotes: (
       lotes.rows as Array<{

@@ -12,8 +12,16 @@ import {
   verificarExpediente,
 } from '../../src/persistencia/reverificacion'
 import { enTransaccionDeSesion, type ContextoSesion } from '../../src/persistencia/transaccion'
+import { hoyEnMexico } from '../../src/dominio/fechas'
 
-const HOY = '2026-08-15'
+/**
+ * Hoy DE VERDAD, no una constante.
+ *
+ * La aprobación la sella `now()` en la base, así que un `HOY` fijo empieza a
+ * mentir en cuanto pasa la medianoche — y este archivo se rompió exactamente
+ * así. Todo lo que se compara con el reloj sale del mismo reloj.
+ */
+const HOY = hoyEnMexico()
 
 /**
  * La revisión anual del expediente.
@@ -126,32 +134,45 @@ describe('La revisión anual del expediente', () => {
       // "hoy" de dentro de un año para que el vencimiento ya cuente.
     })
 
-    const dentroDeUnAnio = (): string => {
-      const d = new Date(`${HOY}T00:00:00Z`)
-      d.setUTCFullYear(d.getUTCFullYear() + 1)
-      return d.toISOString().slice(0, 10)
+    /**
+     * Un año después de la APROBACIÓN REAL, leída de la base.
+     *
+     * No se calcula desde una constante: la aprobación la sella `now()`, y este
+     * test se rompió solo al cruzar la medianoche —esperaba el aniversario del
+     * 15 y la fila decía el 16—. Derivarlo de la fila prueba la regla en vez de
+     * un literal, y deja de caducar.
+     */
+    const aniversarioDeLaAprobacion = async (): Promise<string> => {
+      const { rows } = await db.query(
+        `select ((e.aprobado_en at time zone 'America/Mexico_City')::date
+                  + interval '1 year')::date::text as vence
+           from expedientes e where e.id = $1`,
+        [expedienteId],
+      )
+      return (rows[0] as { vence: string }).vence
     }
 
     it('un cliente SIN declarar no entra: no se le inventa la obligación', async () => {
       // Ni dentro ni fuera. Es el tercer estado que este proyecto insiste en no
       // perder: «todavía no sé» no es «no debes».
-      expect(await pendientes(dentroDeUnAnio())).toEqual([])
+      expect(await pendientes(await aniversarioDeLaAprobacion())).toEqual([])
     })
 
     it('un cliente OCASIONAL tampoco: el Art. 21 lo excluye expresamente', async () => {
       await declararRelacionDeNegocios(db, { sesion: admin, clienteId, hay: false })
-      expect(await pendientes(dentroDeUnAnio())).toEqual([])
+      expect(await pendientes(await aniversarioDeLaAprobacion())).toEqual([])
     })
 
     it('un cliente con RELACIÓN DE NEGOCIOS sí, y con su fecha de vencimiento', async () => {
       await declararRelacionDeNegocios(db, { sesion: admin, clienteId, hay: true })
 
-      const lista = await pendientes(dentroDeUnAnio())
+      const vence = await aniversarioDeLaAprobacion()
+      const lista = await pendientes(vence)
       expect(lista).toHaveLength(1)
       expect(lista[0]?.cliente).toBe('Compradora Habitual SA')
       expect(lista[0]?.verificadoEn).toBeNull()
-      // Nunca verificado: el año corre desde la aprobación, que fue hoy.
-      expect(lista[0]?.vence).toBe(dentroDeUnAnio())
+      // Nunca verificado: el año corre desde la aprobación.
+      expect(lista[0]?.vence).toBe(vence)
     })
 
     it('y no aparece antes de tiempo', async () => {

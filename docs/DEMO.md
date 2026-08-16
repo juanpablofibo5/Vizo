@@ -161,7 +161,7 @@ Y baja a la tarjeta de abajo:
 
 ## Las preguntas que importan (haz estas dos, siempre)
 
-Del análisis del Acuerdo 115/2026, son las que más informan sobre segmento y precio a la vez:
+Del Acuerdo 115/2026, **ya contrastado contra el DOF**, son las que más informan sobre segmento y precio a la vez:
 
 1. **¿Qué le cotizó, o le cobró, un despacho por armar su metodología de riesgo y su Manual de Políticas Internas?**
    *Calibra el ancla de valor con un número verificable.*
@@ -170,6 +170,36 @@ Del análisis del Acuerdo 115/2026, son las que más informan sobre segmento y p
    *Determina si cae en diligencia reforzada como caso normal — y con eso, cuánta carga operativa tiene de verdad.*
 
 **De estructura, si hay tiempo:** ¿bajo cuántos RFC opera? · ¿quién es su REC y ya aceptó la designación en el Portal? · ¿ya tiene Manual y cuándo lo actualizó? · **¿en qué herramienta lleva hoy sus expedientes y su acumulación?** · ¿opera algún desarrollo a través de fideicomiso?
+
+### El Manual: pregunta, no oferta
+
+Es la obligación con la fecha más cercana y la que más disposición a pagar despierta. Por eso hay que tratarla con cuidado: **VIZO todavía no la entrega.**
+
+Lo verificado en el texto oficial, por si preguntan y para que no digas de más:
+
+- **1 de marzo de 2027**, Transitorio Tercero. Es la fecha, y es literal.
+- **14 elementos obligatorios**, Art. 37 Bis, fracciones I a XIV. No es una cifra de folleto: están enumeradas.
+- El plazo corre a los **90 días naturales del alta y registro** (Art. 37), así que quien se dé de alta ahora ya tiene reloj.
+- Grupos empresariales: políticas centralizadas, **Art. 37 Bis 1**.
+- Quien no realice ciertos supuestos queda exento de normarlos, **si lo hace constar en el Manual** (Art. 37 Bis 2). Es un argumento a favor de un manual que refleje la operación real y no una plantilla.
+
+**El puente honesto con lo que sí tienes:** la fracción VIII del Art. 37 Bis exige *«los mecanismos para dar seguimiento y acumular actos u operaciones»*. Eso es exactamente lo que la demo acaba de enseñar funcionando. El Manual tiene que **declarar** cómo se acumula; VIZO ya lo **ejecuta** y deja la prueba en la bitácora.
+
+Se puede decir así, y solo así:
+
+> «El Manual tiene que declarar cómo acumula usted las operaciones. Lo que le acabo de enseñar es esa acumulación, funcionando y con evidencia. El documento todavía no se lo entrego.»
+
+**Lo que NO se dice:** que VIZO genera el Manual, que hace clasificación de riesgo, o que revisa listas de PEP, OFAC o SAT 69-B. Nada de eso está construido, y dos de esas cosas tocan fronteras del producto (`docs/ALCANCE.md` §0). Vender el Manual antes de tenerlo es la forma más rápida de quemar las cinco entrevistas.
+
+### El fideicomiso también tiene fecha
+
+Contrastado: el **Cap. II Ter** obliga a dar de alta y registrar a quienes operen por fideicomiso u otra figura jurídica, con la vigencia general del **30 de noviembre de 2026**.
+
+Para el corredor Cancún–Tulum eso deja de ser una curiosidad. La pregunta cambia de *«¿opera algún desarrollo por fideicomiso?»* a:
+
+> «¿Cuántos de sus desarrollos operan por fideicomiso, y ya los dio de alta bajo el Capítulo II Ter?»
+
+La segunda mitad es la que informa: si no sabe de qué le hablas, acabas de encontrar un incumplimiento con fecha — y esa es la conversación que más rápido se convierte en interés real.
 
 ---
 

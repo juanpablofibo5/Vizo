@@ -51,6 +51,31 @@ export class CatalogoDelAvisoIncompleto extends Error {
  * un informe en cero sobre un periodo que sí tuvo obligación: el peor resultado
  * posible, porque se presenta y se acusa, y queda archivado como cumplimiento.
  */
+/**
+ * Se pidió consolidar el periodo y las operaciones son de desarrollos distintos.
+ *
+ * CONTRASTADO CONTRA EL DOF. El Art. 24 Bis 1 del Acuerdo 115/2026 —publicado
+ * el 7 de agosto de 2026, edición vespertina— fija la regla general de **un
+ * Aviso por cada acto u operación**, y abre una excepción para la Fr. V Bis:
+ *
+ *   «es posible enviar en un Aviso todos los actos u operaciones realizados
+ *   durante el mes calendario correspondiente siempre que los recursos
+ *   recibidos sean aplicados al mismo Desarrollo Inmobiliario…»
+ *
+ * O sea que consolidar no es una preferencia de quien genera: es una excepción
+ * condicionada. Con dos desarrollos en el mismo periodo, el aviso consolidado
+ * no cumple la condición — y saldría igual, válido contra el XSD, porque el
+ * esquema no sabe de esta regla. El modo de falla de siempre: nada revienta.
+ */
+export class ConsolidacionNoPermitida extends Error {
+  constructor(readonly desarrollos: string[]) {
+    super(
+      `El periodo tiene operaciones de ${String(desarrollos.length)} desarrollos inmobiliarios distintos, y el Art. 24 Bis 1 solo permite consolidar en un Aviso los recursos aplicados al MISMO desarrollo. Genera un aviso por operación.`,
+    )
+    this.name = 'ConsolidacionNoPermitida'
+  }
+}
+
 export class AvisoIncompleto extends Error {
   constructor(
     mensaje: string,
@@ -85,6 +110,7 @@ export interface ResultadoAviso {
 interface FilaReportable {
   operacion_id: string
   evaluacion_id: string
+  desarrollo_id: string
   tipo_operacion: string
   fecha_aportacion: string
   instrumento_monetario: string | null
@@ -232,6 +258,7 @@ export async function generarAviso(
     // del Layer 0 y esta consulta la lee — no cambia de forma.
     const reportables = await db.query(
       `select o.id::text as operacion_id, ev.id::text as evaluacion_id,
+              o.desarrollo_id::text as desarrollo_id,
               $4::text as tipo_operacion,
               to_char(o.fecha_operacion, 'YYYYMMDD') as fecha_aportacion,
               o.instrumento_monetario, o.moneda_codigo,
@@ -305,6 +332,14 @@ export async function generarAviso(
           'reportar. Asigna el desarrollo a estas operaciones y vuelve a generar.',
         ids,
       )
+    }
+
+    // Consolidar exige un solo desarrollo (Art. 24 Bis 1, tercer párrafo). Se
+    // comprueba ANTES de construir el XML: después ya sería un archivo válido
+    // contra el XSD y prohibido por la regla, que es la peor combinación.
+    if (p.granularidad === 'un_aviso_por_periodo') {
+      const desarrollos = [...new Set(filas.map((f) => f.desarrollo_id))]
+      if (desarrollos.length > 1) throw new ConsolidacionNoPermitida(desarrollos)
     }
 
     const operaciones = filas.map(aOperacionDelAviso)

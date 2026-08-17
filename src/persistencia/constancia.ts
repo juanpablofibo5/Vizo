@@ -45,6 +45,18 @@ const filas = async <T>(db: EjecutorSql, sql: string, p: unknown[]): Promise<T[]
   return rows as T[]
 }
 
+/**
+ * Cuenta con su sustantivo concordado.
+ *
+ * «Se conservan 1 documentos» apareció DOS veces —en la Fr. XII y en la VII— y
+ * las dos se vieron al abrir el archivo, no en una prueba. En un documento que
+ * se entrega a la autoridad, la concordancia se nota. Una cuenta de estas casi
+ * siempre vale más de uno en producción y exactamente uno en una demo, que es
+ * cuando alguien lo lee con calma.
+ */
+const cuenta = (n: number, singular: string, plural: string): string =>
+  `${String(n)} ${n === 1 ? singular : plural}`
+
 /** Fracción I · criterios de identificación y conocimiento. */
 const camposDelExpediente: Recolector = async (db, tenantId, hoy) => {
   const r = await filas<{ obligatorios: number; documentales: number; version: string | null }>(
@@ -121,7 +133,10 @@ const pipelineDelAviso: Recolector = async (db, tenantId) => {
 
   const hechos: HechoAcreditado[] = [
     {
-      afirmacion: `El aviso se genera desde las operaciones que el motor marcó como reportables, se valida contra el XSD oficial antes de guardarse, y solo entonces queda disponible. Se han generado ${String(a.total)} avisos.`,
+      afirmacion:
+        'El aviso se genera desde las operaciones que el motor marcó como reportables, se valida ' +
+        'contra el XSD oficial antes de guardarse, y solo entonces queda disponible. ' +
+        `${a.total === 1 ? 'Se ha generado 1 aviso' : `Se han generado ${String(a.total)} avisos`}.`,
       respaldo: 'avisos + aviso_operaciones · validación XSD bloqueante en la generación',
     },
     {
@@ -131,13 +146,15 @@ const pipelineDelAviso: Recolector = async (db, tenantId) => {
     {
       afirmacion:
         'Ningún aviso avanza a presentado sin una aprobación humana registrada, y VIZO no presenta ante el SPPLD: el envío lo hace el sujeto obligado con su e.firma y aquí se registra el acuse.',
-      respaldo: `avisos.aprobado_por · función app.aviso_aprobar · ${String(a.con_acuse)} acuses registrados`,
+      respaldo: `avisos.aprobado_por · función app.aviso_aprobar · ${cuenta(a.con_acuse, 'acuse registrado', 'acuses registrados')}`,
     },
   ]
 
   if (a.ceros > 0) {
     hechos.push({
-      afirmacion: `Un periodo sin operaciones reportables genera informe en cero, que es una obligación por sí misma y no la ausencia de una. Se han generado ${String(a.ceros)}.`,
+      afirmacion:
+        'Un periodo sin operaciones reportables genera informe en cero, que es una obligación por ' +
+        `sí misma y no la ausencia de una. ${a.ceros === 1 ? 'Se ha generado 1' : `Se han generado ${String(a.ceros)}`}.`,
       respaldo: "avisos.tipo = 'cero'",
     })
   }
@@ -158,18 +175,27 @@ const conservacionYHuellas: Recolector = async (db, tenantId) => {
 
   const hechos: HechoAcreditado[] = [
     {
-      afirmacion: `Se conservan ${String(c.documentos)} documentos, cada uno con su huella SHA-256 calculada sobre el archivo tal como se guarda. Un documento no se edita ni se borra: reemplazarlo es una versión nueva y la anterior permanece.`,
+      afirmacion:
+        `El expediente conserva ${cuenta(c.documentos, 'documento', 'documentos')}, ` +
+        `${c.documentos === 1 ? 'con su' : 'cada uno con su'} huella SHA-256 calculada sobre el archivo tal como se guarda. ` +
+        'Un documento no se edita ni se borra: reemplazarlo es una versión nueva y la anterior permanece.',
       respaldo: 'documentos.hash_sha256 · tabla append-only con trigger que impide UPDATE y DELETE',
     },
     {
-      afirmacion: `Todo hecho con peso regulatorio queda en una bitácora encadenada por hash, donde cada evento apunta al anterior: ${String(c.eventos)} eventos. Alterar uno rompe la cadena y el verificador lo señala.`,
+      afirmacion:
+        'Todo hecho con peso regulatorio queda en una bitácora encadenada por hash, donde cada ' +
+        `evento apunta al anterior: ${cuenta(c.eventos, 'evento registrado', 'eventos registrados')}. ` +
+        'Alterar uno rompe la cadena y el verificador lo señala.',
       respaldo: 'bitacora.hash y hash_previo · función app.bitacora_verificar',
     },
   ]
 
   if (c.manifiestos > 0) {
     hechos.push({
-      afirmacion: `El estado de un expediente en un momento dado se puede congelar en un manifiesto verificable, que incluye las huellas de sus documentos y la cabeza de la bitácora: ${String(c.manifiestos)} generados.`,
+      afirmacion:
+        'El estado de un expediente en un momento dado se puede congelar en un manifiesto ' +
+        'verificable, que incluye las huellas de sus documentos y la cabeza de la bitácora: ' +
+        `${cuenta(c.manifiestos, 'uno generado', 'generados')}.`,
       respaldo: 'manifiestos.hash_sha256 y hash_bitacora_cabeza',
     })
   }
@@ -198,11 +224,17 @@ const acumulacion: Recolector = async (db, tenantId) => {
 
   return [
     {
-      afirmacion: `Cada operación se evalúa al capturarse contra el umbral vigente a su fecha, y el veredicto queda registrado con la UMA, el umbral y la versión de catálogo que se usaron: ${String(e.evaluaciones)} evaluaciones.`,
+      afirmacion:
+        'Cada operación se evalúa al capturarse contra el umbral vigente a su fecha, y el ' +
+        'veredicto queda registrado con la UMA, el umbral y la versión de catálogo que se ' +
+        `usaron: ${cuenta(e.evaluaciones, 'evaluación', 'evaluaciones')}.`,
       respaldo: 'evaluaciones_umbral · append-only, una fila por evaluación',
     },
     {
-      afirmacion: `Las operaciones del mismo cliente se acumulan en una ventana deslizante de ${String(p[0]?.meses ?? 6)} meses, sumando todas las sucursales, y el aviso se dispara en la operación que hace que la suma alcance el umbral. Se han detectado ${String(e.por_acumulacion)} casos por acumulación.`,
+      afirmacion:
+        `Las operaciones del mismo cliente se acumulan en una ventana deslizante de ${String(p[0]?.meses ?? 6)} ` +
+        'meses, sumando todas las sucursales, y el aviso se dispara en la operación que hace que ' +
+        `la suma alcance el umbral. ${e.por_acumulacion === 1 ? 'Se ha detectado 1 caso' : `Se han detectado ${String(e.por_acumulacion)} casos`} por acumulación.`,
       respaldo: 'parametros_motor.ventana_acumulacion_meses · evaluaciones_umbral.suma_ventana y operaciones_acumuladas',
     },
     {
@@ -317,7 +349,11 @@ const aislamientoYPrivilegios: Recolector = async (db, tenantId) => {
 
   return [
     {
-      afirmacion: `Los datos de este sujeto obligado —${String(s.clientes)} clientes, ${String(s.documentos)} documentos y ${String(s.operaciones)} operaciones— están aislados por políticas de la propia base de datos. Ninguna consulta de otro obligado los alcanza, y una consulta sin sesión válida no devuelve una sola fila.`,
+      afirmacion:
+        `Los datos de este sujeto obligado —${cuenta(s.clientes, 'cliente', 'clientes')}, ` +
+        `${cuenta(s.documentos, 'documento', 'documentos')} y ${cuenta(s.operaciones, 'operación', 'operaciones')}— ` +
+        'están aislados por políticas de la propia base de datos. Ninguna consulta de otro ' +
+        'obligado los alcanza, y una consulta sin sesión válida no devuelve una sola fila.',
       respaldo:
         'Row Level Security por tenant_id en cada tabla · comprobado con dos obligados en el smoke test estructural',
     },

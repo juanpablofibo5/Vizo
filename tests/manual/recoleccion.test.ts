@@ -149,7 +149,11 @@ describe('La evidencia sale del obligado, no del producto', () => {
       const vii = despues.secciones.find((s) => s.fraccion === 'VII')
 
       expect(vii?.resolucion).toBe('acreditado')
-      expect(vii?.hechos[0]?.afirmacion).toContain('1 documentos')
+      // Se afirma sobre el HECHO —que cuenta el documento del obligado— y no
+      // sobre la redacción exacta: este caso se rompió al corregir la
+      // concordancia, y una prueba que vigila la prosa estorba en vez de
+      // proteger.
+      expect(vii?.hechos[0]?.afirmacion).toMatch(/\b1 documento\b/)
       expect(vii?.degradado).toBe(false)
     })
 

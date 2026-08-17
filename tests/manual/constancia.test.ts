@@ -231,6 +231,32 @@ describe('Cómo se escribe la Constancia', () => {
     expect(texto()).toContain('dar seguimiento y acumular actos u operaciones')
   })
 
+  it('un apartado DEGRADADO no deja un encabezado de preguntas vacío', () => {
+    // EL DEFECTO QUE APARECIÓ EN EL ARCHIVO DESCARGADO. Un degradado no trae
+    // preguntas —el catálogo lo daba por acreditado— y el documento salía con
+    // «Qué hay que responder aquí:» seguido de nada. Un hueco mudo, que es lo
+    // que el CHECK de la tabla impide sembrar, colándose por el renderizado.
+    //
+    // Ninguna prueba lo vio porque todas miraban secciones CON preguntas.
+    const t = escribirConstancia(resolverConstancia([acreditado], new Map()), obligado)
+
+    expect(t).toContain('Pendiente — lo redacta el sujeto obligado')
+    expect(t).not.toContain('Qué hay que responder')
+  })
+
+  it('y tampoco repite dos veces que no encontró evidencia', () => {
+    const t = escribirConstancia(resolverConstancia([acreditado], new Map()), obligado)
+    expect(t).not.toContain('**Nota:**')
+  })
+
+  it('la lista final no queda pegada al separador', () => {
+    // Sin línea en blanco, un `---` pegado a una lista deja de ser separador en
+    // Markdown y se come el último elemento. Se ve al abrir el archivo, no al
+    // leer la cadena.
+    const t = escribirConstancia(resolverConstancia([acreditado, hueco], new Map()), obligado)
+    expect(t).not.toMatch(/\n- [^\n]+\n---/)
+  })
+
   it('cuando algo se degradó, lo advierte al final en vez de callarlo', () => {
     const t = escribirConstancia(resolverConstancia([acreditado, hueco], new Map()), obligado)
     expect(t).toContain('Atención:')

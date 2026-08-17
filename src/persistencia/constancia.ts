@@ -266,9 +266,16 @@ const separacionDeRoles: Recolector = async (db, tenantId) => {
   const u = r[0]
   if (u === undefined || u.admins === 0 || u.capturistas === 0) return []
 
+  // Concordancia: «1 personas capturan» se leía mal en un documento que se
+  // entrega. Lo vio la primera descarga real, no una prueba.
+  const gente = (n: number): string =>
+    n === 1 ? '1 persona captura' : `${String(n)} personas capturan`
+  const aprueban = (n: number): string =>
+    n === 1 ? '1 además aprueba' : `${String(n)} además aprueban`
+
   return [
     {
-      afirmacion: `El acceso está separado en dos funciones: ${String(u.capturistas)} personas capturan clientes y operaciones, y ${String(u.admins)} además aprueban expedientes y avisos. Quien captura no aprueba.`,
+      afirmacion: `El acceso está separado en dos funciones: ${gente(u.capturistas)} clientes y operaciones, y ${aprueban(u.admins)} expedientes y avisos. Quien captura no aprueba.`,
       respaldo: 'usuarios.rol · la separación la impone la base de datos, no la pantalla',
     },
     {

@@ -41,27 +41,49 @@ export interface DatosDelObligado {
   anticipadaDesde?: string | undefined
 }
 
-const vinetas = (items: readonly string[]): string =>
-  items.map((i) => `- ${i}`).join('\n')
+const vinetas = (items: readonly string[]): string => items.map((i) => `- ${i}`).join('\n')
+
+/**
+ * El bloque de preguntas, o nada.
+ *
+ * **Sin preguntas NO se escribe el encabezado.** Parece obvio y no lo era: la
+ * primera versión emitía «Qué hay que responder aquí:» seguido de vacío en los
+ * apartados degradados, que por definición no traen preguntas de catálogo —el
+ * catálogo los daba por acreditados—. Un hueco mudo, que es justo lo que el
+ * CHECK de `apartados_manual` impide sembrar, colándose por el renderizado.
+ *
+ * Lo cazó leer el archivo descargado. Ninguna prueba lo vio porque todas
+ * miraban secciones con preguntas.
+ */
+function preguntasEscritas(preguntas: readonly string[], titulo: string): string[] {
+  if (preguntas.length === 0) return []
+  return ['', `**${titulo}**`, '', vinetas(preguntas)]
+}
 
 function seccionEscrita(s: SeccionResuelta): string {
   const encabezado = `## Fracción ${s.fraccion}\n\n> ${s.texto}\n\n*${s.fuente}*`
 
   if (s.resolucion === 'hueco') {
-    const nota = s.degradado
-      ? '\n\n**Nota:** este apartado normalmente lo acredita el sistema. Hoy no encontró evidencia, así que queda pendiente.'
-      : ''
+    // La nota solo agrega algo cuando el catálogo YA daba una explicación
+    // propia: ahí conviven «esto le toca a usted» y «además, hoy faltó
+    // evidencia». Sin explicación de catálogo, `porQueNo` ya dice las dos
+    // cosas y repetirlo era ruido.
+    const nota =
+      s.degradado && s.porQueNo !== undefined && !s.porQueNo.startsWith('VIZO debería poder')
+        ? [
+            '',
+            '**Nota:** este apartado normalmente lo acredita el sistema. Hoy no encontró evidencia, así que queda pendiente.',
+          ]
+        : []
+
     return [
       encabezado,
       '',
       '### ⬚ Pendiente — lo redacta el sujeto obligado',
       '',
       s.porQueNo ?? '',
-      nota,
-      '',
-      '**Qué hay que responder aquí:**',
-      '',
-      vinetas(s.preguntas),
+      ...nota,
+      ...preguntasEscritas(s.preguntas, 'Qué hay que responder aquí:'),
     ].join('\n')
   }
 
@@ -76,10 +98,7 @@ function seccionEscrita(s: SeccionResuelta): string {
           '### ⬚ Lo que falta en este apartado',
           '',
           s.porQueNo ?? '',
-          '',
-          '**Qué hay que responder:**',
-          '',
-          vinetas(s.preguntas),
+          ...preguntasEscritas(s.preguntas, 'Qué hay que responder:'),
         ].join('\n')
       : ''
 
@@ -153,5 +172,7 @@ export function escribirConstancia(c: Constancia, o: DatosDelObligado): string {
       : '',
   ].join('\n')
 
-  return `${cabecera}${cuerpo}${pie}\n`
+  // El salto extra NO es cosmético: sin línea en blanco, un `---` pegado a una
+  // lista deja de ser separador en Markdown y se come el último elemento.
+  return `${cabecera}${cuerpo}\n${pie}\n`
 }

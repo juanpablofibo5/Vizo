@@ -27,7 +27,7 @@ Por eso el producto exige que quien genera el aviso no sea quien lo aprueba. Est
 
 Se anota el **código de publicación** del DOF y la fecha. Va en la migración, en la columna `fuente` / `fuente_dof`, y en `docs/DECISIONES.md` si cambia una decisión.
 
-> Estado actual: el **Acuerdo 115/2026** (DOF 7-ago-2026, código 5795797) todavía **no está contrastado**. Issue #9. Nada suyo entra al catálogo hasta que lo esté — ver `docs/ACUERDO-115-2026.md`.
+> Estado actual (16-ago-2026): el **Acuerdo 115/2026** (DOF 7-ago-2026, código 5795797) **ya está contrastado** en lo que tocaba al núcleo, y el texto oficial vive en `regulatorio/dof/` con su SHA-256. Lo verificado va marcado ✅ DOF con su artículo en `docs/ACUERDO-115-2026.md §0`; lo que sigue viniendo de análisis secundarios va marcado ⚠️ y **no entra al catálogo**. La base del umbral la resolvió el **Art. 6 del Reglamento**, no el Acuerdo.
 
 ---
 

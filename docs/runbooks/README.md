@@ -12,6 +12,7 @@ Estos documentos son también **el diseño del backoffice de F2**. Lo que aquí 
 | [02 · Carga de una vigencia regulatoria](02-carga-de-vigencias.md) | Cuando el DOF publica | **Afecta a todos los clientes a la vez.** Un umbral mal cargado calcula mal y nadie lo nota |
 | [03 · Monitoreo de la flota](03-monitoreo.md) | Semanal, y todo día 10 al 17 | Un obligado incumple un plazo y se entera después de la multa |
 | [04 · Soporte](04-soporte.md) | Cuando un cliente pide ayuda | Se mira lo que no se debe, o se toca lo que jamás |
+| [05 · Despliegue a producción](05-despliegue-a-produccion.md) | Cada vez que hay migraciones nuevas | El código se despliega solo y el esquema no: producción calcula mal sin dar un error |
 
 ## Las reglas que atraviesan los cuatro
 

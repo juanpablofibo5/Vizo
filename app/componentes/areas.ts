@@ -103,6 +103,10 @@ export const NAVEGACION: Grupo[] = [
     areas: [
       { estado: 'lista', ruta: '/avisos', nombre: 'Avisos', icono: 'avisos' },
       { estado: 'lista', ruta: '/calendario', nombre: 'Calendario', icono: 'calendario' },
+      // La Constancia vive en Cumplimiento y no en Evidencia a propósito: no es
+      // una herramienta de verificación, es un documento que el obligado
+      // entrega. Ver ADR-20.
+      { estado: 'lista', ruta: '/constancia', nombre: 'Constancia', icono: 'evidencia' },
       {
         estado: 'lista',
         ruta: '/evidencia',

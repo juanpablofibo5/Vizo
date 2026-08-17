@@ -183,6 +183,44 @@ RLS no filtra TRUNCATE y los triggers `for each row` no lo ven, así que las dos
 
 ---
 
+## ADR-20 · El Manual: VIZO acredita lo que hace, y deja el hueco de lo que no — 2026-08-16
+
+**Contexto:** el Art. 37 Bis del Acuerdo 115/2026 exige un Manual de Políticas Internas con **catorce** apartados, exigible el 1 de marzo de 2027 (Transitorio Tercero) y dentro de los 90 días naturales del alta (Art. 37). Es la obligación que más sujetos obligados van a tener que resolver a la vez. Y toca de frente la frontera 5 de `ALCANCE.md`: *VIZO no asesora legalmente*.
+
+**Lo que reencuadró la decisión:** al contrastar los catorce apartados contra el sistema, resultó que **VIZO solo puede demostrar siete**.
+
+| Con evidencia verificable | Ocurre fuera de VIZO |
+|---|---|
+| I identificación · VI avisos · VII conservación · VIII acumulación · XIII confidencialidad · X REC *(parcial)* · XII control interno *(parcial)* | II riesgo · III debida diligencia · IV PEP · V perfil · IX listas · XI capacitación · XIV actualización |
+
+No son dos grados del mismo trabajo: son **dos artefactos distintos**. Uno describe mecanismos implementados y cada frase puede señalar el dato que la respalda. El otro redacta políticas sobre lo que el obligado *debería* hacer, donde no hay evidencia que señalar — solo criterio. Lo primero es documentación técnica del propio producto; lo segundo es asesoría.
+
+**Y el texto abre la puerta para separarlos.** Art. 37, párrafo 2: *«se deberán incluir las **referencias** de aquellos criterios, medidas, procedimientos internos y demás información que […] puedan quedar plasmados en **un documento distinto**»*. El Manual puede citar otros documentos. VIZO no necesita escribir el Manual para producir algo que el Manual cite.
+
+**Decisión.** VIZO entrega **dos piezas**:
+
+1. **La Constancia de mecanismos** — el «documento distinto» del Art. 37 ¶2. Completa, con evidencia verificable: versiones de catálogo, hashes, fechas, cadena de bitácora. Es el entregable terminado.
+2. **El índice del Manual** — los catorce apartados. Los siete que VIZO acredita remiten a la Constancia; los otros siete aparecen como **hueco**, con su artículo citado y las preguntas que hay que contestar.
+
+**La regla que hace la frontera verificable, y no una intención:**
+
+> **VIZO no emite una sola frase que no pueda respaldar con un dato del sistema.** Cada sección tiene una consulta de evidencia; si la consulta no devuelve datos, la sección **no genera prosa: genera el hueco**.
+
+Es la regla dura 6 aplicada a un documento en vez de a un cálculo — *nada se afirma en silencio con datos que no cuadran*. Y es comprobable en pruebas: se vacía la evidencia de una sección y se verifica que sale el hueco, no un párrafo.
+
+**Alternativas descartadas:**
+
+- **(a) Manual completo asistido**, con plantillas para los siete de fuera. Es lo que más vendería y cruza la frontera sin ambigüedad: una plantilla que dice qué medidas de debida diligencia aplicar es una recomendación sobre qué es *adecuado*. Además el **Art. 37 Bis 3** permite al SAT ordenar modificaciones al Manual — quien responde es el obligado, pero quien lo redactó sería VIZO.
+- **(b) Solo la Constancia**, sin el índice. Más conservador y más barato, pero deja al obligado sin ver que ya tiene la mitad resuelta, y sin saber qué le falta. El índice es precisamente lo que convierte la Constancia en algo accionable.
+
+**Lo que VIZO no hace nunca, aunque se lo pidan:** redactar una política, sugerir el texto de un hueco, clasificar riesgo, decidir qué debida diligencia corresponde, ni firmar el Manual. El hueco se queda hueco.
+
+**Sobre el nombre, que es parte de la frontera:** el entregable **no se llama «su Manual»**. Un obligado que recibe algo llamado Manual lo trata como completo, y lo estaría entregando incompleto ante la autoridad. Se llama Constancia de mecanismos, y el índice dice en su encabezado cuántos apartados faltan.
+
+**Costo:** por estimar. **Lo que abre:** el generador es data-driven sobre el catálogo, así que un apartado nuevo —o uno que VIZO empiece a acreditar cuando se construya el Cap. III Bis— es una fila, no código. Ver `docs/ROADMAP-2027.md`.
+
+---
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 1. **Sellado del manifiesto** (ADR-10): ¿una constancia NOM-151 sobre el manifiesto con los hashes de todos los documentos satisface la exigencia de fecha cierta, o la autoridad espera constancia por documento?

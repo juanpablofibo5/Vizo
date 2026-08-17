@@ -17,6 +17,8 @@ Lo que VIZO **no es, en ninguna fase** (fronteras de producto, no recortes):
 3. **No custodia e.firmas** ni credenciales del SAT. Nunca.
 4. **No descarta coincidencias de screening** ni aprueba nada: toda decisión con peso legal es humana y queda registrada.
 5. **No asesora legalmente.** Automatiza el cumplimiento de reglas verificadas contra fuente oficial; las dudas de interpretación van al especialista.
+
+   **Cómo se verifica esta frontera** (ADR-20, al decidir el alcance del Manual de Políticas Internas): *VIZO no emite una sola frase que no pueda respaldar con un dato del sistema.* Todo documento que VIZO genere lleva una consulta de evidencia por sección; si la consulta no devuelve datos, la sección **no genera prosa: genera el hueco**, con su artículo citado. Es la regla dura 6 aplicada a un documento en vez de a un cálculo, y se prueba vaciando la evidencia y comprobando que sale el hueco.
 6. **Sin impersonation.** Nadie de VIZO puede "entrar como" un cliente. El soporte, cuando exista, será un rol propio de solo lectura con consentimiento.
 
 Estas seis líneas son el contrato de confianza del producto. Se venden tanto como las features.
@@ -80,9 +82,10 @@ Modelo comercial reflejado en software: **unidad de cobro = RFC obligado**; impl
 | Qué | Cuándo | Por qué |
 |---|---|---|
 | Captura por enlace al comprador (magic-link) | F2 | Puerta abierta en el esquema; el Art. 23 Ter la valida con Firma Electrónica, pero es alcance nuevo |
-| Rol REC como figura propia + aceptación de designación | F2 | Issue #12; hoy admin ejerce sus funciones |
+| ~~Rol REC como figura propia + aceptación de designación~~ | ✅ **construido el 15-ago** | Issue #12 cerrado. La designación es un estado con su tabla, sus transiciones y su paso de arranque. El REC sigue sin ser un rol de la app —es una figura con exposición personal— y eso no cambia |
 | Aviso modificatorio y aviso 24h | F2 / bloqueado | El 24h espera Resolución de formatos (Transitorio Quinto) |
-| Grado de riesgo, perfil transaccional, cuestionarios, Manual | F2/F3 | **Bloqueado por #9** — no se construye sobre articulado sin contrastar |
+| Grado de riesgo, perfil transaccional, cuestionarios | F2/F3 | #9 ya cerró, así que el articulado está contrastado. Fechas y detalle en `ROADMAP-2027.md` |
+| Manual de Políticas Internas | F2, **con frontera decidida** | ADR-20: VIZO acredita los 7 apartados que puede demostrar y deja el hueco en los otros 7. No redacta política |
 | Parser CFDI | F2 | Recortable desde el plan original; captura manual completa existe |
 | Notificaciones por correo | F2 | El semáforo cubre la necesidad en F1 |
 | Multi-RFC / grupos | F3 | Issue #13; toca la decisión más delicada del esquema (aislamiento) |

@@ -31,6 +31,14 @@ export interface DatosDelObligado {
   rfc: string
   /** 'AAAA-MM-DD' de la generación. */
   fecha: string
+  /**
+   * Cuando se pide antes de que el Art. 37 Bis entre en vigor: la fecha en que
+   * entra. El documento lo dice arriba, con todas sus letras.
+   *
+   * No es un matiz: un documento anticipado que no se anuncie como tal puede
+   * terminar entregado como si fuera el bueno.
+   */
+  anticipadaDesde?: string | undefined
 }
 
 const vinetas = (items: readonly string[]): string =>
@@ -81,12 +89,24 @@ function seccionEscrita(s: SeccionResuelta): string {
 export function escribirConstancia(c: Constancia, o: DatosDelObligado): string {
   const pendientes = c.huecos + c.parciales
 
+  const anticipo =
+    o.anticipadaDesde === undefined
+      ? []
+      : [
+          `> ⚠️ **VISTA ANTICIPADA — no entregar.** El Artículo 37 Bis entra en vigor el ` +
+            `**${o.anticipadaDesde}**, así que hoy el Manual todavía no es exigible. Este ` +
+            'documento se armó con las reglas que entrarán ese día, para que se vea con ' +
+            'anticipación qué va a pedir y cuánto de eso ya está cubierto.',
+          '',
+        ]
+
   const cabecera = [
     '# Constancia de mecanismos implementados',
     '',
     `**${o.razonSocial}** · RFC ${o.rfc}`,
     `Generada el ${o.fecha}`,
     '',
+    ...anticipo,
     '---',
     '',
     '## Qué es este documento, y qué no',

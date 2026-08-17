@@ -27,15 +27,25 @@ export async function descargarConstancia(
   try {
     const { contenido, nombre } = await conBase(async ({ db, sesion, obligado }) => {
       const hoy = hoyEnMexico()
-      const c = await leerComoUsuario(db, sesion, () => armarConstancia(db, { sesion, hoy }))
+      const r = await leerComoUsuario(db, sesion, () => armarConstancia(db, { sesion, hoy }))
+
+      // Antes del 30 de noviembre de 2026 el Art. 37 Bis no rige, así que lo
+      // que se descarga es una vista anticipada — y el archivo lo dice arriba,
+      // con todas sus letras. Un documento anticipado que no se anuncia como
+      // tal puede terminar entregado como si fuera el bueno.
+      const anticipada = r.estado === 'aun_no_exigible'
+      const c = anticipada ? r.vistaPrevia : r.constancia
 
       return {
         contenido: escribirConstancia(c, {
           razonSocial: obligado.razonSocial,
           rfc: obligado.rfc,
           fecha: hoy,
+          ...(anticipada ? { anticipadaDesde: r.desde } : {}),
         }),
-        nombre: `constancia-de-mecanismos-${obligado.rfc}-${hoy}.md`,
+        nombre: anticipada
+          ? `constancia-VISTA-ANTICIPADA-${obligado.rfc}-${hoy}.md`
+          : `constancia-de-mecanismos-${obligado.rfc}-${hoy}.md`,
       }
     })
 

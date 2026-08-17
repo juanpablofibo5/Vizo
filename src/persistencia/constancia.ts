@@ -387,19 +387,47 @@ export async function apartadosVigentes(
 }
 
 /**
- * Arma la Constancia de un obligado a una fecha.
+ * Qué salió al pedir la Constancia.
  *
- * No escribe nada en la base: generar el documento es una LECTURA. Guardarlo
- * con su huella es un acto aparte, y deliberado — igual que el aviso.
+ * ────────────────────────────────────────────────────────────────────────────
+ * POR QUÉ ESTO ES UNA UNIÓN Y NO UNA CONSTANCIA A SECAS
+ * ────────────────────────────────────────────────────────────────────────────
+ * El Art. 37 Bis entra en vigor el 30 de noviembre de 2026. Antes de esa fecha
+ * **no hay apartados vigentes**, y eso NO es un error: es que la obligación
+ * todavía no existe.
+ *
+ * La primera versión no distinguía los dos casos y reventaba con
+ * `CatalogoDelManualVacio` —«el catálogo no cargó»— sobre una cuenta donde en
+ * realidad todo estaba bien. Es el mismo par que este proyecto separa en todas
+ * partes: **«todavía no» no es «no hay»**, igual que «sin evaluar» no es
+ * «completo» y una designación pendiente no es una aceptada.
+ *
+ * La unión obliga a quien consume a distinguirlos. Y la vista previa se arma
+ * con la fecha de entrada en vigor, no con hoy: leer un catálogo que aún no
+ * rige sería justo lo que el versionado por vigencia existe para impedir, así
+ * que se hace explícito y se etiqueta.
  */
-export async function armarConstancia(
+export type ResultadoConstancia =
+  | { estado: 'vigente'; constancia: Constancia }
+  | { estado: 'aun_no_exigible'; desde: string; vistaPrevia: Constancia }
+
+/** La primera vigencia del Manual posterior a una fecha, si la hay. */
+async function proximaVigencia(db: EjecutorSql, hoy: string): Promise<string | null> {
+  const r = await filas<{ desde: string | null }>(
+    db,
+    `select min(vigente_desde)::text as desde from apartados_manual
+      where vigente_desde > $1::date`,
+    [hoy],
+  )
+  return r[0]?.desde ?? null
+}
+
+async function recolectar(
   db: EjecutorSql,
-  p: { sesion: ContextoSesion; hoy: string },
+  tenantId: string,
+  fecha: string,
+  apartados: readonly ApartadoDelManual[],
 ): Promise<Constancia> {
-  await exigirSesionActiva(db, p.sesion)
-
-  const apartados = await apartadosVigentes(db, p.hoy)
-
   const hechos = new Map<string, readonly HechoAcreditado[]>()
   for (const a of apartados) {
     if (a.claveEvidencia === undefined) continue
@@ -408,8 +436,41 @@ export async function armarConstancia(
     // degradaría la sección a hueco por un error de programación y parecería
     // una decisión de producto—: se detiene.
     if (recolector === undefined) throw new RecolectorDesconocido(a.claveEvidencia)
-    hechos.set(a.claveEvidencia, await recolector(db, p.sesion.tenantId, p.hoy))
+    hechos.set(a.claveEvidencia, await recolector(db, tenantId, fecha))
+  }
+  return resolverConstancia(apartados, hechos)
+}
+
+/**
+ * Arma la Constancia de un obligado a una fecha.
+ *
+ * No escribe nada en la base: generar el documento es una LECTURA. Guardarlo
+ * con su huella es un acto aparte, y deliberado — igual que el aviso.
+ */
+export async function armarConstancia(
+  db: EjecutorSql,
+  p: { sesion: ContextoSesion; hoy: string },
+): Promise<ResultadoConstancia> {
+  await exigirSesionActiva(db, p.sesion)
+
+  const apartados = await apartadosVigentes(db, p.hoy)
+
+  if (apartados.length === 0) {
+    const desde = await proximaVigencia(db, p.hoy)
+    // Sin apartados hoy Y sin ninguno por venir, el catálogo sí está roto.
+    // Ahí el error de dominio es la respuesta correcta y se deja subir.
+    if (desde === null) return { estado: 'vigente', constancia: resolverConstancia([], new Map()) }
+
+    // La evidencia se recolecta a la fecha de ENTRADA EN VIGOR, que es la
+    // misma con la que se eligieron los apartados. Un documento no se juzga a
+    // caballo entre dos fechas.
+    const futuros = await apartadosVigentes(db, desde)
+    return {
+      estado: 'aun_no_exigible',
+      desde,
+      vistaPrevia: await recolectar(db, p.sesion.tenantId, desde, futuros),
+    }
   }
 
-  return resolverConstancia(apartados, hechos)
+  return { estado: 'vigente', constancia: await recolectar(db, p.sesion.tenantId, p.hoy, apartados) }
 }

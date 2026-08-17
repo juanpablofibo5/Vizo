@@ -44,8 +44,16 @@ describe('La evidencia sale del obligado, no del producto', () => {
     sesion = await crearTenantConUsuario(db, marca, 'admin')
   })
 
-  const constancia = () =>
-    enTransaccionDeSesion(db, sesion, () => armarConstancia(db, { sesion, hoy: HOY }))
+  /** Desenvuelve la unión: a esta fecha el Art. 37 Bis ya rige. */
+  const constancia = async () => {
+    const r = await enTransaccionDeSesion(db, sesion, () =>
+      armarConstancia(db, { sesion, hoy: HOY }),
+    )
+    if (r.estado !== 'vigente') {
+      throw new Error(`Se esperaba el Manual vigente en ${HOY} y salió ${r.estado}.`)
+    }
+    return r.constancia
+  }
 
   it('el catálogo trae los catorce apartados del Art. 37 Bis', async () => {
     const a = await apartadosVigentes(db, HOY)
@@ -167,6 +175,33 @@ describe('La evidencia sale del obligado, no del producto', () => {
       // PARCIAL, no acreditado: las funciones del REC las define el obligado.
       expect(x?.resolucion).toBe('parcial')
       expect(x?.preguntas.length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('antes de que el artículo entre en vigor', () => {
+    // EL DEFECTO QUE LLEGÓ AL NAVEGADOR. La pantalla pedía la constancia con la
+    // fecha de HOY —agosto de 2026—, no había apartados vigentes porque el
+    // Art. 37 Bis entra el 30 de noviembre, y el sistema lo trató como «el
+    // catálogo no cargó». Son cosas distintas: «todavía no» no es «no hay».
+    it('no revienta: responde que aún no es exigible, y desde cuándo lo será', async () => {
+      const r = await enTransaccionDeSesion(db, sesion, () =>
+        armarConstancia(db, { sesion, hoy: '2026-08-16' }),
+      )
+
+      expect(r.estado).toBe('aun_no_exigible')
+      if (r.estado !== 'aun_no_exigible') return
+      expect(r.desde).toBe('2026-11-30')
+    })
+
+    it('y trae la vista previa armada con las reglas que entrarán ese día', async () => {
+      // Se arma con la fecha de ENTRADA EN VIGOR, no con hoy: un documento no
+      // se juzga a caballo entre dos vigencias.
+      const r = await enTransaccionDeSesion(db, sesion, () =>
+        armarConstancia(db, { sesion, hoy: '2026-08-16' }),
+      )
+
+      if (r.estado !== 'aun_no_exigible') throw new Error('debía ser anticipada')
+      expect(r.vistaPrevia.secciones).toHaveLength(14)
     })
   })
 

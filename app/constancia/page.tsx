@@ -1,6 +1,5 @@
 import { conBase, leerComoUsuario } from '../../src/supabase/conexion'
-import { armarConstancia } from '../../src/persistencia/constancia'
-import type { Constancia } from '../../src/dominio/constancia'
+import { armarConstancia, type ResultadoConstancia } from '../../src/persistencia/constancia'
 import { hoyEnMexico } from '../../src/dominio/fechas'
 import { Marco } from '../componentes/marco'
 import { BotonDescargar } from './descargar'
@@ -35,10 +34,16 @@ const ETIQUETA: Record<string, string> = {
 
 export default async function PantallaConstancia() {
   return conBase(async ({ db, sesion, perfil, obligado }) => {
-    const c = await leerComoUsuario(db, sesion, (): Promise<Constancia> =>
+    const r = await leerComoUsuario(db, sesion, (): Promise<ResultadoConstancia> =>
       armarConstancia(db, { sesion, hoy: hoyEnMexico() }),
     )
 
+    // «Todavía no es exigible» no es «no hay catálogo». La primera versión de
+    // esta pantalla los confundía y reventaba con un error de dominio sobre una
+    // cuenta donde todo estaba bien: el Art. 37 Bis entra el 30 de noviembre de
+    // 2026 y hoy simplemente no rige.
+    const anticipada = r.estado === 'aun_no_exigible'
+    const c = anticipada ? r.vistaPrevia : r.constancia
     const pendientes = c.huecos + c.parciales
 
     return (
@@ -47,6 +52,15 @@ export default async function PantallaConstancia() {
         <p className="sub">
           Lo que su sistema de cumplimiento tiene implementado, con la evidencia que lo respalda.
         </p>
+
+        {anticipada && (
+          <div className="aviso" style={{ marginBottom: '1rem' }}>
+            <strong>Vista anticipada.</strong> El Artículo 37 Bis entra en vigor el{' '}
+            <strong>{r.desde}</strong>: hoy el Manual todavía no es exigible. Lo de abajo se armó
+            con las reglas que entrarán ese día, para que veas desde ahora qué va a pedir y cuánto
+            de eso ya está cubierto.
+          </div>
+        )}
 
         {/* La frontera, antes que nada. No es un descargo legal al pie: es lo
             primero que la pantalla dice, porque es lo que evita el error caro. */}

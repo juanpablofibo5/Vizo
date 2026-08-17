@@ -23,7 +23,7 @@ Esta regla existe porque el modo de falla de este proyecto **no es el crash**: e
 |---|---|
 | El motor aceptó una configuración de otra fecha | Se evaluó con la UMA equivocada → **aviso omitido** |
 | La operación evaluada venía en su propio historial | Se contó dos veces → **aviso falso** |
-| Con umbral `con_iva`, una previa sin total sumaba solo su base | Suma de menos → **aviso omitido** |
+| Con umbral `con_contribuciones`, una previa sin total sumaba solo su base | Suma de menos → **aviso omitido** |
 | `registrarEvaluacion` aceptaba un `operacionId` suelto | Registro incoherente en **el objeto que se defiende ante la autoridad** |
 
 Ninguna lanzó una excepción. Todas devolvieron un número plausible.
@@ -71,7 +71,8 @@ Next.js (App Router) · TypeScript estricto · Supabase (Postgres + Auth + Stora
 - `01_ARQUITECTURA_V4.md` — modelo de datos y decisiones cerradas
 - `docs/PLATAFORMA.md` — el diseño de producto: VIZO como SaaS completo (portal, roles, onboarding, backoffice), no solo el motor. La UI nunca calcula: pinta lo que el motor registró
 - `docs/ALCANCE.md` — **las decisiones de alcance**: qué entra en cada fase (F0 núcleo ✓ · F1 plataforma · compuerta de viabilidad · F2/F3), las seis fronteras que no se cruzan, y el mapa de rutas de F1. Cambiar algo de ahí es cambiar de dirección
-- `regulatorio/` — XSD oficiales, instructivos y `decisiones.md` del consultor PLD
+- `docs/ROADMAP-2027.md` — **el calendario del regulador**, contrastado transitorio por transitorio: qué entra el 30-nov-2026, el 1-mar-2027, el 1-jun-2027 y el 1-ene-2028, con lo que VIZO tiene de cada capítulo
+- `regulatorio/` — XSD oficiales, instructivos, textos del DOF con su SHA-256, y `decisiones.md` del consultor PLD
 
 ## Gotchas
 

@@ -1,64 +1,105 @@
 'use server'
 
-import { conBase, leerComoUsuario } from '../../src/supabase/conexion'
-import { armarConstancia } from '../../src/persistencia/constancia'
-import { escribirConstancia } from '../../src/dominio/constancia-texto'
+import { conBase } from '../../src/supabase/conexion'
+import { emitirConstancia, NoAutorizadoAEmitir } from '../../src/persistencia/constancia'
+import { escribirIndiceDelManual } from '../../src/dominio/indice-manual'
 import { CatalogoDelManualVacio } from '../../src/dominio/constancia'
 import { RecolectorDesconocido } from '../../src/persistencia/constancia'
 import { hoyEnMexico } from '../../src/dominio/fechas'
 
 /**
- * Generar el archivo de la Constancia.
+ * Emitir la Constancia y armar el índice del Manual.
  *
- * La evidencia se recolecta EN EL SERVIDOR, contra la base y con la sesión del
- * usuario, así que RLS decide qué se puede ver. El navegador solo recibe el
- * texto ya armado: no hay forma de pedir la constancia de otro obligado.
+ * ────────────────────────────────────────────────────────────────────────────
+ * POR QUÉ LOS DOS ARCHIVOS SALEN JUNTOS
+ * ────────────────────────────────────────────────────────────────────────────
+ * El índice del Manual **referencia** la Constancia por su huella (Art. 37 ¶2).
+ * Entregarlo solo dejaría siete apartados apuntando a un documento que el
+ * lector no tiene — un Manual con agujeros que parecen completos.
+ *
+ * Descargarlos por separado invitaría exactamente a ese error, así que un solo
+ * acto produce los dos, y el índice cita la huella de la Constancia que acaba
+ * de emitirse.
+ *
+ * La evidencia se recolecta EN EL SERVIDOR con la sesión del usuario, así que
+ * RLS decide qué se ve: no hay forma de pedir la constancia de otro obligado.
  */
 
-export interface EstadoDescarga {
-  texto: { nombre: string; contenido: string } | null
+export interface Archivo {
+  nombre: string
+  contenido: string
+}
+
+export interface EstadoEmision {
+  archivos: Archivo[] | null
+  /** Qué pasó, para decirlo en pantalla. */
+  mensaje: string | null
   error: string | null
 }
 
-export async function descargarConstancia(
-  _previo: EstadoDescarga,
+export async function emitirYDescargar(
+  _previo: EstadoEmision,
   _datos: FormData,
-): Promise<EstadoDescarga> {
+): Promise<EstadoEmision> {
   try {
-    const { contenido, nombre } = await conBase(async ({ db, sesion, obligado }) => {
+    const r = await conBase(async ({ db, sesion, obligado }) => {
       const hoy = hoyEnMexico()
-      const r = await leerComoUsuario(db, sesion, () => armarConstancia(db, { sesion, hoy }))
+      const emitida = await emitirConstancia(db, { sesion, hoy })
 
-      // Antes del 30 de noviembre de 2026 el Art. 37 Bis no rige, así que lo
-      // que se descarga es una vista anticipada — y el archivo lo dice arriba,
-      // con todas sus letras. Un documento anticipado que no se anuncia como
-      // tal puede terminar entregado como si fuera el bueno.
-      const anticipada = r.estado === 'aun_no_exigible'
-      const c = anticipada ? r.vistaPrevia : r.constancia
-
-      return {
-        contenido: escribirConstancia(c, {
+      const indice = escribirIndiceDelManual(
+        emitida.constancia,
+        {
           razonSocial: obligado.razonSocial,
           rfc: obligado.rfc,
           fecha: hoy,
-          ...(anticipada ? { anticipadaDesde: r.desde } : {}),
-        }),
-        nombre: anticipada
-          ? `constancia-VISTA-ANTICIPADA-${obligado.rfc}-${hoy}.md`
-          : `constancia-de-mecanismos-${obligado.rfc}-${hoy}.md`,
+          ...(emitida.anticipadaDesde === null
+            ? {}
+            : { anticipadaDesde: emitida.anticipadaDesde }),
+        },
+        { fecha: emitida.fecha, hashSha256: emitida.hashSha256 },
+      )
+
+      const sufijo = emitida.anticipadaDesde === null ? '' : '-VISTA-ANTICIPADA'
+      return {
+        nueva: emitida.nueva,
+        hash: emitida.hashSha256,
+        archivos: [
+          {
+            nombre: `constancia-de-mecanismos${sufijo}-${obligado.rfc}-${hoy}.md`,
+            contenido: emitida.contenido,
+          },
+          {
+            nombre: `manual-indice${sufijo}-${obligado.rfc}-${hoy}.md`,
+            contenido: indice,
+          },
+        ],
       }
     })
 
-    return { texto: { nombre, contenido }, error: null }
-  } catch (e) {
-    // Los dos errores de dominio ya traen un mensaje que dice qué hacer; el
-    // resto se muestra crudo antes que inventar una explicación.
-    if (e instanceof CatalogoDelManualVacio || e instanceof RecolectorDesconocido) {
-      return { texto: null, error: e.message }
-    }
     return {
-      texto: null,
-      error: e instanceof Error ? e.message : 'No se pudo generar la constancia.',
+      archivos: r.archivos,
+      mensaje: r.nueva
+        ? `Constancia emitida. Huella SHA-256: ${r.hash.slice(0, 16)}… El índice del Manual la referencia por esa huella.`
+        : `Ya había una constancia idéntica de hoy, así que se reusó — emitir dos veces sin que nada cambie no crea dos evidencias. Huella: ${r.hash.slice(0, 16)}…`,
+      error: null,
     }
+  } catch (e) {
+    if (
+      e instanceof CatalogoDelManualVacio ||
+      e instanceof RecolectorDesconocido ||
+      e instanceof NoAutorizadoAEmitir
+    ) {
+      return { archivos: null, mensaje: null, error: e.message }
+    }
+    const bruto = e instanceof Error ? e.message : String(e)
+    if (/row-level security|permission denied/i.test(bruto)) {
+      return {
+        archivos: null,
+        mensaje: null,
+        error:
+          'Solo un administrador puede emitir la constancia: es el documento que el obligado adopta y que su Manual va a referenciar.',
+      }
+    }
+    return { archivos: null, mensaje: null, error: bruto }
   }
 }

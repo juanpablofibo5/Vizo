@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import type { EjecutorSql } from '../catalogo/cargador'
 import {
   resolverConstancia,
@@ -5,7 +6,9 @@ import {
   type Constancia,
   type HechoAcreditado,
 } from '../dominio/constancia'
-import { exigirSesionActiva, type ContextoSesion } from './transaccion'
+import { escribirConstancia } from '../dominio/constancia-texto'
+import type { EjecutorTransaccional } from './manifiesto'
+import { enTransaccionDeSesion, exigirSesionActiva, type ContextoSesion } from './transaccion'
 
 /**
  * Los recolectores de evidencia de la Constancia de mecanismos.
@@ -516,4 +519,152 @@ export async function armarConstancia(
   }
 
   return { estado: 'vigente', constancia: await recolectar(db, p.sesion.tenantId, p.hoy, apartados) }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Emitir: congelar la Constancia para que el Manual pueda referenciarla
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface ConstanciaEmitida {
+  id: string
+  fecha: string
+  hashSha256: string
+  contenido: string
+  constancia: Constancia
+  anticipadaDesde: string | null
+  /** `false` cuando ya existía una idéntica y se reusó. */
+  nueva: boolean
+}
+
+/**
+ * Emite la Constancia: la arma, la escribe, la hashea y la guarda.
+ *
+ * ────────────────────────────────────────────────────────────────────────────
+ * POR QUÉ EMITIR ES UN ACTO Y NO UNA DESCARGA
+ * ────────────────────────────────────────────────────────────────────────────
+ * Porque el Manual va a REFERENCIARLA, y una referencia a un documento que se
+ * regenera distinto cada vez no es una referencia. Si el Manual dice «ver
+ * Constancia» y esa constancia cambia cuando el obligado sube un documento o
+ * presenta un aviso, entonces el Manual remite a un blanco móvil y nadie puede
+ * decir qué decía el día que se citó.
+ *
+ * Emitir congela el texto con su huella y lo deja en la bitácora. Es el mismo
+ * criterio del aviso y del manifiesto.
+ *
+ * **Emitir dos veces sin que nada haya cambiado no produce dos evidencias.** El
+ * índice único por (obligado, fecha, huella) hace que la segunda emisión reuse
+ * la primera: dos filas idénticas no son dos hechos, son el mismo hecho
+ * contado dos veces, y al listarlas parecerían actividad que no ocurrió.
+ */
+export async function emitirConstancia(
+  db: EjecutorTransaccional,
+  p: { sesion: ContextoSesion; hoy: string },
+): Promise<ConstanciaEmitida> {
+  return enTransaccionDeSesion(db, p.sesion, async () => {
+    const t = await filas<{ razon_social: string; rfc: string }>(
+      db,
+      `select razon_social, rfc from tenants where id = $1`,
+      [p.sesion.tenantId],
+    )
+    const obligado = t[0]
+    if (obligado === undefined) {
+      throw new Error('No se encontró el obligado de la sesión al emitir la constancia.')
+    }
+
+    const r = await armarConstancia(db, p)
+    const anticipada = r.estado === 'aun_no_exigible'
+    const c = anticipada ? r.vistaPrevia : r.constancia
+    const desde = anticipada ? r.desde : null
+
+    const contenido = escribirConstancia(c, {
+      razonSocial: obligado.razon_social,
+      rfc: obligado.rfc,
+      fecha: p.hoy,
+      ...(desde === null ? {} : { anticipadaDesde: desde }),
+    })
+    const hash = createHash('sha256').update(contenido, 'utf8').digest('hex')
+
+    const ins = await db.query(
+      `insert into constancias
+         (tenant_id, fecha, contenido, hash_sha256, total, acreditados, parciales, huecos,
+          degradados, anticipada_desde, emitida_por)
+       values ($1,$2::date,$3,$4,$5,$6,$7,$8,$9::text[],$10::date,$11)
+       on conflict (tenant_id, fecha, hash_sha256) do nothing
+       returning id::text`,
+      [
+        p.sesion.tenantId,
+        p.hoy,
+        contenido,
+        hash,
+        c.secciones.length,
+        c.acreditados,
+        c.parciales,
+        c.huecos,
+        c.degradados,
+        desde,
+        p.sesion.usuarioId,
+      ],
+    )
+
+    const nueva = ins.rows.length > 0
+    let id = (ins.rows[0] as { id: string } | undefined)?.id
+
+    if (id === undefined) {
+      const previa = await filas<{ id: string }>(
+        db,
+        `select id::text from constancias
+          where tenant_id = $1 and fecha = $2::date and hash_sha256 = $3`,
+        [p.sesion.tenantId, p.hoy, hash],
+      )
+      id = previa[0]?.id
+      if (id === undefined) {
+        // El INSERT no escribió y tampoco hay fila previa: eso solo pasa si RLS
+        // rechazó la escritura. Se dice, en vez de devolver una constancia sin
+        // respaldo que el Manual acabaría referenciando.
+        throw new NoAutorizadoAEmitir()
+      }
+    }
+
+    // Solo la primera vez: registrar dos veces el mismo hecho llenaría la
+    // bitácora de eventos que no ocurrieron.
+    if (nueva) {
+      await db.query('select app.bitacora_registrar($1,$2,$3,$4,$5::jsonb,$6)', [
+        p.sesion.tenantId,
+        'constancia.emitida',
+        'constancia',
+        id,
+        // REGLA DURA 3: el reparto, no el contenido. El texto lleva nombres de
+        // clientes en ninguna parte, pero la bitácora tampoco necesita el texto.
+        JSON.stringify({
+          fecha: p.hoy,
+          hash_sha256: hash,
+          acreditados: c.acreditados,
+          parciales: c.parciales,
+          huecos: c.huecos,
+          anticipada_desde: desde,
+        }),
+        p.sesion.usuarioId,
+      ])
+    }
+
+    return {
+      id,
+      fecha: p.hoy,
+      hashSha256: hash,
+      contenido,
+      constancia: c,
+      anticipadaDesde: desde,
+      nueva,
+    }
+  })
+}
+
+export class NoAutorizadoAEmitir extends Error {
+  constructor() {
+    super(
+      'No se pudo emitir la constancia. Emitirla es el acto por el que el obligado adopta un ' +
+        'documento que su Manual va a referenciar, así que lo firma un administrador.',
+    )
+    this.name = 'NoAutorizadoAEmitir'
+  }
 }

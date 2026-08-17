@@ -2,7 +2,7 @@ import { conBase, leerComoUsuario } from '../../src/supabase/conexion'
 import { armarConstancia, type ResultadoConstancia } from '../../src/persistencia/constancia'
 import { hoyEnMexico } from '../../src/dominio/fechas'
 import { Marco } from '../componentes/marco'
-import { BotonDescargar } from './descargar'
+import { BotonEmitir } from './descargar'
 
 export const dynamic = 'force-dynamic'
 
@@ -92,10 +92,7 @@ export default async function PantallaConstancia() {
             </span>
           </div>
           <div className="tarjeta" style={{ display: 'grid', alignContent: 'center' }}>
-            <BotonDescargar />
-            <span className="pequeno tenue" style={{ marginTop: '.5rem' }}>
-              Texto plano, para pegarse o referenciarse
-            </span>
+            <BotonEmitir puede={perfil.rol === 'admin'} />
           </div>
         </div>
 

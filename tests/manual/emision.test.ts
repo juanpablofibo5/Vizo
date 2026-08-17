@@ -1,6 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { Client } from 'pg'
 import { conectar, crearTenantConUsuario } from '../soporte/db'
+import { almacenComo } from '../soporte/almacen'
+import { BUCKET_EXPEDIENTES } from '../../src/supabase/almacen'
+import { abrirExpediente } from '../../src/persistencia/expediente'
+import { registrarDocumento } from '../../src/persistencia/documentos'
 import { emitirConstancia } from '../../src/persistencia/constancia'
 import { escribirIndiceDelManual } from '../../src/dominio/indice-manual'
 import type { ContextoSesion } from '../../src/persistencia/transaccion'
@@ -46,6 +50,33 @@ describe('Emitir la Constancia', () => {
        select $1, id from actividades_vulnerables where fraccion = 'V_BIS'`,
       [admin.tenantId],
     )
+
+    // UN DOCUMENTO DE VERDAD, y no es decoración del escenario.
+    //
+    // Sin él, la fracción VII se degrada a hueco y su texto —que incluye el
+    // conteo de eventos de bitácora— nunca se renderiza. La prueba de
+    // reutilización pasaba así, por la razón equivocada, mientras en producción
+    // salían tres constancias distintas: la constancia se contaba a sí misma y
+    // el caso no podía verlo porque su obligado no tenía nada que conservar.
+    const c = await db.query(
+      `insert into clientes_finales (tenant_id,tipo_persona,rfc,nombre_o_razon_social,nacionalidad)
+       values ($1,'moral',$2,'Compradora SA','MX') returning id::text`,
+      [admin.tenantId, `EMS${marca}`],
+    )
+    const { expedienteId } = await abrirExpediente(db, {
+      sesion: admin,
+      clienteId: (c.rows[0] as { id: string }).id,
+    })
+    await registrarDocumento(db, almacenComo(admin, BUCKET_EXPEDIENTES), {
+      sesion: admin,
+      expedienteId,
+      documento: {
+        campo: 'identificacion_oficial',
+        nombreArchivo: 'ine.pdf',
+        mime: 'application/pdf',
+        bytes: new Uint8Array([1, 2, 3]),
+      },
+    })
   })
 
   it('congela el texto con su huella y lo deja en la bitácora', async () => {
@@ -116,7 +147,7 @@ describe('Emitir la Constancia', () => {
 
     const c = await db.query(
       `insert into clientes_finales (tenant_id,tipo_persona,rfc,nombre_o_razon_social,nacionalidad)
-       values ($1,'moral',$2,'Compradora SA','MX') returning id::text`,
+       values ($1,'moral',$2,'Otra Compradora SA','MX') returning id::text`,
       [admin.tenantId, `EMI${String(Date.now()).slice(-9)}`],
     )
     expect(c.rows).toHaveLength(1)

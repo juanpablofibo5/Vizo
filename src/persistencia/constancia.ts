@@ -168,9 +168,23 @@ const pipelineDelAviso: Recolector = async (db, tenantId) => {
 const conservacionYHuellas: Recolector = async (db, tenantId) => {
   const r = await filas<{ documentos: number; manifiestos: number; eventos: number }>(
     db,
+    // `evento <> 'constancia.emitida'` NO es un detalle: SIN ESA LÍNEA LA
+    // CONSTANCIA SE CUENTA A SÍ MISMA.
+    //
+    // Emitirla escribe su propio evento en la bitácora, esta consulta lo
+    // contaba, y la siguiente emisión reportaba un evento más — texto distinto,
+    // huella distinta, y la reutilización sin disparar nunca. En producción
+    // salieron tres constancias seguidas con 21, 22 y 23 eventos, idénticas en
+    // todo lo demás. Un documento que se modifica por el acto de emitirlo no
+    // puede ser referenciado por nadie.
+    //
+    // Conceptualmente la exclusión también es la correcta: lo que este apartado
+    // acredita es que los hechos del OBLIGADO quedan en bitácora. Emitir el
+    // documento es metadato sobre el documento, no operación del obligado.
     `select (select count(*)::int from documentos where tenant_id = $1) as documentos,
             (select count(*)::int from manifiestos where tenant_id = $1) as manifiestos,
-            (select count(*)::int from bitacora where tenant_id = $1) as eventos`,
+            (select count(*)::int from bitacora
+              where tenant_id = $1 and evento <> 'constancia.emitida') as eventos`,
     [tenantId],
   )
   const c = r[0]

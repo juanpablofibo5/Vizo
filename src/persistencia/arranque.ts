@@ -39,6 +39,7 @@ export type ClaveDePaso =
   | 'actividad'
   | 'fecha_alta'
   | 'tipo_persona'
+  | 'estructura'
   | 'rec'
   | 'sucursal'
   | 'desarrollo'
@@ -77,6 +78,7 @@ interface Fila {
   actividad: boolean
   fecha_alta: boolean
   tipo_persona: boolean
+  estructura: boolean
   rec: boolean
   sucursal: boolean
   desarrollo: boolean
@@ -84,8 +86,8 @@ interface Fila {
   operacion: boolean
   periodo: boolean
   fracciones: string[]
-  /** null mientras no se sepa. Decide si el paso del REC siquiera aparece. */
-  tipo: 'fisica' | 'moral' | 'fideicomiso' | null
+  /** null mientras no se sepa. Decide qué pasos siquiera aparecen. */
+  tipo: 'fisica' | 'moral' | 'fideicomiso' | 'figura_juridica' | null
 }
 
 /** El orden es el del arranque real: configurar, luego operar. */
@@ -93,6 +95,7 @@ const RESPONSABLE: Record<ClaveDePaso, Responsable> = {
   actividad: 'vizo',
   fecha_alta: 'obligado',
   tipo_persona: 'obligado',
+  estructura: 'obligado',
   rec: 'obligado',
   sucursal: 'vizo',
   desarrollo: 'vizo',
@@ -117,6 +120,16 @@ export async function arranqueDelObligado(
                 where id = $1 and fecha_alta_autoridad is not null) as fecha_alta,
        exists (select 1 from tenants
                 where id = $1 and tipo_persona is not null) as tipo_persona,
+       -- Cap. II Ter (Art. 10 Sexies): el paso se cumple cuando la estructura
+       -- existe, al menos un integrante fue ENVIADO al SAT y no queda ninguno
+       -- capturado sin enviar. Una estructura a medias es un trámite a medias.
+       exists (select 1 from estructura_del_obligado e
+                where e.tenant_id = $1
+                  and exists (select 1 from integrantes_estructura i
+                               where i.estructura_id = e.id and i.estado = 'enviado')
+                  and not exists (select 1 from integrantes_estructura i
+                                   where i.estructura_id = e.id and i.estado = 'capturado')
+              ) as estructura,
        -- Art. 20 LFPIORPI ¶2: una designación PENDIENTE no cuenta. Mientras no
        -- sea aceptada, las obligaciones siguen recayendo en el órgano de
        -- administración, así que este paso solo se marca con 'aceptada'.
@@ -155,7 +168,13 @@ export async function arranqueDelObligado(
     // porque el paso anterior es justo averiguarlo. Enseñarlo antes sería
     // reclamar una obligación que quizá no existe; darlo por cumplido sería
     // esconder una que quizá sí.
-    if (clave === 'rec') return f.tipo === 'moral' || f.tipo === 'fideicomiso'
+    if (clave === 'rec')
+      return f.tipo === 'moral' || f.tipo === 'fideicomiso' || f.tipo === 'figura_juridica'
+    // La estructura del Cap. II Ter es de quienes actúan por fideicomiso u
+    // otra figura jurídica. Mismo criterio que el REC: mientras no se sepa la
+    // clase de persona, el paso no se muestra.
+    if (clave === 'estructura')
+      return f.tipo === 'fideicomiso' || f.tipo === 'figura_juridica'
     return true
   }
 
@@ -164,6 +183,7 @@ export async function arranqueDelObligado(
       'actividad',
       'fecha_alta',
       'tipo_persona',
+      'estructura',
       'rec',
       'sucursal',
       'desarrollo',

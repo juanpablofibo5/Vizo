@@ -34,7 +34,7 @@ import { enTransaccionDeSesion, exigirSesionActiva, type ContextoSesion } from '
  */
 
 export type EstadoDesignacion = 'designado' | 'aceptada' | 'rechazada' | 'sustituida'
-export type TipoPersonaObligado = 'fisica' | 'moral' | 'fideicomiso'
+export type TipoPersonaObligado = 'fisica' | 'moral' | 'fideicomiso' | 'figura_juridica'
 
 export interface Designacion {
   id: string
@@ -150,7 +150,10 @@ export async function estadoDelRec(
     // Mientras `tipoPersona` sea null la respuesta honesta es «todavía no sé»,
     // y se representa como `aplica: false` con `tipoPersona: null` — quien
     // consume esto tiene que mirar los dos campos, no solo el booleano.
-    aplica: tipoPersona === 'moral' || tipoPersona === 'fideicomiso',
+    aplica:
+      tipoPersona === 'moral' ||
+      tipoPersona === 'fideicomiso' ||
+      tipoPersona === 'figura_juridica',
     tipoPersona,
     pendiente: primera('designado'),
     vigente: primera('aceptada'),

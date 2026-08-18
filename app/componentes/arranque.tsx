@@ -44,6 +44,12 @@ const COPIA: Record<ClaveDePaso, Copia> = {
       'De esto depende si hay que designar un Representante Encargado de Cumplimiento: la Ley se lo pide a las morales y a las figuras jurídicas, no a las personas físicas.',
     ruta: '/configuracion',
   },
+  estructura: {
+    titulo: 'Estructura del fideicomiso o figura enviada al SAT',
+    porQue:
+      'Quien actúa por fideicomiso u otra figura jurídica registra a sus integrantes con la herramienta del Portal (Art. 10 Sexies del Acuerdo 115/2026). Aquí se captura la estructura con los datos exactos del Anexo y se deja constancia de qué se envió y cuándo.',
+    ruta: '/configuracion',
+  },
   rec: {
     titulo: 'Designación del REC aceptada',
     porQue:

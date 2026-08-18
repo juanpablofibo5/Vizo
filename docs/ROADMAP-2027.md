@@ -39,7 +39,7 @@ Alta y registro mediante el XML que genera la herramienta del Portal, con la inf
 
 **Lo que decide el modelo:** un fideicomitente o un fideicomisario **puede ser a su vez un fideicomiso** (Anexo 2 Bis, secciones III.III y IV.III). La estructura es recursiva. Un modelo que asuma «persona física o moral» se rompe con el primer fideicomiso dentro de otro — y en el corredor Cancún–Tulum eso no es exótico.
 
-**En VIZO:** `tenants.tipo_persona` ya admite `fideicomiso`. Nada más. Issue #13.
+**En VIZO (issue #20, 17-ago-2026):** la estructura del obligado como registro con evidencia — los datos de la figura y sus integrantes con los campos exactos del Anexo por naturaleza, y el ciclo capturado → enviado → baja del Art. 10 Sexies (corregir es dar de baja y reenviar, nunca editar). El contraste del Anexo 2 Bis además desactivó el susto de la recursión: el fideicomiso anidado se identifica con 4 datos, no con su estructura completa. Los grupos multi-RFC siguen en el issue #13.
 
 ### Cap. III Quáter · PEP — **30 nov 2026**
 Art. 23 Quáter define quién es PEP y **asimila** —literal— «el cónyuge, la concubina, el concubinario y las personas con quienes […] mantengan parentesco **por consanguinidad o afinidad hasta el segundo grado**, así como los **asociados o socios** de personas morales con las que mantengan vínculos patrimoniales». También sigue siendo PEP nacional **durante el año siguiente** a dejar el cargo — y el ¶5 añade un **segundo reloj**: si el cese cayó dentro del año previo al acto u operación, se le cataloga PEP durante el año siguiente **al acto**, no al cese. Art. 23 Quáter 1: la consulta se hace en la aplicación **Consulta PEP 2.0** de la UIF, con la e.firma del alta.

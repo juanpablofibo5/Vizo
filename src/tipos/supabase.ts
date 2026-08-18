@@ -1268,6 +1268,56 @@ export type Database = {
           },
         ]
       }
+      estructura_del_obligado: {
+        Row: {
+          cotiza_en_bolsa: boolean | null
+          created_at: string
+          descripcion_otra: string | null
+          fecha_constitucion: string
+          fideicomisarios_determinados: boolean | null
+          id: string
+          numero_referencia: string
+          pais_nacionalidad: string | null
+          rfc: string
+          tenant_id: string
+          tipo_figura: Database["public"]["Enums"]["tipo_figura"]
+        }
+        Insert: {
+          cotiza_en_bolsa?: boolean | null
+          created_at?: string
+          descripcion_otra?: string | null
+          fecha_constitucion: string
+          fideicomisarios_determinados?: boolean | null
+          id?: string
+          numero_referencia: string
+          pais_nacionalidad?: string | null
+          rfc: string
+          tenant_id: string
+          tipo_figura: Database["public"]["Enums"]["tipo_figura"]
+        }
+        Update: {
+          cotiza_en_bolsa?: boolean | null
+          created_at?: string
+          descripcion_otra?: string | null
+          fecha_constitucion?: string
+          fideicomisarios_determinados?: boolean | null
+          id?: string
+          numero_referencia?: string
+          pais_nacionalidad?: string | null
+          rfc?: string
+          tenant_id?: string
+          tipo_figura?: Database["public"]["Enums"]["tipo_figura"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estructura_del_obligado_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evaluaciones_umbral: {
         Row: {
           actividad_id: string
@@ -1535,6 +1585,106 @@ export type Database = {
             columns: ["actividad_id"]
             isOneToOne: false
             referencedRelation: "actividades_vulnerables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integrantes_estructura: {
+        Row: {
+          corrige_a: string | null
+          created_at: string
+          curp: string | null
+          denominacion: string | null
+          denominacion_fiduciario: string | null
+          descripcion_otro: string | null
+          estado: Database["public"]["Enums"]["estado_integrante"]
+          estructura_id: string
+          fecha_baja: string | null
+          fecha_constitucion: string | null
+          fecha_envio: string | null
+          fecha_nacimiento: string | null
+          id: string
+          naturaleza: Database["public"]["Enums"]["naturaleza_integrante"]
+          nombres: string | null
+          numero_referencia: string | null
+          pais_nacimiento: string | null
+          pais_nacionalidad: string | null
+          papel: Database["public"]["Enums"]["papel_integrante"]
+          primer_apellido: string | null
+          rfc: string
+          segundo_apellido: string | null
+          tenant_id: string
+        }
+        Insert: {
+          corrige_a?: string | null
+          created_at?: string
+          curp?: string | null
+          denominacion?: string | null
+          denominacion_fiduciario?: string | null
+          descripcion_otro?: string | null
+          estado?: Database["public"]["Enums"]["estado_integrante"]
+          estructura_id: string
+          fecha_baja?: string | null
+          fecha_constitucion?: string | null
+          fecha_envio?: string | null
+          fecha_nacimiento?: string | null
+          id?: string
+          naturaleza: Database["public"]["Enums"]["naturaleza_integrante"]
+          nombres?: string | null
+          numero_referencia?: string | null
+          pais_nacimiento?: string | null
+          pais_nacionalidad?: string | null
+          papel: Database["public"]["Enums"]["papel_integrante"]
+          primer_apellido?: string | null
+          rfc: string
+          segundo_apellido?: string | null
+          tenant_id: string
+        }
+        Update: {
+          corrige_a?: string | null
+          created_at?: string
+          curp?: string | null
+          denominacion?: string | null
+          denominacion_fiduciario?: string | null
+          descripcion_otro?: string | null
+          estado?: Database["public"]["Enums"]["estado_integrante"]
+          estructura_id?: string
+          fecha_baja?: string | null
+          fecha_constitucion?: string | null
+          fecha_envio?: string | null
+          fecha_nacimiento?: string | null
+          id?: string
+          naturaleza?: Database["public"]["Enums"]["naturaleza_integrante"]
+          nombres?: string | null
+          numero_referencia?: string | null
+          pais_nacimiento?: string | null
+          pais_nacionalidad?: string | null
+          papel?: Database["public"]["Enums"]["papel_integrante"]
+          primer_apellido?: string | null
+          rfc?: string
+          segundo_apellido?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrantes_estructura_tenant_id_corrige_a_fkey"
+            columns: ["tenant_id", "corrige_a"]
+            isOneToOne: false
+            referencedRelation: "integrantes_estructura"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "integrantes_estructura_tenant_id_estructura_id_fkey"
+            columns: ["tenant_id", "estructura_id"]
+            isOneToOne: false
+            referencedRelation: "estructura_del_obligado"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "integrantes_estructura_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -2426,6 +2576,7 @@ export type Database = {
         | "aceptada"
         | "rechazada"
         | "sustituida"
+      estado_integrante: "capturado" | "enviado" | "baja"
       estatus_aviso:
         | "borrador"
         | "generado"
@@ -2442,9 +2593,18 @@ export type Database = {
         | "prestamo_financiero"
         | "prestamo_no_financiero"
         | "financiamiento_bursatil"
+      naturaleza_integrante: "fisica" | "moral" | "fideicomiso"
       nivel_riesgo: "bajo" | "medio" | "alto"
       objeto_sellado: "manifiesto" | "aviso"
       origen_apartado: "acreditado" | "acreditado_parcial" | "del_obligado"
+      papel_integrante:
+        | "fiduciario"
+        | "delegado_fiduciario"
+        | "fideicomitente"
+        | "fideicomisario"
+        | "asociante"
+        | "asociado"
+        | "otro"
       resolucion_screening: "pendiente" | "descartada" | "confirmada"
       resultado_aviso: "no" | "individual" | "acumulacion"
       resultado_declaracion_pep: "niega" | "pep_por_funcion" | "pep_asimilada"
@@ -2459,7 +2619,8 @@ export type Database = {
         | "calendario"
       tipo_aviso: "normal" | "acumulacion" | "cero" | "modificatorio" | "24h"
       tipo_dato_campo: "texto" | "fecha" | "monto" | "catalogo" | "documento"
-      tipo_persona: "fisica" | "moral" | "fideicomiso"
+      tipo_figura: "fideicomiso" | "asociacion_en_participacion" | "otra"
+      tipo_persona: "fisica" | "moral" | "fideicomiso" | "figura_juridica"
       tipo_umbral: "identificacion" | "aviso" | "efectivo"
       vinculo_pep:
         | "titular"
@@ -2611,6 +2772,7 @@ export const Constants = {
         "rechazada",
         "sustituida",
       ],
+      estado_integrante: ["capturado", "enviado", "baja"],
       estatus_aviso: [
         "borrador",
         "generado",
@@ -2629,9 +2791,19 @@ export const Constants = {
         "prestamo_no_financiero",
         "financiamiento_bursatil",
       ],
+      naturaleza_integrante: ["fisica", "moral", "fideicomiso"],
       nivel_riesgo: ["bajo", "medio", "alto"],
       objeto_sellado: ["manifiesto", "aviso"],
       origen_apartado: ["acreditado", "acreditado_parcial", "del_obligado"],
+      papel_integrante: [
+        "fiduciario",
+        "delegado_fiduciario",
+        "fideicomitente",
+        "fideicomisario",
+        "asociante",
+        "asociado",
+        "otro",
+      ],
       resolucion_screening: ["pendiente", "descartada", "confirmada"],
       resultado_aviso: ["no", "individual", "acumulacion"],
       resultado_declaracion_pep: ["niega", "pep_por_funcion", "pep_asimilada"],
@@ -2647,7 +2819,8 @@ export const Constants = {
       ],
       tipo_aviso: ["normal", "acumulacion", "cero", "modificatorio", "24h"],
       tipo_dato_campo: ["texto", "fecha", "monto", "catalogo", "documento"],
-      tipo_persona: ["fisica", "moral", "fideicomiso"],
+      tipo_figura: ["fideicomiso", "asociacion_en_participacion", "otra"],
+      tipo_persona: ["fisica", "moral", "fideicomiso", "figura_juridica"],
       tipo_umbral: ["identificacion", "aviso", "efectivo"],
       vinculo_pep: [
         "titular",

@@ -21,6 +21,14 @@ import {
   declararRelacionDeNegocios,
   verificarExpediente,
 } from '../../../../src/persistencia/reverificacion'
+import {
+  DeclaracionPepInvalida,
+  RevisionPepImposible,
+  registrarDeclaracionPep,
+  revisarDeclaracionPep,
+  type ResultadoDeclaracion,
+  type VinculoDeclarado,
+} from '../../../../src/persistencia/pep'
 import { DocumentoInvalido } from '../../../../src/dominio/documentos'
 import { hoyEnMexico } from '../../../../src/dominio/fechas'
 
@@ -303,6 +311,110 @@ export async function guardarDatos(
       ok: false,
       mensaje: e instanceof Error ? e.message : 'Error inesperado al guardar los datos.',
     }
+  } finally {
+    await db.end()
+  }
+}
+
+/**
+ * La declaración PEP (Art. 23 Quáter). El JSON del formulario es transporte:
+ * la validación con mensajes vive en la persistencia y la garantía en la base.
+ */
+function interpretarVinculos(crudo: string): VinculoDeclarado[] {
+  const datos: unknown = JSON.parse(crudo)
+  if (!Array.isArray(datos)) throw new Error('Los vínculos no llegaron como lista.')
+  return datos.map((v) => {
+    const o = v as Record<string, unknown>
+    return {
+      tipo: String(o['tipo'] ?? '') as VinculoDeclarado['tipo'],
+      ...(o['grado'] === undefined ? {} : { grado: Number(o['grado']) as 1 | 2 }),
+      ...(o['nombrePep'] === undefined ? {} : { nombrePep: String(o['nombrePep']) }),
+      cargo: String(o['cargo'] ?? ''),
+      ambito: String(o['ambito'] ?? '') as VinculoDeclarado['ambito'],
+      ...(o['pais'] === undefined ? {} : { pais: String(o['pais']) }),
+      enFunciones: o['enFunciones'] === true,
+      ...(o['fechaCese'] === undefined ? {} : { fechaCese: String(o['fechaCese']) }),
+      ...(o['detalle'] === undefined ? {} : { detalle: String(o['detalle']) }),
+    }
+  })
+}
+
+export async function declararPep(
+  _previo: EstadoRevision,
+  form: FormData,
+): Promise<EstadoRevision> {
+  const sesion = await sesionRequerida()
+  const ctx = { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol }
+  const clienteId = String(form.get('clienteId') ?? '')
+  const resultado = String(form.get('resultado') ?? '')
+  const fechaDeclaracion = String(form.get('fechaDeclaracion') ?? '')
+
+  if (resultado !== 'niega' && resultado !== 'pep_por_funcion' && resultado !== 'pep_asimilada') {
+    return { ok: false, mensaje: 'Elige qué declaró la persona antes de registrar.' }
+  }
+
+  let vinculos: VinculoDeclarado[]
+  try {
+    vinculos = interpretarVinculos(String(form.get('vinculos') ?? '[]'))
+  } catch {
+    return { ok: false, mensaje: 'Los vínculos del formulario no se pudieron leer. Recarga e intenta de nuevo.' }
+  }
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await registrarDeclaracionPep(db, {
+      sesion: ctx,
+      clienteId,
+      resultado: resultado as ResultadoDeclaracion,
+      fechaDeclaracion,
+      vinculos,
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return {
+      ok: true,
+      mensaje:
+        resultado === 'niega'
+          ? 'Registrado: la persona declaró que ni ella ni su red tienen función pública. Esa respuesta también es evidencia.'
+          : `Declaración registrada con ${String(vinculos.length)} ${vinculos.length === 1 ? 'vínculo' : 'vínculos'}. Queda pendiente la revisión de un administrador, que la congela.`,
+    }
+  } catch (e) {
+    if (e instanceof DeclaracionPepInvalida) return { ok: false, mensaje: e.message }
+    const bruto = e instanceof Error ? e.message : String(e)
+    if (/personas físicas/i.test(bruto)) {
+      return {
+        ok: false,
+        mensaje:
+          'La declaración PEP es de personas físicas. Para una persona moral la pregunta correcta es su Beneficiario Controlador.',
+      }
+    }
+    return { ok: false, mensaje: bruto }
+  } finally {
+    await db.end()
+  }
+}
+
+export async function revisarPep(
+  _previo: EstadoRevision,
+  form: FormData,
+): Promise<EstadoRevision> {
+  const sesion = await sesionRequerida()
+  const ctx = { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol }
+  const clienteId = String(form.get('clienteId') ?? '')
+  const declaracionId = String(form.get('declaracionId') ?? '')
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await revisarDeclaracionPep(db, { sesion: ctx, declaracionId, hoy: hoy() })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return {
+      ok: true,
+      mensaje: 'Revisión registrada. La declaración y su red quedaron congeladas como evidencia.',
+    }
+  } catch (e) {
+    if (e instanceof RevisionPepImposible) return { ok: false, mensaje: e.message }
+    return { ok: false, mensaje: e instanceof Error ? e.message : 'No se pudo registrar la revisión.' }
   } finally {
     await db.end()
   }

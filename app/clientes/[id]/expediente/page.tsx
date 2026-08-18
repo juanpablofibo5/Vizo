@@ -12,6 +12,8 @@ import { SeccionRevisionAnual } from './revision'
 import { FormularioDatos, type CampoPendiente } from './datos'
 import { camposCapturables } from '../../../../src/persistencia/datos-expediente'
 import { hoyEnMexico } from '../../../../src/dominio/fechas'
+import { SeccionPep } from './pep'
+import { estadoPepDelCliente, type EstadoPep } from '../../../../src/persistencia/pep'
 
 export const dynamic = 'force-dynamic'
 
@@ -184,6 +186,18 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       expedienteId: expediente.id,
     })
 
+    // La declaración PEP solo existe para personas físicas: a una moral la
+    // base se la niega (la pregunta correcta ahí es el Beneficiario
+    // Controlador), así que ni se consulta.
+    const estadoPep: EstadoPep | null =
+      cliente.tipo_persona === 'fisica'
+        ? await estadoPepDelCliente(db, {
+            sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+            clienteId,
+            hoy: hoyEnMexico(),
+          })
+        : null
+
     await db.query('rollback')
 
     const faltantes = evaluado ? completitud.faltantes : []
@@ -312,6 +326,21 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
           aprobado={expediente.estatus === 'aprobado'}
           puede={sesion.rol === 'admin'}
         />
+
+        {/* Art. 23 Quáter: la declaración PEP, solo de personas físicas. Va
+            junto a la revisión anual porque las dos son conocimiento del
+            cliente que caduca — una por calendario, otra por los dos relojes. */}
+        {estadoPep !== null && (
+          <>
+            <h2 id="pep">Persona Políticamente Expuesta</h2>
+            <SeccionPep
+              clienteId={clienteId}
+              estado={estadoPep}
+              esAdmin={sesion.rol === 'admin'}
+              hoy={hoyEnMexico()}
+            />
+          </>
+        )}
 
         <h2>Subir documento</h2>
         {/*

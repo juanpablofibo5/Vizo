@@ -3,12 +3,16 @@ import { estadoDelRec, type EstadoRec } from '../../src/persistencia/rec'
 import { Marco } from '../componentes/marco'
 import { FormularioFechaAlta } from './formulario'
 import { SeccionRec } from './rec'
+import { SeccionEstructura } from './estructura'
+import { estadoDeLaEstructura, type EstadoEstructura } from '../../src/persistencia/estructura'
+import { hoyEnMexico } from '../../src/dominio/fechas'
 
 export const dynamic = 'force-dynamic'
 
 interface Datos {
   fechaAlta: string | null
   rec: EstadoRec
+  estructura: EstadoEstructura
   actividades: Array<{ fraccion: string; nombre: string; claveSppld: string | null }>
   usuarios: Array<{ nombre: string; email: string; rol: string; activo: boolean }>
   sucursales: Array<{ nombre: string; clave: string }>
@@ -60,6 +64,7 @@ export default async function Configuracion() {
         fechaAlta: (t.rows[0] as { fecha_alta_autoridad: string | null } | undefined)
           ?.fecha_alta_autoridad ?? null,
         rec: await estadoDelRec(db, { sesion }),
+        estructura: await estadoDeLaEstructura(db, { sesion }),
         actividades: (
           act.rows as Array<{ fraccion: string; nombre: string; clave_sppld: string | null }>
         ).map((a) => ({ fraccion: a.fraccion, nombre: a.nombre, claveSppld: a.clave_sppld })),
@@ -102,6 +107,15 @@ export default async function Configuracion() {
             se resuelve dando de alta a alguien en el portal, y no. */}
         <h2 id="rec">Responsable del cumplimiento</h2>
         <SeccionRec estado={datos.rec} puede={esAdmin} />
+
+        {/* Cap. II Ter: solo existe para quien actúa por fideicomiso u otra
+            figura. A una moral no se le enseña un anexo que no es el suyo. */}
+        {datos.estructura.aplica && (
+          <>
+            <h2 id="estructura">Estructura del fideicomiso o figura</h2>
+            <SeccionEstructura estado={datos.estructura} puede={esAdmin} hoy={hoyEnMexico()} />
+          </>
+        )}
 
         <h2 id="actividades">Actividades contratadas</h2>
         <div className="tabla-envoltura">

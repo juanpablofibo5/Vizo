@@ -27,7 +27,8 @@ import {
 const ETIQUETA_TIPO: Record<string, string> = {
   fisica: 'Persona física',
   moral: 'Persona moral',
-  fideicomiso: 'Fideicomiso u otra figura jurídica',
+  fideicomiso: 'Fideicomiso',
+  figura_juridica: 'Otra figura jurídica (Asociación en Participación u otra)',
 }
 
 function Mensaje({ estado }: { estado: Resultado | null }) {
@@ -56,7 +57,8 @@ function FormularioTipoPersona({ valor, puede }: { valor: string | null; puede: 
           </option>
           <option value="fisica">Persona física</option>
           <option value="moral">Persona moral</option>
-          <option value="fideicomiso">Fideicomiso u otra figura jurídica</option>
+          <option value="fideicomiso">Fideicomiso</option>
+          <option value="figura_juridica">Otra figura jurídica (AeP u otra)</option>
         </select>
       </label>
 

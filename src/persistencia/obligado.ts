@@ -73,9 +73,9 @@ export async function registrarFechaAlta(
   })
 }
 
-export type TipoPersonaObligado = 'fisica' | 'moral' | 'fideicomiso'
+export type TipoPersonaObligado = 'fisica' | 'moral' | 'fideicomiso' | 'figura_juridica'
 
-const TIPOS: readonly TipoPersonaObligado[] = ['fisica', 'moral', 'fideicomiso']
+const TIPOS: readonly TipoPersonaObligado[] = ['fisica', 'moral', 'fideicomiso', 'figura_juridica']
 
 export class TipoDePersonaInvalido extends Error {
   constructor(mensaje: string) {
@@ -103,7 +103,7 @@ export async function registrarTipoPersona(
 ): Promise<TipoPersonaObligado> {
   if (!TIPOS.includes(p.tipo as TipoPersonaObligado)) {
     throw new TipoDePersonaInvalido(
-      `El obligado es persona física, moral o fideicomiso, y llegó "${p.tipo}".`,
+      `El obligado es persona física, moral, fideicomiso u otra figura jurídica, y llegó "${p.tipo}".`,
     )
   }
   const tipo = p.tipo as TipoPersonaObligado

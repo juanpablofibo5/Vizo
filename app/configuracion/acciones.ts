@@ -10,6 +10,17 @@ import {
   TipoDePersonaInvalido,
 } from '../../src/persistencia/obligado'
 import {
+  DatoDeEstructuraInvalido,
+  EnvioImposible,
+  NoAplicaEstructura,
+  capturarIntegrante,
+  darDeBajaIntegrante,
+  registrarEnvio,
+  registrarFigura,
+  type DatosFigura,
+  type DatosIntegrante,
+} from '../../src/persistencia/estructura'
+import {
   DatoDelRecInvalido,
   NoAplicaDesignacion,
   RelevoExigeSustituir,
@@ -197,6 +208,9 @@ function traducir(e: unknown): Resultado {
     e instanceof DatoDelRecInvalido ||
     e instanceof NoAplicaDesignacion ||
     e instanceof RelevoExigeSustituir ||
+    e instanceof DatoDeEstructuraInvalido ||
+    e instanceof NoAplicaEstructura ||
+    e instanceof EnvioImposible ||
     e instanceof TipoDePersonaInvalido ||
     e instanceof FechaDeAltaInvalida ||
     e instanceof NoAutorizado
@@ -247,3 +261,144 @@ function traducir(e: unknown): Resultado {
  * Regla para lo que venga: en un archivo `'use server'` no se exporta nada que
  * no se llame desde el cliente.
  */
+
+/**
+ * La estructura del Cap. II Ter (Art. 10 Sexies). Las acciones parsean y
+ * traducen; los requisitos con mensaje viven en la persistencia y la garantía
+ * en la base.
+ */
+const campo = (datos: FormData, nombre: string): string | undefined => {
+  const v = String(datos.get(nombre) ?? '').trim()
+  return v === '' ? undefined : v
+}
+
+export async function guardarFigura(
+  _previo: Resultado | null,
+  datos: FormData,
+): Promise<Resultado> {
+  const tipoFigura = String(datos.get('tipoFigura') ?? '')
+  if (
+    tipoFigura !== 'fideicomiso' &&
+    tipoFigura !== 'asociacion_en_participacion' &&
+    tipoFigura !== 'otra'
+  ) {
+    return { ok: false, mensaje: 'Elige el tipo de figura antes de guardar.' }
+  }
+
+  const figura: DatosFigura = {
+    tipoFigura,
+    numeroReferencia: String(datos.get('numeroReferencia') ?? ''),
+    fechaConstitucion: String(datos.get('fechaConstitucion') ?? ''),
+    rfc: String(datos.get('rfc') ?? ''),
+    ...(campo(datos, 'descripcionOtra') === undefined
+      ? {}
+      : { descripcionOtra: campo(datos, 'descripcionOtra') as string }),
+    ...(campo(datos, 'paisNacionalidad') === undefined
+      ? {}
+      : { paisNacionalidad: campo(datos, 'paisNacionalidad') as string }),
+    ...(tipoFigura === 'fideicomiso'
+      ? {
+          cotizaEnBolsa: String(datos.get('cotizaEnBolsa') ?? '') === 'true',
+          fideicomisariosDeterminados:
+            String(datos.get('fideicomisariosDeterminados') ?? '') === 'true',
+        }
+      : {}),
+  }
+
+  try {
+    await conBase(({ db, sesion }) => registrarFigura(db, { sesion, figura }))
+    revalidatePath('/configuracion')
+    revalidatePath('/')
+    return {
+      ok: true,
+      mensaje: 'Figura registrada. Ahora captura a sus integrantes con los datos del Anexo.',
+    }
+  } catch (e) {
+    return traducir(e)
+  }
+}
+
+export async function guardarIntegrante(
+  _previo: Resultado | null,
+  datos: FormData,
+): Promise<Resultado> {
+  const integrante = {
+    papel: String(datos.get('papel') ?? ''),
+    naturaleza: String(datos.get('naturaleza') ?? ''),
+    rfc: String(datos.get('rfc') ?? ''),
+    ...(campo(datos, 'descripcionOtro') === undefined ? {} : { descripcionOtro: campo(datos, 'descripcionOtro') }),
+    ...(campo(datos, 'primerApellido') === undefined ? {} : { primerApellido: campo(datos, 'primerApellido') }),
+    ...(campo(datos, 'segundoApellido') === undefined ? {} : { segundoApellido: campo(datos, 'segundoApellido') }),
+    ...(campo(datos, 'nombres') === undefined ? {} : { nombres: campo(datos, 'nombres') }),
+    ...(campo(datos, 'fechaNacimiento') === undefined ? {} : { fechaNacimiento: campo(datos, 'fechaNacimiento') }),
+    ...(campo(datos, 'curp') === undefined ? {} : { curp: campo(datos, 'curp') }),
+    ...(campo(datos, 'paisNacimiento') === undefined ? {} : { paisNacimiento: campo(datos, 'paisNacimiento') }),
+    ...(campo(datos, 'denominacion') === undefined ? {} : { denominacion: campo(datos, 'denominacion') }),
+    ...(campo(datos, 'fechaConstitucion') === undefined ? {} : { fechaConstitucion: campo(datos, 'fechaConstitucion') }),
+    ...(campo(datos, 'paisNacionalidad') === undefined ? {} : { paisNacionalidad: campo(datos, 'paisNacionalidad') }),
+    ...(campo(datos, 'numeroReferencia') === undefined ? {} : { numeroReferencia: campo(datos, 'numeroReferencia') }),
+    ...(campo(datos, 'denominacionFiduciario') === undefined ? {} : { denominacionFiduciario: campo(datos, 'denominacionFiduciario') }),
+  } as DatosIntegrante
+  const corrigeA = campo(datos, 'corrigeA')
+
+  try {
+    await conBase(({ db, sesion }) =>
+      capturarIntegrante(db, {
+        sesion,
+        integrante,
+        ...(corrigeA === undefined ? {} : { corrigeA }),
+      }),
+    )
+    revalidatePath('/configuracion')
+    revalidatePath('/')
+    return {
+      ok: true,
+      mensaje:
+        corrigeA === undefined
+          ? 'Integrante capturado. Queda pendiente registrar el envío al SAT.'
+          : 'Corrección capturada. El Art. 10 Sexies ¶4 pide reenviar toda la información: registra el envío cuando el trámite ocurra.',
+    }
+  } catch (e) {
+    return traducir(e)
+  }
+}
+
+export async function registrarEnvioSat(
+  _previo: Resultado | null,
+  datos: FormData,
+): Promise<Resultado> {
+  const fecha = String(datos.get('fecha') ?? '').trim()
+  try {
+    const r = await conBase(({ db, sesion }) => registrarEnvio(db, { sesion, fecha }))
+    revalidatePath('/configuracion')
+    revalidatePath('/')
+    return {
+      ok: true,
+      mensaje: `Envío registrado: ${String(r.enviados)} integrante(s) quedaron como enviados al SAT con fecha ${fecha}.`,
+    }
+  } catch (e) {
+    return traducir(e)
+  }
+}
+
+export async function bajaIntegrante(
+  _previo: Resultado | null,
+  datos: FormData,
+): Promise<Resultado> {
+  const integranteId = String(datos.get('integranteId') ?? '')
+  const fecha = String(datos.get('fecha') ?? '').trim()
+  try {
+    await conBase(({ db, sesion }) =>
+      darDeBajaIntegrante(db, { sesion, integranteId, fecha }),
+    )
+    revalidatePath('/configuracion')
+    revalidatePath('/')
+    return {
+      ok: true,
+      mensaje:
+        'Baja registrada. Si fue para corregir, captura al integrante corregido y vuelve a registrar el envío (Art. 10 Sexies ¶4).',
+    }
+  } catch (e) {
+    return traducir(e)
+  }
+}

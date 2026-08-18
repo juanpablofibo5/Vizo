@@ -46,7 +46,7 @@ Art. 23 Quáter define quién es PEP y **asimila** —literal— «el cónyuge, 
 
 **Lo que eso significa para el formulario:** no es una casilla «¿es usted PEP?». Es una red de hasta segundo grado más los socios patrimoniales, y esa red la tiene que declarar el cliente. El diseño de la captura es el trabajo, no la consulta.
 
-**En VIZO:** nada. La tabla `consultas_screening` existe vacía desde la semana 1.
+**En VIZO (issue #19, 17-ago-2026):** la declaración con su red y evidencia — captura tipificada con el vocabulario del ¶3 (vínculo, grado, cargo, ámbito, fechas), coherencia declaración↔vínculos garantizada por la base, revisión de admin que congela, y la vigencia derivada con los dos relojes desde el catálogo. Pendiente: el seguimiento reforzado (Manual Fr. IV) y el riesgo alto por defecto de extranjeras (23 Bis 4, 1-mar-2027). `consultas_screening` sigue vacía a propósito: la consulta oficial es Consulta PEP 2.0, del obligado con su e.firma.
 
 ### Cap. II Quáter · Enfoque basado en Riesgos — **1 mar 2027**
 Art. 10 Septies 1 pide **tres** cosas de la metodología, y dentro de la primera, **cuatro elementos mínimos** de exposición: *actos u operaciones · tipo de personas Clientes o Usuarias · países y áreas geográficas · transacciones y canales*. Más un método de medición que asigne valores, y la identificación de los Mitigantes ya implementados.

@@ -184,6 +184,51 @@ export type Database = {
           },
         ]
       }
+      apartados_manual: {
+        Row: {
+          clave_evidencia: string | null
+          created_at: string
+          fraccion: string
+          fuente: string
+          id: string
+          orden: number
+          origen: Database["public"]["Enums"]["origen_apartado"]
+          por_que_no: string | null
+          preguntas: Json
+          texto: string
+          vigente_desde: string
+          vigente_hasta: string | null
+        }
+        Insert: {
+          clave_evidencia?: string | null
+          created_at?: string
+          fraccion: string
+          fuente: string
+          id?: string
+          orden: number
+          origen: Database["public"]["Enums"]["origen_apartado"]
+          por_que_no?: string | null
+          preguntas?: Json
+          texto: string
+          vigente_desde: string
+          vigente_hasta?: string | null
+        }
+        Update: {
+          clave_evidencia?: string | null
+          created_at?: string
+          fraccion?: string
+          fuente?: string
+          id?: string
+          orden?: number
+          origen?: Database["public"]["Enums"]["origen_apartado"]
+          por_que_no?: string | null
+          preguntas?: Json
+          texto?: string
+          vigente_desde?: string
+          vigente_hasta?: string | null
+        }
+        Relationships: []
+      }
       aviso_lotes: {
         Row: {
           aviso_id: string
@@ -825,6 +870,69 @@ export type Database = {
           },
         ]
       }
+      constancias: {
+        Row: {
+          acreditados: number
+          anticipada_desde: string | null
+          contenido: string
+          degradados: string[]
+          emitida_en: string
+          emitida_por: string | null
+          fecha: string
+          hash_sha256: string
+          huecos: number
+          id: string
+          parciales: number
+          tenant_id: string
+          total: number
+        }
+        Insert: {
+          acreditados: number
+          anticipada_desde?: string | null
+          contenido: string
+          degradados?: string[]
+          emitida_en?: string
+          emitida_por?: string | null
+          fecha: string
+          hash_sha256: string
+          huecos: number
+          id?: string
+          parciales: number
+          tenant_id: string
+          total: number
+        }
+        Update: {
+          acreditados?: number
+          anticipada_desde?: string | null
+          contenido?: string
+          degradados?: string[]
+          emitida_en?: string
+          emitida_por?: string | null
+          fecha?: string
+          hash_sha256?: string
+          huecos?: number
+          id?: string
+          parciales?: number
+          tenant_id?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "constancias_emitida_por_fkey"
+            columns: ["emitida_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "constancias_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultas_screening: {
         Row: {
           coincidencias: Json
@@ -882,6 +990,71 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
+      declaraciones_pep: {
+        Row: {
+          capturada_por: string
+          cliente_id: string
+          created_at: string
+          fecha_declaracion: string
+          id: string
+          resultado: Database["public"]["Enums"]["resultado_declaracion_pep"]
+          revisada_en: string | null
+          revisada_por: string | null
+          tenant_id: string
+        }
+        Insert: {
+          capturada_por: string
+          cliente_id: string
+          created_at?: string
+          fecha_declaracion: string
+          id?: string
+          resultado: Database["public"]["Enums"]["resultado_declaracion_pep"]
+          revisada_en?: string | null
+          revisada_por?: string | null
+          tenant_id: string
+        }
+        Update: {
+          capturada_por?: string
+          cliente_id?: string
+          created_at?: string
+          fecha_declaracion?: string
+          id?: string
+          resultado?: Database["public"]["Enums"]["resultado_declaracion_pep"]
+          revisada_en?: string | null
+          revisada_por?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "declaraciones_pep_capturada_por_fkey"
+            columns: ["capturada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "declaraciones_pep_revisada_por_fkey"
+            columns: ["revisada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "declaraciones_pep_tenant_id_cliente_id_fkey"
+            columns: ["tenant_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_finales"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "declaraciones_pep_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1995,6 +2168,69 @@ export type Database = {
           },
         ]
       }
+      vinculos_pep: {
+        Row: {
+          ambito: Database["public"]["Enums"]["ambito_funcion_publica"]
+          cargo: string
+          created_at: string
+          declaracion_id: string
+          detalle: string | null
+          en_funciones: boolean
+          fecha_cese: string | null
+          grado: number | null
+          id: string
+          nombre_pep: string | null
+          pais: string | null
+          tenant_id: string
+          tipo: Database["public"]["Enums"]["vinculo_pep"]
+        }
+        Insert: {
+          ambito: Database["public"]["Enums"]["ambito_funcion_publica"]
+          cargo: string
+          created_at?: string
+          declaracion_id: string
+          detalle?: string | null
+          en_funciones: boolean
+          fecha_cese?: string | null
+          grado?: number | null
+          id?: string
+          nombre_pep?: string | null
+          pais?: string | null
+          tenant_id: string
+          tipo: Database["public"]["Enums"]["vinculo_pep"]
+        }
+        Update: {
+          ambito?: Database["public"]["Enums"]["ambito_funcion_publica"]
+          cargo?: string
+          created_at?: string
+          declaracion_id?: string
+          detalle?: string | null
+          en_funciones?: boolean
+          fecha_cese?: string | null
+          grado?: number | null
+          id?: string
+          nombre_pep?: string | null
+          pais?: string | null
+          tenant_id?: string
+          tipo?: Database["public"]["Enums"]["vinculo_pep"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vinculos_pep_tenant_id_declaracion_id_fkey"
+            columns: ["tenant_id", "declaracion_id"]
+            isOneToOne: false
+            referencedRelation: "declaraciones_pep"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "vinculos_pep_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       expedientes_por_reverificar: {
@@ -2179,6 +2415,7 @@ export type Database = {
     }
     Enums: {
       ambito_domicilio: "nacional" | "extranjero"
+      ambito_funcion_publica: "nacional" | "extranjero"
       aplica_persona: "persona_fisica" | "persona_moral" | "ambas"
       base_calculo: "sin_contribuciones" | "con_contribuciones"
       control_beneficiario: "participacion" | "control_efectivo"
@@ -2207,8 +2444,10 @@ export type Database = {
         | "financiamiento_bursatil"
       nivel_riesgo: "bajo" | "medio" | "alto"
       objeto_sellado: "manifiesto" | "aviso"
+      origen_apartado: "acreditado" | "acreditado_parcial" | "del_obligado"
       resolucion_screening: "pendiente" | "descartada" | "confirmada"
       resultado_aviso: "no" | "individual" | "acumulacion"
+      resultado_declaracion_pep: "niega" | "pep_por_funcion" | "pep_asimilada"
       resultado_screening: "sin_coincidencia" | "coincidencia"
       rol_usuario: "admin" | "capturista"
       sujeto_screening: "cliente" | "beneficiario"
@@ -2222,6 +2461,13 @@ export type Database = {
       tipo_dato_campo: "texto" | "fecha" | "monto" | "catalogo" | "documento"
       tipo_persona: "fisica" | "moral" | "fideicomiso"
       tipo_umbral: "identificacion" | "aviso" | "efectivo"
+      vinculo_pep:
+        | "titular"
+        | "conyuge"
+        | "concubinato"
+        | "consanguinidad"
+        | "afinidad"
+        | "socio_patrimonial"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2353,6 +2599,7 @@ export const Constants = {
   public: {
     Enums: {
       ambito_domicilio: ["nacional", "extranjero"],
+      ambito_funcion_publica: ["nacional", "extranjero"],
       aplica_persona: ["persona_fisica", "persona_moral", "ambas"],
       base_calculo: ["sin_contribuciones", "con_contribuciones"],
       control_beneficiario: ["participacion", "control_efectivo"],
@@ -2384,8 +2631,10 @@ export const Constants = {
       ],
       nivel_riesgo: ["bajo", "medio", "alto"],
       objeto_sellado: ["manifiesto", "aviso"],
+      origen_apartado: ["acreditado", "acreditado_parcial", "del_obligado"],
       resolucion_screening: ["pendiente", "descartada", "confirmada"],
       resultado_aviso: ["no", "individual", "acumulacion"],
+      resultado_declaracion_pep: ["niega", "pep_por_funcion", "pep_asimilada"],
       resultado_screening: ["sin_coincidencia", "coincidencia"],
       rol_usuario: ["admin", "capturista"],
       sujeto_screening: ["cliente", "beneficiario"],
@@ -2400,6 +2649,14 @@ export const Constants = {
       tipo_dato_campo: ["texto", "fecha", "monto", "catalogo", "documento"],
       tipo_persona: ["fisica", "moral", "fideicomiso"],
       tipo_umbral: ["identificacion", "aviso", "efectivo"],
+      vinculo_pep: [
+        "titular",
+        "conyuge",
+        "concubinato",
+        "consanguinidad",
+        "afinidad",
+        "socio_patrimonial",
+      ],
     },
   },
 } as const

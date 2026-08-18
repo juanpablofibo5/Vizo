@@ -20,7 +20,7 @@
 | **30 may 2027** *(calc.)* | Fr. XVI (activos virtuales): actualizar la información del Art. 10 Bis. Seis meses desde la vigencia | Transitorio **Décimo Segundo** |
 | **1 jun 2027** | **Cap. XIII** — los mecanismos automatizados del Art. 41. El texto acota: *«deberá contener la información de los actos u operaciones realizados A PARTIR DE ESA FECHA»* | Transitorio **Noveno** |
 | **30 jul 2027** *(calc.)* | Sistema de notificaciones electrónicas de la SHCP. Ocho meses desde la vigencia — **a cargo de la autoridad**, no del obligado | Transitorio **Décimo Primero** |
-| **30 ago 2027** *(calc.)* | La aplicación **Consulta PEP** queda disponible. Nueve meses desde la vigencia | Transitorio **Décimo** |
+| **30 ago 2027** *(calc.)* | La aplicación **Consulta PEP 2.0** queda disponible. Nueve meses desde la vigencia | Transitorio **Décimo** |
 | **1 ene 2028** | Arranca el primer periodo de revisión de auditoría (**Cap. XIV**), hasta el 31 de diciembre | Transitorio **Octavo** |
 | **Indeterminada** | Avisos de 24 h (Arts. 26 Bis, 26 Bis 1, 26 Bis 2 y 27 ¶2): seis meses **después** de que se publique la Resolución de formatos, que aún no existe | Transitorio **Quinto** |
 
@@ -42,7 +42,7 @@ Alta y registro mediante el XML que genera la herramienta del Portal, con la inf
 **En VIZO:** `tenants.tipo_persona` ya admite `fideicomiso`. Nada más. Issue #13.
 
 ### Cap. III Quáter · PEP — **30 nov 2026**
-Art. 23 Quáter define quién es PEP y **asimila** —literal— «el cónyuge, la concubina, el concubinario y las personas con quienes […] mantengan parentesco **por consanguinidad o afinidad hasta el segundo grado**, así como los **asociados o socios** de personas morales con las que mantengan vínculos patrimoniales». También sigue siendo PEP nacional **durante el año siguiente** a dejar el cargo. Art. 23 Quáter 1: la consulta se hace en la aplicación de la UIF.
+Art. 23 Quáter define quién es PEP y **asimila** —literal— «el cónyuge, la concubina, el concubinario y las personas con quienes […] mantengan parentesco **por consanguinidad o afinidad hasta el segundo grado**, así como los **asociados o socios** de personas morales con las que mantengan vínculos patrimoniales». También sigue siendo PEP nacional **durante el año siguiente** a dejar el cargo — y el ¶5 añade un **segundo reloj**: si el cese cayó dentro del año previo al acto u operación, se le cataloga PEP durante el año siguiente **al acto**, no al cese. Art. 23 Quáter 1: la consulta se hace en la aplicación **Consulta PEP 2.0** de la UIF, con la e.firma del alta.
 
 **Lo que eso significa para el formulario:** no es una casilla «¿es usted PEP?». Es una red de hasta segundo grado más los socios patrimoniales, y esa red la tiene que declarar el cliente. El diseño de la captura es el trabajo, no la consulta.
 

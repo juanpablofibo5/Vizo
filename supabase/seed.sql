@@ -102,6 +102,71 @@ insert into usuarios (id, tenant_id, rol, nombre, email) values
   ('00000000-0000-4000-8000-00000000000b', '00000000-0000-4000-8000-000000000001', 'capturista', 'Carlos Pech', 'capturista@vizo.mx');
 
 -- ---------------------------------------------------------------------------
+-- Obligado de demo que actúa por FIDEICOMISO (Cap. II Ter)
+-- ---------------------------------------------------------------------------
+-- Existe aparte, y no reetiquetando al obligado moral, por una razón que el
+-- propio Acuerdo impone: la clase de persona decide QUÉ ANEXO le corresponde
+-- —el 2 para una moral, el 2 Bis para un fideicomiso— y con qué e.firma hace
+-- su trámite (Art. 4 ¶3). Un obligado que cambia de clase no es el mismo
+-- obligado con otra etiqueta; por eso la migración
+-- 20260819120000 impide el cambio cuando ya hay estructura registrada.
+--
+-- La razón social lo dice sin ambigüedad: es un fideicomiso, no una SA de CV.
+-- Su estructura del Anexo 2 Bis la siembra `scripts/datos-demo.ts` por el
+-- camino real de la aplicación, para que la bitácora tenga los eventos que
+-- tendría en la vida real.
+insert into tenants (id, rfc, razon_social, fecha_alta_autoridad, tipo_persona, domicilio) values (
+  '00000000-0000-4000-8000-000000000003',
+  'FPE200315J47',
+  'Fideicomiso Península F/1847-2020',
+  date '2026-03-09',
+  'fideicomiso',
+  '{"calle":"Calle 21","numero":"302","colonia":"Itzimná","cp":"97100","municipio":"Mérida","estado":"Yucatán"}'::jsonb
+);
+
+-- También realiza Fr. V Bis: es un fideicomiso de desarrollo inmobiliario, el
+-- caso típico del corredor Cancún–Tulum.
+insert into actividades_tenant (tenant_id, actividad_id)
+select '00000000-0000-4000-8000-000000000003', id
+from actividades_vulnerables where fraccion = 'V_BIS';
+
+insert into sucursales (tenant_id, nombre, clave) values
+  ('00000000-0000-4000-8000-000000000003', 'Oficina del fideicomiso', 'FID');
+
+-- Art. 20 LFPIORPI ¶1: quienes actúan por fideicomiso también designan REC.
+insert into designaciones_rec
+  (tenant_id, rfc, nombre, estado, fecha_designacion, fecha_respuesta, fecha_notificacion_sat)
+values (
+  '00000000-0000-4000-8000-000000000003',
+  'SACL820430D12', 'Lucía Fernanda Sansores Cámara',
+  'aceptada', date '2026-03-09', date '2026-03-11', date '2026-03-19'
+);
+
+insert into auth.users (
+  id, instance_id, aud, role, email, encrypted_password,
+  email_confirmed_at, created_at, updated_at,
+  raw_app_meta_data, raw_user_meta_data,
+  confirmation_token, recovery_token, email_change_token_new, email_change,
+  email_change_token_current, phone_change, phone_change_token, reauthentication_token
+) values (
+  '00000000-0000-4000-8000-00000000000c',
+  '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+  'fideicomiso@vizo.mx', crypt('vizo-demo-2026', gen_salt('bf')),
+  now(), now(), now(),
+  '{"provider":"email","providers":["email"],"tenant_id":"00000000-0000-4000-8000-000000000003","rol":"admin"}'::jsonb,
+  '{}'::jsonb,
+  '', '', '', '', '', '', '', ''
+);
+
+insert into auth.identities (id, user_id, provider_id, provider, identity_data, created_at, updated_at)
+values (gen_random_uuid(), '00000000-0000-4000-8000-00000000000c', '00000000-0000-4000-8000-00000000000c',
+  'email', '{"sub":"00000000-0000-4000-8000-00000000000c","email":"fideicomiso@vizo.mx","email_verified":true}'::jsonb, now(), now());
+
+insert into usuarios (id, tenant_id, rol, nombre, email) values
+  ('00000000-0000-4000-8000-00000000000c', '00000000-0000-4000-8000-000000000003',
+   'admin', 'Lucía Sansores', 'fideicomiso@vizo.mx');
+
+-- ---------------------------------------------------------------------------
 -- Segundo tenant: existe para que el aislamiento sea demostrable
 -- ---------------------------------------------------------------------------
 -- Sin un segundo obligado con datos propios, "RLS funciona" es una afirmación

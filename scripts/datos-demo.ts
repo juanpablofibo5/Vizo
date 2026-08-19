@@ -4,7 +4,13 @@ import { registrarDocumento } from '../src/persistencia/documentos'
 import { pesos } from '../src/dominio/dinero'
 import { abrirExpediente, recalcularCompletitud } from '../src/persistencia/expediente'
 import { hoyEnMexico } from '../src/dominio/fechas'
-import type { ContextoSesion } from '../src/persistencia/transaccion'
+import { enTransaccionDeSesion, type ContextoSesion } from '../src/persistencia/transaccion'
+import {
+  capturarIntegrante,
+  estadoDeLaEstructura,
+  registrarEnvio,
+  registrarFigura,
+} from '../src/persistencia/estructura'
 // Storage hablado como el usuario, firmando un JWT con el secreto por omisión
 // del stack local. Vive en `tests/soporte` porque nació ahí; se reusa aquí
 // porque este script también es de desarrollo y nunca se empaqueta. Usar la
@@ -69,6 +75,118 @@ const TENANT = '00000000-0000-4000-8000-000000000001'
 const ADMIN = '00000000-0000-4000-8000-00000000000a'
 const CAPTURISTA = '00000000-0000-4000-8000-00000000000b'
 
+/** El obligado que actúa por fideicomiso, y su admin (ver `supabase/seed.sql`). */
+const TENANT_FIDEICOMISO = '00000000-0000-4000-8000-000000000003'
+const ADMIN_FIDEICOMISO = '00000000-0000-4000-8000-00000000000c'
+
+/**
+ * La estructura del Cap. II Ter del obligado fideicomiso.
+ *
+ * Se siembra por el camino REAL —`registrarFigura`, `capturarIntegrante`,
+ * `registrarEnvio`— y no con INSERTs, por lo mismo que las operaciones: así la
+ * bitácora tiene los eventos que tendría en la vida real, y la demo no enseña
+ * un estado que el sistema nunca produjo.
+ *
+ * Los cinco integrantes cubren las tres naturalezas del Anexo 2 Bis y sus
+ * cuatro papeles, incluido el caso que decide el modelo: un fideicomitente que
+ * es a su vez un fideicomiso (sección III.III), identificado con cuatro datos
+ * y no con su estructura completa.
+ */
+async function estructuraDelFideicomiso(db: Client): Promise<void> {
+  const sesion: ContextoSesion = {
+    usuarioId: ADMIN_FIDEICOMISO,
+    tenantId: TENANT_FIDEICOMISO,
+    rol: 'admin',
+  }
+
+  // La lectura va DENTRO de una sesión, como cualquier otra: `estadoDeLaEstructura`
+  // exige correr como `authenticated` y fuera de la transacción muere. El primer
+  // intento la envolvió en un `.catch(() => null)`, y ese atajo convirtió «no
+  // pude leer» en «no hay estructura» — la regla dura 6 en miniatura: el fallo
+  // no revienta, siembra dos veces.
+  const ya = await enTransaccionDeSesion(db, sesion, () =>
+    estadoDeLaEstructura(db, { sesion }),
+  )
+  if (ya.figura !== null) {
+    console.log('El fideicomiso ya tiene estructura; no se toca.')
+    return
+  }
+
+  await registrarFigura(db, {
+    sesion,
+    figura: {
+      tipoFigura: 'fideicomiso',
+      numeroReferencia: 'F/1847-2020',
+      fechaConstitucion: '2020-03-15',
+      rfc: 'FPE200315J47',
+      cotizaEnBolsa: false,
+      fideicomisariosDeterminados: true,
+    },
+  })
+
+  const integrantes = [
+    {
+      papel: 'fiduciario' as const,
+      naturaleza: 'moral' as const,
+      denominacion: 'Banco Fiduciario del Sureste SA, IBM',
+      fechaConstitucion: '1995-06-01',
+      paisNacionalidad: 'MX',
+      rfc: 'BFS950601H23',
+    },
+    {
+      papel: 'delegado_fiduciario' as const,
+      naturaleza: 'fisica' as const,
+      primerApellido: 'Herrera',
+      segundoApellido: 'Pat',
+      nombres: 'Rodrigo',
+      fechaNacimiento: '1978-09-22',
+      curp: 'HEPR780922HYNRTD05',
+      paisNacionalidad: 'MX',
+      paisNacimiento: 'MX',
+      rfc: 'HEPR780922K18',
+    },
+    {
+      papel: 'fideicomitente' as const,
+      naturaleza: 'moral' as const,
+      denominacion: 'Inmobiliaria Península del Mayab SA de CV',
+      fechaConstitucion: '2005-08-10',
+      paisNacionalidad: 'MX',
+      rfc: 'IPM050810QK4',
+    },
+    // La recursión aplanada del Anexo 2 Bis III.III: cuatro datos, no una
+    // estructura anidada.
+    {
+      papel: 'fideicomitente' as const,
+      naturaleza: 'fideicomiso' as const,
+      numeroReferencia: 'F/0932-2016',
+      fechaConstitucion: '2016-11-08',
+      denominacionFiduciario: 'Banco del Caribe SA, IBM',
+      rfc: 'FCA161108T55',
+    },
+    {
+      papel: 'fideicomisario' as const,
+      naturaleza: 'fisica' as const,
+      primerApellido: 'Sansores',
+      segundoApellido: 'Cámara',
+      nombres: 'Lucía Fernanda',
+      fechaNacimiento: '1982-04-30',
+      curp: 'SACL820430MYNNMC09',
+      paisNacionalidad: 'MX',
+      paisNacimiento: 'MX',
+      rfc: 'SACL820430D12',
+    },
+  ]
+
+  for (const integrante of integrantes) {
+    await capturarIntegrante(db, { sesion, integrante })
+  }
+
+  const { enviados } = await registrarEnvio(db, { sesion, fecha: '2026-03-10' })
+  console.log(
+    `Fideicomiso demo: estructura del Anexo 2 Bis con ${String(enviados)} integrantes enviados al SAT.`,
+  )
+}
+
 const URL = process.env['VIZO_DB_URL_ADMIN'] ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
 
 async function main(): Promise<void> {
@@ -76,6 +194,12 @@ async function main(): Promise<void> {
   await db.connect()
 
   try {
+    // Cada pieza de la demo comprueba SU propia idempotencia. Si esta llamada
+    // fuera después del guardia de abajo, que mira las operaciones del
+    // obligado moral, el fideicomiso nunca se sembraría en una base que ya
+    // tuviera operaciones — dos obligados distintos atados por un `if` ajeno.
+    await estructuraDelFideicomiso(db)
+
     const ya = await db.query(`select count(*)::int as n from operaciones where tenant_id = $1`, [
       TENANT,
     ])

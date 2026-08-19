@@ -39,7 +39,7 @@ const COPIA: Record<ClaveDePaso, Copia> = {
     ruta: '/configuracion',
   },
   tipo_persona: {
-    titulo: 'Persona física, moral o fideicomiso',
+    titulo: 'Persona física, moral, fideicomiso u otra figura jurídica',
     porQue:
       'De esto depende si hay que designar un Representante Encargado de Cumplimiento: la Ley se lo pide a las morales y a las figuras jurídicas, no a las personas físicas.',
     ruta: '/configuracion',

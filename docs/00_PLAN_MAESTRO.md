@@ -183,7 +183,7 @@ Recomendación de posicionamiento: **no compitas en "software PLD". Compite en "
 La ley de datos personales se sustituyó completa el 20 de marzo de 2025 (vigente desde el 21).
 
 - El INAI desapareció. La autoridad ahora es la **Secretaría Anticorrupción y Buen Gobierno**.
-- Multas de 100 a 320,000 UMA, **se duplican tratándose de datos sensibles**. Los biométricos son sensibles.
+- Multas de **100 a 160,000 UMA** (Art. 59 fr. II, para las infracciones del Art. 58 frs. II a VII) y de **200 a 320,000 UMA** (fr. III, para las frs. VIII a XVIII). **Corregido el 20-ago-2026:** con datos sensibles las sanciones «**podrán incrementarse** hasta por dos veces» — discrecional de la Secretaría, no automático. Lo que sí se duplica solo es la **pena de prisión** del Art. 64. Y que los biométricos sean sensibles no lo dice el texto: es pregunta abierta (`docs/LFPDPPP.md` §3).
 - Hasta 5 años de prisión por tratamiento con engaño o con fin de lucro indebido.
 - **No hay requisito de localización de datos.** Supabase y Vercel en regiones de EE. UU. son jurídicamente viables.
 

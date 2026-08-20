@@ -137,7 +137,7 @@ El link es la superficie pública del sistema. Es por donde entran datos persona
 - Rate limiting por IP y por token.
 - Guardado parcial atado al token, no a una cookie.
 - Subida directa del navegador al storage con URL firmada de corta vida — el archivo no pasa por el servidor de aplicación.
-- Cifrado en reposo. Los biométricos y las identificaciones son **datos sensibles** bajo la LFPDPPP: la multa se duplica.
+- Cifrado en reposo. **Corregido el 20-ago-2026, ya con la ley en el repositorio:** que las identificaciones y los biométricos sean **datos sensibles** bajo la LFPDPPP es *pregunta abierta* — la palabra «biométrico» no aparece en el texto y la lista del Art. 2 fr. VI, aunque enunciativa, no los nombra. Y la agravante no es la que decía este renglón: la multa del Art. 59 **podría** incrementarse hasta el doble (discrecional), mientras que la que **se duplica** sola es la pena de prisión del Art. 64. Ver `docs/LFPDPPP.md`.
 - Aviso de privacidad en modalidad simplificada mostrado **antes** de la primera captura, con enlace al integral. Es obligación del Art. 35, no cortesía.
 - Ningún dato personal en logs, en Sentry, ni en mensajes de error. Esta regla se rompe sola si no hay un hook que la vigile.
 

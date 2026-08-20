@@ -9,7 +9,18 @@ Multi-tenant. Los clientes son sujetos obligados; VIZO es su **encargado** bajo 
 
 **2. Ningún cálculo regulatorio se acepta sin prueba.** Todo cambio en el motor de umbrales necesita casos en `tests/umbrales/`. La suite completa debe pasar antes de considerar cualquier tarea terminada.
 
-**3. Ningún dato personal en logs, errores, ni telemetría.** Nombres, RFC, CURP, direcciones, imágenes de identificaciones. Los biométricos son datos sensibles: la multa bajo la LFPDPPP se duplica. En logs se usan IDs opacos.
+**3. Ningún dato personal en logs, errores, ni telemetría.** Nombres, RFC, CURP, direcciones, imágenes de identificaciones. En logs se usan IDs opacos.
+
+La escala de lo que está en juego, con la ley ya en el repositorio (`regulatorio/leyes/LFPDPPP.pdf`, SHA-256 `04d67464…`, contrastada el 20-ago-2026):
+
+| | Qué dice el texto | Efecto |
+|---|---|---|
+| **Art. 59** (sanciones administrativas) | «Tratándose de datos personales sensibles, las sanciones **podrán incrementarse** hasta por dos veces, los montos establecidos» | La multa **no** se duplica sola: es discrecional de la Secretaría |
+| **Art. 64** (delitos) | «Tratándose de datos personales sensibles, **las penas** a que se refiere este Capítulo **se duplicarán**» | Automático, y sobre **prisión** — Arts. 62 y 63: hasta tres y hasta cinco años |
+
+Y **si una identificación oficial es «dato sensible» no está resuelto**: la palabra «biométrico» no aparece en la ley. El Art. 2 fr. VI da un criterio —lo que afecte «la esfera más íntima» o cuyo uso indebido «pueda dar origen a discriminación»— y una lista **enunciativa más no limitativa** que nombra origen racial o étnico, salud, información genética, creencias, opiniones políticas y preferencia sexual. Ni identificaciones ni biometría. Es pregunta abierta para el abogado (`docs/LFPDPPP.md` §3, pregunta 1).
+
+**Esta regla no depende de esa respuesta.** Aplica a todo dato personal, sea sensible o no; lo sensible solo agrava. La versión anterior de este párrafo afirmaba que «la multa se duplica» y que «los biométricos son datos sensibles», ninguna de las dos con respaldo en el texto — la regla dura 1 incumplida dentro de las reglas duras. Se deja escrito para que no vuelva a pasar.
 
 **4. La bitácora es append-only.** Nunca escribas un `UPDATE` o `DELETE` sobre `bitacora`.
 

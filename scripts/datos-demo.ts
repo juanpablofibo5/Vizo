@@ -75,9 +75,9 @@ const TENANT = '00000000-0000-4000-8000-000000000001'
 const ADMIN = '00000000-0000-4000-8000-00000000000a'
 const CAPTURISTA = '00000000-0000-4000-8000-00000000000b'
 
-/** El obligado que actúa por fideicomiso, y su admin (ver `supabase/seed.sql`). */
+/** El obligado que actúa por fideicomiso (ver `supabase/seed.sql`). */
 const TENANT_FIDEICOMISO = '00000000-0000-4000-8000-000000000003'
-const ADMIN_FIDEICOMISO = '00000000-0000-4000-8000-00000000000c'
+const CORREO_FIDEICOMISO = 'fideicomiso@vizo.mx'
 
 /**
  * La estructura del Cap. II Ter del obligado fideicomiso.
@@ -93,8 +93,27 @@ const ADMIN_FIDEICOMISO = '00000000-0000-4000-8000-00000000000c'
  * y no con su estructura completa.
  */
 async function estructuraDelFideicomiso(db: Client): Promise<void> {
+  // El admin se busca POR CORREO y no por un UUID fijo.
+  //
+  // En local lo siembra `seed.sql` con un id conocido, pero en producción el
+  // acceso lo crea una persona desde el panel de Supabase —donde la contraseña
+  // se escribe en su lugar y no en un archivo del repositorio— y ahí el UUID es
+  // aleatorio. Buscar por correo hace que los dos caminos funcionen.
+  const u = await db.query(
+    `select id::text from usuarios where tenant_id = $1 and email = $2 and rol = 'admin'`,
+    [TENANT_FIDEICOMISO, CORREO_FIDEICOMISO],
+  )
+  const fila = u.rows[0] as { id: string } | undefined
+  if (fila === undefined) {
+    console.log(
+      `El obligado de fideicomiso todavía no tiene admin (${CORREO_FIDEICOMISO}). ` +
+        'Créalo con scripts/produccion-obligado-fideicomiso.sql y vuelve a correr esto.',
+    )
+    return
+  }
+
   const sesion: ContextoSesion = {
-    usuarioId: ADMIN_FIDEICOMISO,
+    usuarioId: fila.id,
     tenantId: TENANT_FIDEICOMISO,
     rol: 'admin',
   }

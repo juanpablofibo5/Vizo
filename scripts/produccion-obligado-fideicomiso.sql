@@ -1,20 +1,15 @@
 -- ---------------------------------------------------------------------------
 -- Obligado de demo para fideicomisos · pasos que corre una persona
 -- ---------------------------------------------------------------------------
--- Correr UNA vez en el editor SQL de Supabase (proyecto vizo, producción).
+-- Editor SQL de Supabase, proyecto vizo (producción). Los bloques van en orden
+-- y cada uno se corre por separado.
 --
--- Por qué no lo corrió el agente:
---   · el bloque 1 BORRA datos de producción, y esa decisión es del dueño;
---   · el bloque 3 crea un acceso con contraseña, y las credenciales no pasan
---     por el agente. La contraseña la eliges y la escribes tú.
---
--- Después de esto, la estructura del Anexo 2 Bis se siembra por el camino real
--- de la aplicación con:
---
---     pnpm demo:datos:remoto
+-- Por qué no los corrió el agente: el bloque 1 BORRA datos de producción, y esa
+-- decisión es del dueño. La contraseña del acceso nunca aparece aquí — se
+-- escribe en el panel de Supabase (paso 3 del instructivo), que es su lugar.
 --
 -- ---------------------------------------------------------------------------
--- 1. Reubicar: quitar del obligado MORAL la estructura de muestra
+-- BLOQUE 1 · Reubicar: quitar del obligado MORAL la estructura de muestra
 -- ---------------------------------------------------------------------------
 -- Son 1 figura y 6 integrantes capturados el 19-ago-2026 como demostración.
 -- La bitácora NO se toca: es append-only y registra que esto ocurrió, que es
@@ -34,7 +29,8 @@ update tenants set tipo_persona = 'moral' where rfc = 'DPE010101AAA';
 commit;
 
 -- ---------------------------------------------------------------------------
--- 2. El obligado nuevo: un fideicomiso de verdad, no una moral reetiquetada
+-- BLOQUE 2 · El obligado nuevo: un fideicomiso de verdad, no una moral
+--            reetiquetada
 -- ---------------------------------------------------------------------------
 -- Los mismos datos que `supabase/seed.sql` siembra en local, para que la demo
 -- local y la de producción enseñen lo mismo.
@@ -68,50 +64,42 @@ values (
 commit;
 
 -- ---------------------------------------------------------------------------
--- 3. El acceso · CAMBIA LA CONTRASEÑA ANTES DE CORRER
+-- BLOQUE 3 · Conectar el acceso con su obligado
 -- ---------------------------------------------------------------------------
--- Sustituye PON-AQUI-TU-CONTRASENA por una que elijas tú. No uses la del seed
--- local (`vizo-demo-2026`): esa está en el repositorio.
+-- ANTES de correr esto, crea el usuario en el panel:
+--   Authentication → Users → Add user
+--   correo: fideicomiso@vizo.mx · contraseña: la que tú elijas
+--   (marca «Auto Confirm User»)
 --
--- El UUID es fijo a propósito — `scripts/datos-demo.ts` lo usa para sembrar la
--- estructura por el camino real. Si creas el usuario desde el panel de
--- Supabase en vez de aquí, el UUID sería aleatorio y el script no lo hallaría.
+-- Este bloque hace las dos cosas que el panel NO hace y que RLS necesita:
+-- pone el tenant y el rol en app_metadata —lo único que RLS lee, y que solo el
+-- servicio de Auth puede escribir— y da de alta el perfil legible en `usuarios`.
 begin;
 
-insert into auth.users (
-  id, instance_id, aud, role, email, encrypted_password,
-  email_confirmed_at, created_at, updated_at,
-  raw_app_meta_data, raw_user_meta_data,
-  confirmation_token, recovery_token, email_change_token_new, email_change,
-  email_change_token_current, phone_change, phone_change_token, reauthentication_token
-) values (
-  '00000000-0000-4000-8000-00000000000c',
-  '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-  'fideicomiso@vizo.mx', crypt('PON-AQUI-TU-CONTRASENA', gen_salt('bf')),
-  now(), now(), now(),
-  '{"provider":"email","providers":["email"],"tenant_id":"00000000-0000-4000-8000-000000000003","rol":"admin"}'::jsonb,
-  '{}'::jsonb,
-  '', '', '', '', '', '', '', ''
-);
+update auth.users
+   set raw_app_meta_data = raw_app_meta_data
+     || '{"tenant_id":"00000000-0000-4000-8000-000000000003","rol":"admin"}'::jsonb
+ where email = 'fideicomiso@vizo.mx';
 
-insert into auth.identities (id, user_id, provider_id, provider, identity_data, created_at, updated_at)
-values (gen_random_uuid(), '00000000-0000-4000-8000-00000000000c', '00000000-0000-4000-8000-00000000000c',
-  'email', '{"sub":"00000000-0000-4000-8000-00000000000c","email":"fideicomiso@vizo.mx","email_verified":true}'::jsonb,
-  now(), now());
-
-insert into usuarios (id, tenant_id, rol, nombre, email) values
-  ('00000000-0000-4000-8000-00000000000c', '00000000-0000-4000-8000-000000000003',
-   'admin', 'Lucía Sansores', 'fideicomiso@vizo.mx');
+insert into usuarios (id, tenant_id, rol, nombre, email)
+select id, '00000000-0000-4000-8000-000000000003', 'admin', 'Lucía Sansores', email
+  from auth.users where email = 'fideicomiso@vizo.mx';
 
 commit;
 
 -- ---------------------------------------------------------------------------
--- 4. Comprobación
+-- BLOQUE 4 · Comprobación
 -- ---------------------------------------------------------------------------
-select t.razon_social, t.tipo_persona,
+select t.razon_social,
+       t.tipo_persona,
        (select count(*) from estructura_del_obligado e where e.tenant_id = t.id) as figuras,
        (select count(*) from usuarios u where u.tenant_id = t.id) as usuarios
   from tenants t order by t.created_at;
--- Se espera: Desarrollos Península → moral, 0 figuras
---            Fideicomiso Península  → fideicomiso, 0 figuras (las siembra
---                                     `pnpm demo:datos:remoto`), 1 usuario
+
+-- Se espera:
+--   Desarrollos Península SA de CV      · moral       · 0 figuras · 2 usuarios
+--   Fideicomiso Península F/1847-2020   · fideicomiso · 0 figuras · 1 usuario
+--
+-- Las figuras siguen en 0 a propósito: la estructura del Anexo 2 Bis la siembra
+-- `pnpm demo:datos:remoto` por el camino real de la aplicación, para que la
+-- bitácora tenga los eventos que tendría en la vida real.

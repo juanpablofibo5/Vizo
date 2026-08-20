@@ -57,3 +57,14 @@ Dos tipos merecen atención temprana porque tocan decisiones ya tomadas:
 - **`alerta_type`** — el formato ya contempla alertas de operación inusual, que es el terreno del aviso de 24 h que las RCG activarán.
 
 El desglose campo por campo va a `docs/campos-aviso.md` en la semana 1.
+
+## Leyes (`regulatorio/leyes/`)
+
+Textos oficiales de leyes federales, uno por archivo, con su SHA-256 para saber contra qué versión se contrastó cada afirmación del proyecto.
+
+| Archivo | Qué es | Origen | SHA-256 |
+|---|---|---|---|
+| `leyes/LFPDPPP.pdf` | LFPDPPP — texto vigente, nueva Ley (DOF 20-mar-2025, abroga la de 2010), última reforma DOF 14-11-2025. 24 páginas. Descargado el 20 de agosto de 2026 | `diputados.gob.mx/LeyesBiblio/pdf/LFPDPPP.pdf` | `04d67464e1efc0472040e2ff8012ced52c73ff4fc3573c8e2d3477fd976359c6` |
+| `leyes/LFPDPPP.txt` | Texto plano del anterior (`pdftotext -layout`), para grep — no reemplaza al PDF como fuente | generado aquí | `14654ace642b1a27262a9e449324d62db9f22ef8eaf47127541cc4ed04a46b21` |
+
+El contraste completo del módulo de datos personales contra este texto vive en `docs/LFPDPPP.md`.

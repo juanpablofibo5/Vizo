@@ -10,6 +10,15 @@ import {
   TipoDePersonaInvalido,
 } from '../../src/persistencia/obligado'
 import {
+  DatoDeRiesgoInvalido,
+  ModeloNoActivable,
+  activarModelo,
+  agregarFactor,
+  crearModelo,
+  definirGrado,
+  quitarFactor,
+} from '../../src/persistencia/riesgo'
+import {
   DatoDeEstructuraInvalido,
   EnvioImposible,
   NoAplicaEstructura,
@@ -208,6 +217,8 @@ function traducir(e: unknown): Resultado {
     e instanceof DatoDelRecInvalido ||
     e instanceof NoAplicaDesignacion ||
     e instanceof RelevoExigeSustituir ||
+    e instanceof DatoDeRiesgoInvalido ||
+    e instanceof ModeloNoActivable ||
     e instanceof DatoDeEstructuraInvalido ||
     e instanceof NoAplicaEstructura ||
     e instanceof EnvioImposible ||
@@ -397,6 +408,111 @@ export async function bajaIntegrante(
       ok: true,
       mensaje:
         'Baja registrada. Si fue para corregir, captura al integrante corregido y vuelve a registrar el envío (Art. 10 Sexies ¶4).',
+    }
+  } catch (e) {
+    return traducir(e)
+  }
+}
+
+/**
+ * El modelo de Riesgos (ADR-21). Ninguna de estas acciones escribe un factor,
+ * un grado o un corte que el obligado no haya capturado: no hay valores por
+ * omisión que pudieran colarse como sugerencia de VIZO.
+ */
+export async function guardarGradoRiesgo(
+  _previo: Resultado | null,
+  datos: FormData,
+): Promise<Resultado> {
+  try {
+    await conBase(({ db, sesion }) =>
+      definirGrado(db, {
+        sesion,
+        clave: String(datos.get('clave') ?? ''),
+        nombre: String(datos.get('nombre') ?? ''),
+        orden: Number(datos.get('orden') ?? 0),
+        esAlto: String(datos.get('esAlto') ?? '') === 'true',
+        puntajeMinimo: Number(datos.get('puntajeMinimo') ?? Number.NaN),
+        vigenteDesde: String(datos.get('vigenteDesde') ?? ''),
+      }),
+    )
+    revalidatePath('/configuracion')
+    return { ok: true, mensaje: 'Grado agregado a tu escala.' }
+  } catch (e) {
+    return traducir(e)
+  }
+}
+
+export async function nuevoModeloRiesgo(
+  _previo: Resultado | null,
+  datos: FormData,
+): Promise<Resultado> {
+  try {
+    await conBase(({ db, sesion }) =>
+      crearModelo(db, { sesion, metodoMedicion: String(datos.get('metodoMedicion') ?? '') }),
+    )
+    revalidatePath('/configuracion')
+    return {
+      ok: true,
+      mensaje: 'Versión creada en borrador. Captura tus factores y luego apruébala.',
+    }
+  } catch (e) {
+    return traducir(e)
+  }
+}
+
+export async function guardarFactorRiesgo(
+  _previo: Resultado | null,
+  datos: FormData,
+): Promise<Resultado> {
+  try {
+    await conBase(({ db, sesion }) =>
+      agregarFactor(db, {
+        sesion,
+        modeloId: String(datos.get('modeloId') ?? ''),
+        elementoId: String(datos.get('elementoId') ?? ''),
+        factor: String(datos.get('factor') ?? ''),
+        peso: Number(datos.get('peso') ?? Number.NaN),
+      }),
+    )
+    revalidatePath('/configuracion')
+    return { ok: true, mensaje: 'Factor agregado al borrador.' }
+  } catch (e) {
+    return traducir(e)
+  }
+}
+
+export async function retirarFactorRiesgo(
+  _previo: Resultado | null,
+  datos: FormData,
+): Promise<Resultado> {
+  try {
+    await conBase(({ db, sesion }) =>
+      quitarFactor(db, { sesion, factorId: String(datos.get('factorId') ?? '') }),
+    )
+    revalidatePath('/configuracion')
+    return { ok: true, mensaje: 'Factor retirado del borrador.' }
+  } catch (e) {
+    return traducir(e)
+  }
+}
+
+export async function activarModeloRiesgo(
+  _previo: Resultado | null,
+  datos: FormData,
+): Promise<Resultado> {
+  try {
+    await conBase(({ db, sesion }) =>
+      activarModelo(db, {
+        sesion,
+        modeloId: String(datos.get('modeloId') ?? ''),
+        vigenteDesde: String(datos.get('vigenteDesde') ?? ''),
+      }),
+    )
+    revalidatePath('/configuracion')
+    revalidatePath('/')
+    return {
+      ok: true,
+      mensaje: 'Metodología en vigor, con tu nombre y la hora. Los factores quedaron congelados: para cambiarlos se crea una versión nueva.',
     }
   } catch (e) {
     return traducir(e)

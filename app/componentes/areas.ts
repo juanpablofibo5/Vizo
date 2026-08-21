@@ -132,6 +132,7 @@ export const NAVEGACION: Grupo[] = [
           { ruta: '/configuracion', ancla: 'obligado', nombre: 'El obligado' },
           { ruta: '/configuracion', ancla: 'rec', nombre: 'Responsable del cumplimiento' },
           { ruta: '/configuracion', ancla: 'estructura', nombre: 'Estructura del fideicomiso o figura' },
+          { ruta: '/configuracion', ancla: 'riesgo', nombre: 'Modelo de riesgo' },
           { ruta: '/configuracion', ancla: 'actividades', nombre: 'Actividades contratadas' },
           { ruta: '/configuracion', ancla: 'usuarios', nombre: 'Usuarios' },
           { ruta: '/configuracion', ancla: 'sucursales', nombre: 'Sucursales y desarrollos' },

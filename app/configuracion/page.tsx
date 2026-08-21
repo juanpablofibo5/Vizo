@@ -5,6 +5,8 @@ import { FormularioFechaAlta } from './formulario'
 import { SeccionRec } from './rec'
 import { SeccionEstructura } from './estructura'
 import { estadoDeLaEstructura, type EstadoEstructura } from '../../src/persistencia/estructura'
+import { SeccionRiesgo } from './riesgo'
+import { estadoDelRiesgo, type EstadoRiesgo } from '../../src/persistencia/riesgo'
 import { hoyEnMexico } from '../../src/dominio/fechas'
 
 export const dynamic = 'force-dynamic'
@@ -13,6 +15,7 @@ interface Datos {
   fechaAlta: string | null
   rec: EstadoRec
   estructura: EstadoEstructura
+  riesgo: EstadoRiesgo
   actividades: Array<{ fraccion: string; nombre: string; claveSppld: string | null }>
   usuarios: Array<{ nombre: string; email: string; rol: string; activo: boolean }>
   sucursales: Array<{ nombre: string; clave: string }>
@@ -65,6 +68,7 @@ export default async function Configuracion() {
           ?.fecha_alta_autoridad ?? null,
         rec: await estadoDelRec(db, { sesion }),
         estructura: await estadoDeLaEstructura(db, { sesion }),
+        riesgo: await estadoDelRiesgo(db, { sesion, hoy: hoyEnMexico() }),
         actividades: (
           act.rows as Array<{ fraccion: string; nombre: string; clave_sppld: string | null }>
         ).map((a) => ({ fraccion: a.fraccion, nombre: a.nombre, claveSppld: a.clave_sppld })),
@@ -116,6 +120,11 @@ export default async function Configuracion() {
             <SeccionEstructura estado={datos.estructura} puede={esAdmin} hoy={hoyEnMexico()} />
           </>
         )}
+
+        {/* Caps. II Quáter y III Bis. La estructura la fija la norma; los
+            factores y los pesos son del obligado (ADR-21). */}
+        <h2 id="riesgo">Modelo de riesgo</h2>
+        <SeccionRiesgo estado={datos.riesgo} puede={esAdmin} hoy={hoyEnMexico()} />
 
         <h2 id="actividades">Actividades contratadas</h2>
         <div className="tabla-envoltura">

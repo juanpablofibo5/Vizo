@@ -221,6 +221,39 @@ Es la regla dura 6 aplicada a un documento en vez de a un cálculo — *nada se 
 
 ---
 
+## ADR-21 · El riesgo: el obligado pone el criterio, VIZO pone el motor y la evidencia — 2026-08-20
+
+**Contexto:** el 1 de marzo de 2027 entran juntos tres capítulos entrelazados — Cap. II Quáter (metodología de Riesgos), Cap. III Bis (grado de riesgo del cliente) y Cap. III Ter (conocimiento del cliente y perfil transaccional). El orden no es negociable por texto: el Art. 23 Bis exige que el modelo de grado sea «coherente con la metodología» del Cap. II Quáter, y el Art. 23 Ter ata las medidas reforzadas al valor «Grado de Riesgo alto» que el Cap. III Bis produce. Contraste completo en `docs/RIESGO-EBR.md`.
+
+**La pregunta:** ¿VIZO puede proponer los factores de riesgo, sus indicadores y sus ponderaciones — o el obligado los configura y VIZO se limita a ejecutar, documentar y conservar?
+
+**Lo que decidió el asunto, y no fue la prudencia:** las dos respuestas construyen **exactamente el mismo software**. El motor que aplica la ponderación, el histórico append-only de cambios de grado, el sistema de alertas por desviación de perfil, los cuestionarios de origen y destino y la compuerta de aprobación de directivo son producto en cualquiera de los dos casos — son ejecución y evidencia, no criterio. Lo único que cambia es **quién llena la tabla de configuración**. Proponer factores no compra una sola función; solo compra la responsabilidad de haber diseñado el modelo con el que se clasifica a una persona.
+
+**Y el texto empuja en la misma dirección.** El Art. 37 ¶2 permite llevar contenido del Manual a «un documento distinto», pero solo de lo que «**por virtud de lo dispuesto en estas reglas**» pueda vivir fuera — no es autorización general. El ¶3 nombra qué es esa cosa, en singular: «se deberá incluir **el diseño de la metodología** a que se refiere el Capítulo II Quáter». En cambio el Art. 23 Bis dice que el modelo de grado «deberá estar establecido **en su Manual**» y el Art. 23 Ter que la política «deberá estar integrada **en el Manual**», ambos sin cláusula alterna. La asimetría de redacción es deliberada: **la metodología puede vivir en un documento de VIZO; el modelo de grado y la política de conocimiento, no.** Aunque VIZO quisiera sustituirlos, la norma no lo admite.
+
+**Decisión.** Respuesta B, con la línea trazada donde es verificable:
+
+> **La estructura que fija la norma es producto. Los valores y las ponderaciones son del obligado.**
+
+VIZO transcribe del Acuerdo lo que el Acuerdo ya fijó —los cuatro elementos mínimos de exposición del Art. 10 Septies 1 fr. I, el piso de tres clasificaciones del Art. 23 Bis, los plazos de reevaluación, la lista de jurisdicciones que publica la UIF— porque eso es catálogo regulatorio con su fuente, igual que un umbral. Lo que **no** entrega es un solo factor, indicador o peso propuesto: la tabla de configuración del modelo **nace vacía** y solo el obligado la llena, con su especialista si lo necesita.
+
+**La regla que hace la frontera verificable, y no una intención:**
+
+> **Si la configuración del modelo está vacía, VIZO no calcula un grado de riesgo: devuelve el hueco.** Nunca un grado por defecto, nunca «bajo» mientras no se configure. Es la regla dura 6 aplicada al riesgo — *nada se calcula en silencio con datos que no cuadran*— y se comprueba en pruebas: se vacía la configuración y se verifica que el motor se detiene con un error accionable, no que devuelve un número.
+
+**La trampa que hay que nombrar, porque va a aparecer en una junta de ventas:** «VIZO trae una plantilla de factores que el obligado puede editar» **es la Respuesta A disfrazada**. Un valor sugerido que nadie cambia se vuelve, en los hechos, la metodología del obligado. Si se prellena, es A. Si nace vacía, es B. No hay punto medio.
+
+**Alternativas descartadas:**
+
+- **(a) VIZO propone factores y pesos.** Cruza la frontera 5 de `ALCANCE.md`: decidir qué hace a un cliente más riesgoso, y cuánto pesa cada cosa, es interpretación normativa aplicada a un negocio concreto — el propio Art. 10 Septies ¶1 amarra la metodología «al contexto de cada Actividad Vulnerable». Y repite el argumento que descartó la alternativa (a) del ADR-20: el **Art. 37 Bis 3** permite al SAT ordenar modificaciones al Manual; respondería el obligado por un modelo que habría diseñado VIZO.
+- **(b) Esperar a construir hasta que el obligado configure.** Deja el trabajo entero para después del 1 de marzo. El motor, el histórico y las alertas no dependen de qué factores se elijan: se construyen contra una configuración vacía y se prueban con configuraciones de prueba.
+
+**Costo, dicho sin adorno:** el obligado necesita ayuda para llenar esa configuración con criterio propio, y VIZO **no puede llenar ese hueco con una recomendación** sin volver a (a) por la puerta trasera. Es el mismo hueco que el ADR-20 aceptó en el índice del Manual, y comercialmente es donde entra el despacho — que es justo lo que el material de venta ya dice que VIZO no sustituye.
+
+**Lo que abre:** el esqueleto del ADR-06 **no le queda a este marco** y hay que rediseñarlo, no llenarlo: `nivel_riesgo` es un enum de tres valores fijos donde el Art. 23 Bis pone un piso de tres «y los intermedios que se quieran»; `factores_riesgo` guarda el resultado por cliente y no existe dónde guardar el modelo del tenant que exige el Art. 23 Bis 2; `clientes_finales.nivel_riesgo` es una columna mutable donde hace falta histórico append-only; y `tipo_alerta` no tiene valor para desviación de perfil. Detalle columna por columna en `docs/RIESGO-EBR.md` §3.2. Esas tablas nacieron el 6 de agosto de 2026 y el Acuerdo se publicó el 7: la puerta quedó abierta un día antes de que existiera el marco que debía recibir.
+
+---
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 1. **Sellado del manifiesto** (ADR-10): ¿una constancia NOM-151 sobre el manifiesto con los hashes de todos los documentos satisface la exigencia de fecha cierta, o la autoridad espera constancia por documento?

@@ -180,6 +180,11 @@ Dos caminos, no uno: (a) obligado persona moral → aprobación de un directivo 
 
 ## 4. La pregunta de frontera
 
+> **RESUELTA el 20 de agosto de 2026 — ver ADR-21 en `docs/DECISIONES.md`.** Se eligió la **Respuesta B**, con la línea en: *la estructura que fija la norma es producto; los valores y las ponderaciones son del obligado*. La configuración del modelo nace vacía, y si está vacía el motor devuelve el hueco en vez de un grado por defecto.
+>
+> Y la ⚠️ del §2 punto 4 quedó resuelta al leer el Art. 37 completo: el ¶2 solo permite sacar del Manual lo que «por virtud de lo dispuesto en estas reglas» pueda vivir fuera, y el ¶3 nombra en singular qué es —«el diseño de la metodología» del Cap. II Quáter—. El modelo de grado (Art. 23 Bis, «en su Manual») y la política de conocimiento (Art. 23 Ter, «integrada en el Manual») **no** pueden vivir en un documento distinto. La asimetría de redacción era deliberada.
+
+
 **Forma final, lista para convertirse en ADR sin releer el Acuerdo:**
 
 > **¿VIZO puede proponer los factores de riesgo, sus indicadores y sus ponderaciones (pesos) del modelo del Cap. II Quáter / Cap. III Bis — o el obligado debe configurarlos y VIZO se limita a ejecutar el cálculo, documentarlo y conservarlo?**

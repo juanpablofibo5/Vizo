@@ -503,3 +503,94 @@ export async function evaluarClienteYRegistrar(
     return { resultado, evaluacionId }
   })
 }
+
+// ---------------------------------------------------------------------------
+// La vista del riesgo de UN cliente, para su expediente
+// ---------------------------------------------------------------------------
+
+export interface EvaluacionDeCliente {
+  id: string
+  grado: string
+  gradoNombre: string
+  esAlto: boolean
+  puntaje: number
+  evaluadoEn: string
+  vence: string
+  vencida: boolean
+  aplicados: { factor: string; elemento: string; peso: number }[]
+  modeloVersion: number
+}
+
+export interface RiesgoDelCliente {
+  /** Si el obligado ya puede clasificar. Si no, la pantalla muestra el hueco. */
+  puedeClasificar: boolean
+  faltaParaClasificar: string[]
+  /** Los factores del modelo vigente: las casillas que alguien va a marcar. */
+  factores: FactorGuardado[]
+  vigente: EvaluacionDeCliente | null
+  historico: EvaluacionDeCliente[]
+  /** Del catálogo: cada cuántos meses hay que reevaluar (Art. 23 Bis 1). */
+  reevaluacionMeses: number
+}
+
+interface FilaEvaluacion {
+  id: string
+  grado: string
+  grado_nombre: string
+  es_alto: boolean
+  puntaje: string
+  evaluado_en: string
+  vence: string
+  vencida: boolean
+  factores_aplicados: { factor: string; elemento: string; peso: number }[]
+  version: number
+}
+
+const aEvaluacion = (f: FilaEvaluacion): EvaluacionDeCliente => ({
+  id: f.id,
+  grado: f.grado,
+  gradoNombre: f.grado_nombre,
+  esAlto: f.es_alto,
+  puntaje: Number(f.puntaje),
+  evaluadoEn: f.evaluado_en,
+  vence: f.vence,
+  vencida: f.vencida,
+  aplicados: f.factores_aplicados,
+  modeloVersion: f.version,
+})
+
+export async function riesgoDelCliente(
+  db: EjecutorSql,
+  p: { sesion: ContextoSesion; clienteId: string; hoy: string },
+): Promise<RiesgoDelCliente> {
+  const estado = await estadoDelRiesgo(db, { sesion: p.sesion, hoy: p.hoy })
+
+  const { rows } = await db.query(
+    `select e.id::text, g.clave as grado, g.nombre as grado_nombre, g.es_alto,
+            e.puntaje::text, e.evaluado_en::text as evaluado_en, e.vence::text as vence,
+            (e.vence < (now() at time zone 'America/Mexico_City')::date) as vencida,
+            e.factores_aplicados, m.version
+       from evaluaciones_riesgo e
+       join grados_riesgo g on g.id = e.grado_id
+       join modelos_riesgo m on m.id = e.modelo_id
+      where e.cliente_id = $1
+      order by e.secuencia desc`,
+    [p.clienteId],
+  )
+  const evaluaciones = (rows as FilaEvaluacion[]).map(aEvaluacion)
+
+  const meses = await db.query(
+    `select (valor #>> '{}')::int as meses from parametros_motor
+      where clave = 'reevaluacion_grado_meses' and actividad_id is null
+      order by vigente_desde desc limit 1`,
+  )
+
+  return {
+    puedeClasificar: estado.vigente !== null,
+    faltaParaClasificar: estado.faltaParaClasificar,
+    factores: estado.vigente?.factores ?? [],
+    vigente: evaluaciones[0] ?? null,
+    historico: evaluaciones.slice(1),
+    reevaluacionMeses: (meses.rows[0] as { meses: number } | undefined)?.meses ?? 6,
+  }
+}

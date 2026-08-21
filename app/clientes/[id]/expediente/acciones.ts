@@ -29,6 +29,7 @@ import {
   type ResultadoDeclaracion,
   type VinculoDeclarado,
 } from '../../../../src/persistencia/pep'
+import { evaluarClienteYRegistrar } from '../../../../src/persistencia/riesgo'
 import { DocumentoInvalido } from '../../../../src/dominio/documentos'
 import { hoyEnMexico } from '../../../../src/dominio/fechas'
 
@@ -415,6 +416,63 @@ export async function revisarPep(
   } catch (e) {
     if (e instanceof RevisionPepImposible) return { ok: false, mensaje: e.message }
     return { ok: false, mensaje: e instanceof Error ? e.message : 'No se pudo registrar la revisión.' }
+  } finally {
+    await db.end()
+  }
+}
+
+/**
+ * El Grado de Riesgo del cliente (Cap. III Bis).
+ *
+ * Quien evalúa marca qué factores aplican; el motor calcula. Si el obligado no
+ * tiene metodología vigente, la persistencia devuelve el hueco SIN escribir, y
+ * aquí se dice con esas palabras en vez de traducirlo a un error técnico: no es
+ * que algo falló, es que no hay con qué clasificar (ADR-21).
+ */
+export async function evaluarRiesgo(
+  _previo: EstadoRevision,
+  form: FormData,
+): Promise<EstadoRevision> {
+  const sesion = await sesionRequerida()
+  const ctx = { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol }
+  const clienteId = String(form.get('clienteId') ?? '')
+  const factoresPresentes = form.getAll('factores').map(String)
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    const r = await evaluarClienteYRegistrar(db, {
+      sesion: ctx,
+      clienteId,
+      factoresPresentes,
+      hoy: hoy(),
+    })
+
+    if (r.resultado.estado !== 'evaluado') {
+      return {
+        ok: false,
+        mensaje:
+          'No se evaluó nada, y no es un error: el obligado todavía no tiene una metodología de ' +
+          'riesgo vigente. Se configura en Configuración → Modelo de riesgo.',
+      }
+    }
+
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return {
+      ok: true,
+      mensaje:
+        `Grado ${r.resultado.gradoClave}, con ${String(r.resultado.puntaje)} puntos de ` +
+        `${String(r.resultado.aplicados.length)} factor(es). ` +
+        (r.resultado.esAlto
+          ? 'Es grado alto: aplican las medidas reforzadas del Cap. III Ter.'
+          : 'Queda registrado con tu nombre y la hora.'),
+    }
+  } catch (e) {
+    const bruto = e instanceof Error ? e.message : String(e)
+    if (/insufficient_privilege|admin/i.test(bruto)) {
+      return { ok: false, mensaje: 'Solo un administrador evalúa el Grado de Riesgo.' }
+    }
+    return { ok: false, mensaje: bruto }
   } finally {
     await db.end()
   }

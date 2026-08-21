@@ -14,6 +14,8 @@ import { camposCapturables } from '../../../../src/persistencia/datos-expediente
 import { hoyEnMexico } from '../../../../src/dominio/fechas'
 import { SeccionPep } from './pep'
 import { estadoPepDelCliente, type EstadoPep } from '../../../../src/persistencia/pep'
+import { SeccionRiesgoCliente } from './riesgo'
+import { riesgoDelCliente, type RiesgoDelCliente } from '../../../../src/persistencia/riesgo'
 
 export const dynamic = 'force-dynamic'
 
@@ -198,6 +200,12 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
           })
         : null
 
+    const riesgo: RiesgoDelCliente = await riesgoDelCliente(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+      hoy: hoyEnMexico(),
+    })
+
     await db.query('rollback')
 
     const faltantes = evaluado ? completitud.faltantes : []
@@ -324,6 +332,16 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
           verificadoEn={expediente.verificado_en}
           venceEn={expediente.vence}
           aprobado={expediente.estatus === 'aprobado'}
+          puede={sesion.rol === 'admin'}
+        />
+
+        {/* Cap. III Bis. Va antes de PEP porque el grado alto es lo que
+            dispara las medidas reforzadas del Cap. III Ter, incluida la
+            aprobación de directivo cuando además es PEP (Art. 23 Ter 5). */}
+        <h2 id="riesgo">Grado de riesgo</h2>
+        <SeccionRiesgoCliente
+          clienteId={clienteId}
+          riesgo={riesgo}
           puede={sesion.rol === 'admin'}
         />
 

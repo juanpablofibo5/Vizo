@@ -723,7 +723,6 @@ export type Database = {
           identidad_alterna: Json | null
           identificador_fideicomiso: string | null
           nacionalidad: string | null
-          nivel_riesgo: Database["public"]["Enums"]["nivel_riesgo"] | null
           nombre_normalizado: string | null
           nombre_o_razon_social: string
           nombre_pila: string | null
@@ -754,7 +753,6 @@ export type Database = {
           identidad_alterna?: Json | null
           identificador_fideicomiso?: string | null
           nacionalidad?: string | null
-          nivel_riesgo?: Database["public"]["Enums"]["nivel_riesgo"] | null
           nombre_normalizado?: string | null
           nombre_o_razon_social: string
           nombre_pila?: string | null
@@ -785,7 +783,6 @@ export type Database = {
           identidad_alterna?: Json | null
           identificador_fideicomiso?: string | null
           nacionalidad?: string | null
-          nivel_riesgo?: Database["public"]["Enums"]["nivel_riesgo"] | null
           nombre_normalizado?: string | null
           nombre_o_razon_social?: string
           nombre_pila?: string | null
@@ -1268,6 +1265,33 @@ export type Database = {
           },
         ]
       }
+      elementos_riesgo: {
+        Row: {
+          clave: string
+          created_at: string
+          fuente: string
+          id: string
+          nombre: string
+          vigente_desde: string
+        }
+        Insert: {
+          clave: string
+          created_at?: string
+          fuente: string
+          id?: string
+          nombre: string
+          vigente_desde: string
+        }
+        Update: {
+          clave?: string
+          created_at?: string
+          fuente?: string
+          id?: string
+          nombre?: string
+          vigente_desde?: string
+        }
+        Relationships: []
+      }
       estructura_del_obligado: {
         Row: {
           cotiza_en_bolsa: boolean | null
@@ -1315,6 +1339,87 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "tenants"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluaciones_riesgo: {
+        Row: {
+          cliente_id: string
+          evaluado_en: string
+          evaluado_por: string | null
+          factores_aplicados: Json
+          grado_id: string
+          id: string
+          modelo_id: string
+          motivo: string | null
+          puntaje: number | null
+          secuencia: number
+          tenant_id: string
+          vence: string
+        }
+        Insert: {
+          cliente_id: string
+          evaluado_en?: string
+          evaluado_por?: string | null
+          factores_aplicados: Json
+          grado_id: string
+          id?: string
+          modelo_id: string
+          motivo?: string | null
+          puntaje?: number | null
+          secuencia?: number
+          tenant_id: string
+          vence: string
+        }
+        Update: {
+          cliente_id?: string
+          evaluado_en?: string
+          evaluado_por?: string | null
+          factores_aplicados?: Json
+          grado_id?: string
+          id?: string
+          modelo_id?: string
+          motivo?: string | null
+          puntaje?: number | null
+          secuencia?: number
+          tenant_id?: string
+          vence?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluaciones_riesgo_evaluado_por_fkey"
+            columns: ["evaluado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluaciones_riesgo_tenant_id_cliente_id_fkey"
+            columns: ["tenant_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_finales"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "evaluaciones_riesgo_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluaciones_riesgo_tenant_id_grado_id_fkey"
+            columns: ["tenant_id", "grado_id"]
+            isOneToOne: false
+            referencedRelation: "grados_riesgo"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "evaluaciones_riesgo_tenant_id_modelo_id_fkey"
+            columns: ["tenant_id", "modelo_id"]
+            isOneToOne: false
+            referencedRelation: "modelos_riesgo"
+            referencedColumns: ["tenant_id", "id"]
           },
         ]
       }
@@ -1500,51 +1605,58 @@ export type Database = {
           },
         ]
       }
-      factores_riesgo: {
+      factores_modelo: {
         Row: {
-          cliente_id: string
           created_at: string
-          evaluado_en: string
+          elemento_id: string
           factor: string
           id: string
-          peso: number | null
+          indicadores: Json
+          modelo_id: string
+          peso: number
           tenant_id: string
-          valor: Json
         }
         Insert: {
-          cliente_id: string
           created_at?: string
-          evaluado_en?: string
+          elemento_id: string
           factor: string
           id?: string
-          peso?: number | null
+          indicadores?: Json
+          modelo_id: string
+          peso: number
           tenant_id: string
-          valor?: Json
         }
         Update: {
-          cliente_id?: string
           created_at?: string
-          evaluado_en?: string
+          elemento_id?: string
           factor?: string
           id?: string
-          peso?: number | null
+          indicadores?: Json
+          modelo_id?: string
+          peso?: number
           tenant_id?: string
-          valor?: Json
         }
         Relationships: [
           {
-            foreignKeyName: "factores_riesgo_cliente_fk"
-            columns: ["tenant_id", "cliente_id"]
+            foreignKeyName: "factores_modelo_elemento_id_fkey"
+            columns: ["elemento_id"]
             isOneToOne: false
-            referencedRelation: "clientes_finales"
-            referencedColumns: ["tenant_id", "id"]
+            referencedRelation: "elementos_riesgo"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "factores_riesgo_tenant_id_fkey"
+            foreignKeyName: "factores_modelo_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factores_modelo_tenant_id_modelo_id_fkey"
+            columns: ["tenant_id", "modelo_id"]
+            isOneToOne: false
+            referencedRelation: "modelos_riesgo"
+            referencedColumns: ["tenant_id", "id"]
           },
         ]
       }
@@ -1585,6 +1697,47 @@ export type Database = {
             columns: ["actividad_id"]
             isOneToOne: false
             referencedRelation: "actividades_vulnerables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grados_riesgo: {
+        Row: {
+          clave: string
+          created_at: string
+          es_alto: boolean
+          id: string
+          nombre: string
+          orden: number
+          tenant_id: string
+          vigente_desde: string
+        }
+        Insert: {
+          clave: string
+          created_at?: string
+          es_alto?: boolean
+          id?: string
+          nombre: string
+          orden: number
+          tenant_id: string
+          vigente_desde: string
+        }
+        Update: {
+          clave?: string
+          created_at?: string
+          es_alto?: boolean
+          id?: string
+          nombre?: string
+          orden?: number
+          tenant_id?: string
+          vigente_desde?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grados_riesgo_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -1740,6 +1893,57 @@ export type Database = {
           },
           {
             foreignKeyName: "manifiestos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelos_riesgo: {
+        Row: {
+          aprobado_en: string | null
+          aprobado_por: string | null
+          created_at: string
+          estado: Database["public"]["Enums"]["estado_modelo_riesgo"]
+          id: string
+          metodo_medicion: string | null
+          tenant_id: string
+          version: number
+          vigente_desde: string | null
+        }
+        Insert: {
+          aprobado_en?: string | null
+          aprobado_por?: string | null
+          created_at?: string
+          estado?: Database["public"]["Enums"]["estado_modelo_riesgo"]
+          id?: string
+          metodo_medicion?: string | null
+          tenant_id: string
+          version: number
+          vigente_desde?: string | null
+        }
+        Update: {
+          aprobado_en?: string | null
+          aprobado_por?: string | null
+          created_at?: string
+          estado?: Database["public"]["Enums"]["estado_modelo_riesgo"]
+          id?: string
+          metodo_medicion?: string | null
+          tenant_id?: string
+          version?: number
+          vigente_desde?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelos_riesgo_aprobado_por_fkey"
+            columns: ["aprobado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelos_riesgo_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -2383,6 +2587,36 @@ export type Database = {
       }
     }
     Views: {
+      clientes_riesgo_vigente: {
+        Row: {
+          cliente_id: string | null
+          es_alto: boolean | null
+          evaluacion_id: string | null
+          evaluado_en: string | null
+          grado: string | null
+          grado_nombre: string | null
+          puntaje: number | null
+          tenant_id: string | null
+          vence: string | null
+          vencida: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluaciones_riesgo_tenant_id_cliente_id_fkey"
+            columns: ["tenant_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_finales"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "evaluaciones_riesgo_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expedientes_por_reverificar: {
         Row: {
           cliente_id: string | null
@@ -2577,6 +2811,7 @@ export type Database = {
         | "rechazada"
         | "sustituida"
       estado_integrante: "capturado" | "enviado" | "baja"
+      estado_modelo_riesgo: "borrador" | "vigente" | "sustituido"
       estatus_aviso:
         | "borrador"
         | "generado"
@@ -2594,7 +2829,6 @@ export type Database = {
         | "prestamo_no_financiero"
         | "financiamiento_bursatil"
       naturaleza_integrante: "fisica" | "moral" | "fideicomiso"
-      nivel_riesgo: "bajo" | "medio" | "alto"
       objeto_sellado: "manifiesto" | "aviso"
       origen_apartado: "acreditado" | "acreditado_parcial" | "del_obligado"
       papel_integrante:
@@ -2773,6 +3007,7 @@ export const Constants = {
         "sustituida",
       ],
       estado_integrante: ["capturado", "enviado", "baja"],
+      estado_modelo_riesgo: ["borrador", "vigente", "sustituido"],
       estatus_aviso: [
         "borrador",
         "generado",
@@ -2792,7 +3027,6 @@ export const Constants = {
         "financiamiento_bursatil",
       ],
       naturaleza_integrante: ["fisica", "moral", "fideicomiso"],
-      nivel_riesgo: ["bajo", "medio", "alto"],
       objeto_sellado: ["manifiesto", "aviso"],
       origen_apartado: ["acreditado", "acreditado_parcial", "del_obligado"],
       papel_integrante: [

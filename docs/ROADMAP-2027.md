@@ -61,7 +61,9 @@ Art. 23 Bis: modelo de evaluación coherente con la metodología del Cap. II Qu�
 ### Cap. III Ter · Conocimiento del cliente — **1 mar 2027**
 Perfil transaccional, alertas ante desviaciones, y para riesgo alto cuestionarios de origen y destino de recursos. Aprobación de un directivo antes de operar con PEP o riesgo alto.
 
-**En VIZO:** el motor ya acumula por cliente en ventana deslizante, que es la materia prima del perfil. Del resto, nada.
+**En VIZO (21-ago-2026):** **construido el Perfil transaccional y su sistema de alertas.** `perfiles_transaccionales` guarda append-only lo que el cliente declara —monto máximo mensual, y opcionalmente número, frecuencia, origen y destino, zona y actividad—, anclado a la fecha del acto. Los tres «seis meses» del Art. 23 Ter 1 quedaron en **dos** parámetros de catálogo con fuente propia (`perfil_maduracion_meses`, `reevaluacion_perfil_meses`), y la base impide mover el reloj: reevaluar antes de la maduración es una fila que Postgres rechaza. Al registrar una operación se contrasta el mes contra lo declarado y se levanta la alerta del Art. 23 Ter 2 —`desviacion_perfil`— o la del hueco —`perfil_ausente`— en la misma transacción. ADR-22.
+
+**Lo que falta de este capítulo:** los **cuestionarios de origen y destino** del Art. 23 Ter 3 para riesgo alto (con Firma Electrónica, que es evidencia y no texto libre), las **medidas reforzadas** del Art. 23 Ter 4 —cónyuge y dependientes económicos para físicas, accionistas verificados contra la Secretaría de Economía para morales— y la **aprobación de directivo** del Art. 23 Ter 5, con su rama distinta para el obligado persona física. Los tres ya tienen de qué colgarse: el grado alto y la declaración PEP existen.
 
 ### Cap. III Quinquies · Beneficiario Controlador — **1 mar 2027**
 Art. 23 Quinquies, orden de prelación **literal**:

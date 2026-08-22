@@ -254,11 +254,57 @@ VIZO transcribe del Acuerdo lo que el Acuerdo ya fijó —los cuatro elementos m
 
 ---
 
+## ADR-22 · El Perfil transaccional: el tope lo pone el cliente, y el ¶2 es lo que lo sostiene — 2026-08-21
+
+**Contexto:** el Cap. III Ter (Arts. 23 Ter a 23 Ter 5) entra el 1 de marzo de 2027 junto con los Caps. III Bis y III Quinquies (Transitorio Cuarto). El ADR-21 ya trazó la frontera para el Grado de Riesgo: la estructura que fija la norma es producto, los valores y ponderaciones son del obligado. La pregunta aquí es dónde cae esa misma frontera en el Perfil transaccional, y la respuesta **no es la misma**.
+
+**Lo que decide el asunto es una lectura, no una postura:** el número contra el que se compara no lo pone VIZO **ni el obligado**. Lo pone el **cliente**.
+
+> «deberán considerar […] la información que proporcione cada uno de sus Clientes o Usuarias en ese momento, relativa a los **montos máximos mensuales** de los actos u operaciones que **los propios Clientes o Usuarias estimen realizar**, para determinar su Perfil transaccional inicial, que deberá estar incluido en el sistema de alertas […] con objeto de **detectar inconsistencias entre la información proporcionada por el Cliente o Usuaria y el monto de los actos u operaciones que realice**» — Art. 23 Ter 1 ¶2
+
+El texto nombra el dato (monto máximo mensual declarado), quién lo aporta (el cliente), y qué se hace con él (detectar inconsistencias con lo que efectivamente operó). Comparar dos datos que ya existen no es interpretar. Por eso **la comparación de monto sí es producto**, sin que eso cruce ninguna frontera del `ALCANCE.md`.
+
+**Decisión.**
+
+> **Lo que el cliente declaró es el tope. VIZO compara sin margen, y no propone ningún supuesto de desviación propio.**
+
+Lo que **no** entrega: los «supuestos en que los actos u operaciones se aparten del Perfil transaccional» del Art. 23 Ter fr. IV más allá de esa inconsistencia de monto. Tolerancias, patrones, criterios sobre origen y destino, umbrales de frecuencia. Las columnas para todo eso existen —`frecuencia_esperada`, `zona_geografica`, `origen_recursos`, `destino_recursos`, `actividad_economica`, `otros_elementos`— y **nacen vacías**. El número declarado de operaciones al mes (fr. II) también es nullable: si el obligado no lo recabó, no se compara.
+
+**La trampa, que aquí tiene otra cara que en el ADR-21:** allá era «una plantilla de factores que el obligado puede editar». Aquí es **«un margen de tolerancia del 5% para no llenar de ruido el panel»**. Suena a ergonomía y es criterio de riesgo: quien elige el margen está decidiendo cuánto puede apartarse un cliente antes de que alguien lo mire. Si VIZO lo elige, VIZO puso el criterio. La prueba que lo vigila compara un **centavo** por encima del tope y exige que desvíe; cualquier margen que alguien introduzca la mata.
+
+**La segunda trampa, más silenciosa:** prellenar el monto declarado con lo que el cliente ya operó — «según su historial, unos 480 mil al mes». Eso convierte la declaración en una descripción, y **un perfil que se calcula del historial nunca se desvía de sí mismo**. La pantalla no sugiere ningún monto.
+
+**Lo que hace que todo esto se sostenga, y es el hallazgo del diseño:** el piso de seis meses del ¶2. Sin él, la desviación sería trivial de silenciar — se sube el tope declarado y la alerta desaparece. Con él, **durante seis meses lo declarado gobierna y no se puede sustituir**, y el reloj vive en la base: reevaluar antes de la maduración no es una mala práctica, es una fila que Postgres rechaza. La aserción que lo prueba se llama, precisamente, «se reevaluó el perfil a los dos meses del acto».
+
+**Los tres «seis meses» del Art. 23 Ter 1 no son el mismo plazo.** ¶2 (el perfil inicial rige seis meses) y ¶3 segunda oración (solo se reevalúa a quien operó seis meses antes) son la misma frontera vista desde los dos lados: un parámetro, `perfil_maduracion_meses`. ¶3 primera oración («al menos cada seis meses») es la cadencia: otro parámetro, `reevaluacion_perfil_meses`. Y ninguno comparte fila con `reevaluacion_grado_meses` (Art. 23 Bis 1) ni con `ventana_acumulacion_meses` (Art. 19 de la Ley). Cuatro plazos, el mismo número, cuatro fundamentos: si una reforma mueve uno, los otros no deben moverse solos. El aviso estaba escrito en `docs/RIESGO-EBR.md` §3.1 antes de construir.
+
+**Una figura que el texto no nombra: `correccion`.** El ¶2 obliga a considerar «la información que proporcione» el cliente. Si lo capturado no es lo que dijo —un dedazo—, corregirlo **sirve** al ¶2. Lo que sí lo rodearía es subir el tope para callar una alerta, así que una corrección **hereda la fecha ancla y el vencimiento** de la fila que corrige: compra exactitud, nunca tiempo. Y como todo es append-only, quedan las dos filas con su autor y su razón.
+
+**Y una separación que salió de una restricción de la base, no de una revisión:** «el cliente operó sin que nadie asentara lo que declaró» **no es una desviación** — no hay perfil del cual desviarse. Al principio las dos cosas eran una sola alerta `desviacion_perfil`, y el CHECK que exige `perfil_id` la rechazó. Ceder habría significado volver `perfil_id` opcional, y con eso se perdía la única garantía de que **toda** desviación pueda decir contra qué perfil se desvió. Son dos valores: `desviacion_perfil` y `perfil_ausente`. Se atienden distinto —una se mira, la otra se recaba— y ahora la pantalla puede decirlo.
+
+**Dónde se recaba, y por qué no es un detalle de UI:** en el **formulario de la operación**, no en una pantalla aparte. El ¶2 lo ata al acto («en ese momento»), y la prueba de persistencia lo demostró antes de que fuera una opinión: asentar el perfil después dejaba siempre una alerta espuria sobre el acto que debía anclarlo. Un perfil que se captura después es un perfil que puede no capturarse nunca.
+
+**Alternativas descartadas:**
+
+- **(a) Que el obligado configure el criterio de desviación, como los factores de riesgo.** Sería consistente con el ADR-21 pero contradice el texto: el ¶2 no dice «según los criterios que establezca», dice «detectar inconsistencias entre la información proporcionada por el Cliente y el monto de los actos u operaciones que realice». Dejar esa comparación sin construir, esperando configuración, sería no construir el sistema de alertas que el Art. 23 Ter 2 exige tener.
+- **(b) Calcular el perfil del historial en vez de declararlo.** Es la segunda trampa de arriba, y además contradice el ¶2 dos veces: la fuente («la información que proporcione el Cliente») y el momento («en ese momento»).
+- **(c) Fusionar el mes del perfil con la ventana de acumulación del Art. 19.** Los dos números serían seis y la tentación es real. Son plazos con fundamentos distintos y `RIESGO-EBR.md` §3.1 ya lo había advertido; además la ventana del Art. 19 es deslizante y se mide desde cada operación, mientras el perfil habla de «montos máximos **mensuales**».
+
+**Dos lecturas que son mías y no del texto, y van a la lista del especialista:** que «mensual» es mes de calendario, y que la comparación se hace contra el **monto total** de la operación (el Art. 6 del Reglamento resuelve la base para el umbral del Art. 17 y para el efectivo del Art. 32, y el Perfil transaccional no es ninguno de los dos). Ambas viven en `src/dominio/perfil-transaccional.ts`, documentadas en su encabezado; cambiarlas es cambiar esa función, no un dato.
+
+**Lo que abre:** el Art. 23 Ter 3 (cuestionarios de origen y destino para riesgo alto, con Firma Electrónica) y el Art. 23 Ter 5 (aprobación de directivo cuando el cliente es PEP **y** de grado alto) siguen sin construirse. Los dos ya tienen de qué colgarse: el grado alto del Cap. III Bis y la declaración PEP del Cap. III Quáter existen.
+
+---
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 1. **Sellado del manifiesto** (ADR-10): ¿una constancia NOM-151 sobre el manifiesto con los hashes de todos los documentos satisface la exigencia de fecha cierta, o la autoridad espera constancia por documento?
 2. **Identidad de comprador extranjero sin RFC** (caso A-05): ¿qué criterio de identidad resiste una verificación? Mientras tanto el sistema acumula conservadoramente por documento de identidad y escala a revisión humana.
 3. **Expediente y umbrales de V Bis:** ¿qué campos son obligatorios más allá de lo que exige el XSD?, y validación formal de la tabla de umbrales/vigencias cargada al catálogo (8,025 UMA, vigencia 1 de febrero, bases de IVA).
+6. **«Montos máximos mensuales» como MES DE CALENDARIO** (ADR-22): el Art. 23 Ter 1 ¶2 dice «mensuales» sin más. Se leyó como mes de calendario porque es lo que un cliente entiende al estimar y lo que puede verificar si se le pregunta. La alternativa —ventana deslizante de 30 días— detectaría además el reparto a caballo entre dos meses (90% el día 31 y 90% el día 1 nunca cruzarían un mes de calendario), pero no sale del texto, y la ventana deslizante de este proyecto tiene otro fundamento (Art. 19 de la Ley) que `RIESGO-EBR.md` §3.1 pidió no fusionar. **A diferencia de los relojes, esto no es un dato de catálogo: es la forma de la regla**, y cambiarlo es cambiar `contrastarConElPerfil` en `src/dominio/perfil-transaccional.ts`.
+
+7. **Contra qué monto se compara el Perfil transaccional** (ADR-22): el Art. 6 del Reglamento resuelve la base para el umbral del Art. 17 (sin contribuciones) y para la restricción del Art. 32 (con ellas), pero el Perfil transaccional **no es ninguno de los dos** y ningún artículo lo alcanza. Se toma el **monto total**, contribuciones incluidas, porque es lo que el cliente desembolsa y por tanto lo que estima, y porque ante la duda detecta de más. Confirmar. Relacionado: si un cliente de **acto único** (¶4) queda o no sujeto al ejercicio semestral del ¶3 — el ¶4 no lo exime expresamente, así que hoy sí queda, y eso produce una reevaluación que se resuelve en un clic sobre una relación ya extinguida.
+
 5. **La ventana PEP como año calendario** (issue #19): el Art. 23 Quáter ¶4 y ¶5 dicen «durante el año siguiente **a aquel en que**» — se leyó como **año calendario siguiente completo** (un cese de enero 2026 cataloga hasta el 31-dic-2027), no como 12 meses. Es la lectura literal y la conservadora: nunca acorta la ventana. También: la extranjera cesada quedó **sin fecha de fin** porque los dos párrafos hablan solo de nacionales. Confirmar ambas lecturas; el reloj vive en `parametros_motor` (`pep_vigencia_tras_cese`/`_tras_acto`), así que corregirlo sería un UPDATE con fuente, no un redeploy.
 
 4. **✅ RESUELTA el 16 de agosto de 2026 — la base del umbral.** Contrastada contra el **Art. 6 del Reglamento de la LFPIORPI** (`regulatorio/leyes/Reg_LFPIORPI.pdf`, SHA-256 `8072a83e…`), que la contesta en dos párrafos y define **tres** reglas sobre el mismo dinero:

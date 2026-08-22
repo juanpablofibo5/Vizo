@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Navegacion } from './navegacion'
 import { Salir } from './salir'
+import { Marca } from './marca'
 
 /**
  * El panel lateral: todo lo que el portal sabe hacer, siempre a la vista.
@@ -51,7 +52,7 @@ export function PanelLateral({
     <>
       {/* Solo se ve en pantalla angosta; en escritorio el panel ya está fijo. */}
       <header className="barra-movil">
-        <span className="logo">VIZO</span>
+        <span className="logo"><Marca tamano={20} />VIZO</span>
         <button
           type="button"
           className="alternar"
@@ -93,7 +94,7 @@ export function PanelLateral({
 
       <aside className="lateral" id="panel-lateral" data-abierto={abierto ? 'sí' : 'no'}>
         <div className="marca">
-          <span className="logo">VIZO</span>
+          <span className="logo"><Marca tamano={20} />VIZO</span>
           <span className="obligado" title={obligado.razonSocial}>
             {obligado.razonSocial}
           </span>

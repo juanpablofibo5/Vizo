@@ -33,10 +33,25 @@
   /* Semánticos. Dicen estado regulatorio, no decoran. */
   --ok:           #1D6B58;
   --ok-suave:     #E4F0EC;
-  --alerta:       #9C5416;
+  /* Ámbar, no naranja quemado. Se corrió de #9C5416 el 22-ago-2026 para abrir
+     distancia contra el naranja de marca: pasó de 6.8° a 14.5° de separación
+     de matiz. La decisión de identidad del 16-ago lo ató a que entrara «el
+     mismo día que el logo, no antes», y así fue. */
+  --alerta:       #A16207;
   --alerta-suave: #FAEEE2;
   --critico:      #8C2F2F;
   --critico-suave:#F7E8E8;
+
+  /* ── Marca ───────────────────────────────────────────────────────────
+     El naranja es la MARCA; el verdigrís de arriba es el ESTADO. Este token
+     solo entra donde no hay semáforo: barra lateral, acceso, onboarding y
+     estados vacíos. Nunca en un chip, un `.estado` ni un borde de tarjeta —
+     `tests/diseno/semantica-del-color.test.ts` lo vigila.
+
+     Y nunca como texto sobre fondo claro: rinde 3.58:1 sobre blanco y 3.30:1
+     sobre el #F4F6F5 del portal, por debajo del 4.5:1 que pide un texto. Como
+     relleno de un disco o de un icono grande, sí. */
+  --marca:        #E8590C;
 
   --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -63,10 +78,20 @@
 
     --ok:           #56B99B;
     --ok-suave:     #17302A;
-    --alerta:       #D68A54;
+    /* El hallazgo del 22-ago-2026: este valor estaba a 0.2° de matiz del
+       naranja de marca #FF7A1A — en modo oscuro, «por vencer» y la marca eran
+       literalmente el mismo color, y --alerta se usa como TEXTO en
+       `.estado.aviso`. La decisión del 16-ago solo había corregido el tema
+       claro. #D9A441 recupera 13.9° de separación y además sube el contraste
+       de 6.67:1 a 8.18:1 sobre el fondo: es mejor en los dos ejes. */
+    --alerta:       #D9A441;
     --alerta-suave: #2C2018;
     --critico:      #D2706A;
     --critico-suave:#2E1B1A;
+
+    /* Sobre #0D1614 rinde 7.05:1 — aquí sí alcanzaría para texto, pero la
+       regla no cambia por tema: la marca es el disco, no la palabra. */
+    --marca:        #FF7A1A;
   }
 }
 
@@ -111,7 +136,10 @@ h3 { font-size: .95rem; margin: 0 0 .3rem; }
   display: flex; flex-direction: column; gap: .15rem;
   flex-shrink: 0;
 }
-.marca .logo { font-weight: 680; letter-spacing: .16em; font-size: .95rem; }
+.marca .logo {
+  display: inline-flex; align-items: center; gap: .5rem;
+  font-weight: 680; letter-spacing: .16em; font-size: .95rem;
+}
 .marca .obligado {
   font-size: .8rem; color: var(--texto-suave); line-height: 1.35;
   /* La razón social de una PM es larga; dos renglones y el resto al title. */
@@ -274,6 +302,23 @@ main { max-width: 64rem; margin: 0 auto; padding: 2rem 2rem 5rem; }
   nav.areas .sub-envoltura, .lateral, nav.areas .area > a, nav.areas ul.sub a {
     transition: none;
   }
+}
+
+/* ── Marca ──────────────────────────────────────────────────────────── */
+/* `currentColor` en el SVG: el color entra por aquí y el tema lo resuelve
+   donde resuelve los demás.
+
+   SE LLAMA `marca-disco` Y NO `marca` a propósito: `.marca` es el bloque de
+   identidad de la barra lateral, arriba, y tiene padding. Reutilizar ese
+   nombre aplastaba el SVG a 4 px de contenido dentro de una caja de 44. */
+.marca-disco { color: var(--marca); display: block; flex: none; }
+
+.marca-lockup { display: inline-flex; align-items: center; gap: .6rem; }
+/* La palabra va en TINTA. El naranja no alcanza 4.5:1 sobre fondo claro, y un
+   nombre de marca ilegible no es identidad, es un accidente. */
+.marca-nombre {
+  font-size: 1.6rem; font-weight: 640; letter-spacing: .10em;
+  color: var(--texto); line-height: 1;
 }
 
 /* ── Chips y estados ────────────────────────────────────────────────── */

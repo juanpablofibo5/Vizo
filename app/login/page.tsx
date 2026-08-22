@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { clienteNavegador } from '../../src/supabase/navegador'
+import { MarcaConNombre } from '../componentes/marca'
 
 export default function Login() {
   const router = useRouter()
@@ -32,8 +33,10 @@ export default function Login() {
 
   return (
     <main style={{ maxWidth: '22rem', marginTop: '4rem' }}>
-      <h1>VIZO</h1>
-      <p className="sub">Cumplimiento PLD · Fracción V Bis</p>
+      <MarcaConNombre tamano={44} />
+      <p className="sub" style={{ marginTop: '.5rem' }}>
+        Cumplimiento PLD · Fracción V Bis
+      </p>
 
       <form onSubmit={entrar} className="tarjeta">
         {error !== null && <div className="error">{error}</div>}

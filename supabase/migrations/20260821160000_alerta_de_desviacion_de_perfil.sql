@@ -1,0 +1,24 @@
+-- ---------------------------------------------------------------------------
+-- Un valor nuevo en tipo_alerta: la desviación del Perfil transaccional
+-- ---------------------------------------------------------------------------
+-- Art. 23 Ter 2 del Acuerdo 115/2026 (DOF 7-ago-2026, edición vespertina,
+-- código 5795797), exigible el 1 de marzo de 2027 (Transitorio Cuarto):
+--
+--   «deberán tener e implementar un sistema de alertas que permita el
+--    seguimiento y, en su caso, la detección oportuna de algún CAMBIO EN EL
+--    COMPORTAMIENTO O PERFIL TRANSACCIONAL del Cliente o Usuaria»
+--
+-- El enum nació el 6 de agosto de 2026 con cinco valores —`proximidad`,
+-- `aviso_requerido`, `revision_identidad`, `screening`, `calendario`— y
+-- ninguno nombra esto. Se detectó al contrastar el capítulo
+-- (`docs/RIESGO-EBR.md` §5) y no al construirlo.
+--
+-- POR QUÉ ESTE ARCHIVO ESTÁ SOLO, con una sola línea de efecto.
+--
+-- Postgres prohíbe USAR un valor de enum en la misma transacción en que se
+-- agregó. La migración que sigue trae aserciones que insertan una alerta de
+-- este tipo —son las que prueban que el sistema de alertas existe—, y no
+-- podrían correr si el valor naciera ahí. La migración de la estructura del
+-- obligado esquivó lo mismo comparando como texto en triggers; aquí no se
+-- puede, porque la aserción escribe la fila.
+alter type tipo_alerta add value if not exists 'desviacion_perfil';

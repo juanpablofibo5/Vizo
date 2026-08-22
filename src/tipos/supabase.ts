@@ -114,6 +114,8 @@ export type Database = {
           estado: Database["public"]["Enums"]["estado_alerta"]
           evaluacion_id: string | null
           id: string
+          operacion_id: string | null
+          perfil_id: string | null
           tenant_id: string
           tipo: Database["public"]["Enums"]["tipo_alerta"]
           titulo: string
@@ -128,6 +130,8 @@ export type Database = {
           estado?: Database["public"]["Enums"]["estado_alerta"]
           evaluacion_id?: string | null
           id?: string
+          operacion_id?: string | null
+          perfil_id?: string | null
           tenant_id: string
           tipo: Database["public"]["Enums"]["tipo_alerta"]
           titulo: string
@@ -142,6 +146,8 @@ export type Database = {
           estado?: Database["public"]["Enums"]["estado_alerta"]
           evaluacion_id?: string | null
           id?: string
+          operacion_id?: string | null
+          perfil_id?: string | null
           tenant_id?: string
           tipo?: Database["public"]["Enums"]["tipo_alerta"]
           titulo?: string
@@ -166,6 +172,34 @@ export type Database = {
             columns: ["tenant_id", "evaluacion_id"]
             isOneToOne: false
             referencedRelation: "evaluaciones_umbral"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "alertas_operacion_fk"
+            columns: ["tenant_id", "operacion_id"]
+            isOneToOne: false
+            referencedRelation: "operaciones"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "alertas_operacion_fk"
+            columns: ["tenant_id", "operacion_id"]
+            isOneToOne: false
+            referencedRelation: "operaciones_vigentes"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "alertas_perfil_fk"
+            columns: ["tenant_id", "perfil_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_perfil_vigente"
+            referencedColumns: ["tenant_id", "perfil_id"]
+          },
+          {
+            foreignKeyName: "alertas_perfil_fk"
+            columns: ["tenant_id", "perfil_id"]
+            isOneToOne: false
+            referencedRelation: "perfiles_transaccionales"
             referencedColumns: ["tenant_id", "id"]
           },
           {
@@ -1709,6 +1743,7 @@ export type Database = {
           id: string
           nombre: string
           orden: number
+          puntaje_minimo: number | null
           tenant_id: string
           vigente_desde: string
         }
@@ -1719,6 +1754,7 @@ export type Database = {
           id?: string
           nombre: string
           orden: number
+          puntaje_minimo?: number | null
           tenant_id: string
           vigente_desde: string
         }
@@ -1729,6 +1765,7 @@ export type Database = {
           id?: string
           nombre?: string
           orden?: number
+          puntaje_minimo?: number | null
           tenant_id?: string
           vigente_desde?: string
         }
@@ -2142,6 +2179,131 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "actividades_vulnerables"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      perfiles_transaccionales: {
+        Row: {
+          actividad_economica: string | null
+          cliente_id: string
+          corrige_a: string | null
+          destino_recursos: string | null
+          fecha_ancla: string
+          frecuencia_esperada: string | null
+          fuente: Database["public"]["Enums"]["fuente_perfil"]
+          id: string
+          monto_maximo_mensual: number
+          motivo: string | null
+          operacion_id: string | null
+          operaciones_maximas_mensuales: number | null
+          origen: Database["public"]["Enums"]["origen_perfil"]
+          origen_recursos: string | null
+          otros_elementos: Json
+          registrado_en: string
+          registrado_por: string | null
+          secuencia: number
+          tenant_id: string
+          vence: string
+          vigente_desde: string
+          zona_geografica: string | null
+        }
+        Insert: {
+          actividad_economica?: string | null
+          cliente_id: string
+          corrige_a?: string | null
+          destino_recursos?: string | null
+          fecha_ancla: string
+          frecuencia_esperada?: string | null
+          fuente: Database["public"]["Enums"]["fuente_perfil"]
+          id?: string
+          monto_maximo_mensual: number
+          motivo?: string | null
+          operacion_id?: string | null
+          operaciones_maximas_mensuales?: number | null
+          origen: Database["public"]["Enums"]["origen_perfil"]
+          origen_recursos?: string | null
+          otros_elementos?: Json
+          registrado_en?: string
+          registrado_por?: string | null
+          secuencia?: number
+          tenant_id: string
+          vence: string
+          vigente_desde: string
+          zona_geografica?: string | null
+        }
+        Update: {
+          actividad_economica?: string | null
+          cliente_id?: string
+          corrige_a?: string | null
+          destino_recursos?: string | null
+          fecha_ancla?: string
+          frecuencia_esperada?: string | null
+          fuente?: Database["public"]["Enums"]["fuente_perfil"]
+          id?: string
+          monto_maximo_mensual?: number
+          motivo?: string | null
+          operacion_id?: string | null
+          operaciones_maximas_mensuales?: number | null
+          origen?: Database["public"]["Enums"]["origen_perfil"]
+          origen_recursos?: string | null
+          otros_elementos?: Json
+          registrado_en?: string
+          registrado_por?: string | null
+          secuencia?: number
+          tenant_id?: string
+          vence?: string
+          vigente_desde?: string
+          zona_geografica?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "perfiles_transaccionales_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "perfiles_transaccionales_tenant_id_cliente_id_fkey"
+            columns: ["tenant_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_finales"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "perfiles_transaccionales_tenant_id_corrige_a_fkey"
+            columns: ["tenant_id", "corrige_a"]
+            isOneToOne: false
+            referencedRelation: "clientes_perfil_vigente"
+            referencedColumns: ["tenant_id", "perfil_id"]
+          },
+          {
+            foreignKeyName: "perfiles_transaccionales_tenant_id_corrige_a_fkey"
+            columns: ["tenant_id", "corrige_a"]
+            isOneToOne: false
+            referencedRelation: "perfiles_transaccionales"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "perfiles_transaccionales_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "perfiles_transaccionales_tenant_id_operacion_id_fkey"
+            columns: ["tenant_id", "operacion_id"]
+            isOneToOne: false
+            referencedRelation: "operaciones"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "perfiles_transaccionales_tenant_id_operacion_id_fkey"
+            columns: ["tenant_id", "operacion_id"]
+            isOneToOne: false
+            referencedRelation: "operaciones_vigentes"
+            referencedColumns: ["tenant_id", "id"]
           },
         ]
       }
@@ -2587,6 +2749,37 @@ export type Database = {
       }
     }
     Views: {
+      clientes_perfil_vigente: {
+        Row: {
+          cliente_id: string | null
+          fecha_ancla: string | null
+          fuente: Database["public"]["Enums"]["fuente_perfil"] | null
+          monto_maximo_mensual: number | null
+          operaciones_maximas_mensuales: number | null
+          origen: Database["public"]["Enums"]["origen_perfil"] | null
+          perfil_id: string | null
+          reevaluacion_debida: boolean | null
+          tenant_id: string | null
+          vence: string | null
+          vigente_desde: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "perfiles_transaccionales_tenant_id_cliente_id_fkey"
+            columns: ["tenant_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_finales"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "perfiles_transaccionales_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes_riesgo_vigente: {
         Row: {
           cliente_id: string | null
@@ -2821,6 +3014,7 @@ export type Database = {
         | "presentado"
       estatus_expediente: "incompleto" | "completo" | "aprobado"
       forma_aportacion: "numerario" | "especie"
+      fuente_perfil: "declarada_por_cliente" | "archivos_del_obligado"
       modalidad_aportacion:
         | "recursos_propios"
         | "socio"
@@ -2831,6 +3025,7 @@ export type Database = {
       naturaleza_integrante: "fisica" | "moral" | "fideicomiso"
       objeto_sellado: "manifiesto" | "aviso"
       origen_apartado: "acreditado" | "acreditado_parcial" | "del_obligado"
+      origen_perfil: "inicial" | "reevaluacion" | "correccion" | "acto_unico"
       papel_integrante:
         | "fiduciario"
         | "delegado_fiduciario"
@@ -2851,6 +3046,7 @@ export type Database = {
         | "revision_identidad"
         | "screening"
         | "calendario"
+        | "desviacion_perfil"
       tipo_aviso: "normal" | "acumulacion" | "cero" | "modificatorio" | "24h"
       tipo_dato_campo: "texto" | "fecha" | "monto" | "catalogo" | "documento"
       tipo_figura: "fideicomiso" | "asociacion_en_participacion" | "otra"
@@ -3018,6 +3214,7 @@ export const Constants = {
       ],
       estatus_expediente: ["incompleto", "completo", "aprobado"],
       forma_aportacion: ["numerario", "especie"],
+      fuente_perfil: ["declarada_por_cliente", "archivos_del_obligado"],
       modalidad_aportacion: [
         "recursos_propios",
         "socio",
@@ -3029,6 +3226,7 @@ export const Constants = {
       naturaleza_integrante: ["fisica", "moral", "fideicomiso"],
       objeto_sellado: ["manifiesto", "aviso"],
       origen_apartado: ["acreditado", "acreditado_parcial", "del_obligado"],
+      origen_perfil: ["inicial", "reevaluacion", "correccion", "acto_unico"],
       papel_integrante: [
         "fiduciario",
         "delegado_fiduciario",
@@ -3050,6 +3248,7 @@ export const Constants = {
         "revision_identidad",
         "screening",
         "calendario",
+        "desviacion_perfil",
       ],
       tipo_aviso: ["normal", "acumulacion", "cero", "modificatorio", "24h"],
       tipo_dato_campo: ["texto", "fecha", "monto", "catalogo", "documento"],

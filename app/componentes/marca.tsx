@@ -1,33 +1,34 @@
 /**
- * La marca: «el visor sobre el umbral».
+ * La marca: «el contenedor» — la V calada en un cuadrado de radio del portal.
  *
- * El trazado es el de `~/Desktop/vizo-logos/01-visor-final/svg/vizo-marca.svg`:
- * disco con la V y el umbral CALADOS en espacio negativo, no dibujados encima.
- * La V lleva proporción de letra (24 u de alto por 22 de ancho) y el umbral va
- * acortado a 17 u — se descartó el chevron ancho del primer trazado porque
- * disco + punta + barra se leía como el ícono de «descargar».
- *
- * Va EN LÍNEA y no como archivo en `public/` porque el dibujo es idéntico en
- * los dos temas: lo único que cambia entre `vizo-marca.svg` (#E8590C) y
- * `vizo-marca-oscuro.svg` (#FF7A1A) es el `fill`. Con `currentColor` el color
- * entra desde `--marca`, que ya está definido por tema, y no hay dos archivos
- * que se desincronicen ni una petición extra.
+ * Trazado de `~/Desktop/vizo-logos/svg/04-contenedor-marca-claro.svg`:
+ * cuadrado de 56 u con `rx 15` dentro de un lienzo de 64, y la V con proporción
+ * de letra (M20 20 L32 44 L44 20), trazo de 8 u con extremos y vértice
+ * redondeados. El radio es proporcional, así que a 28 px da ~7.5 px: el mismo
+ * `--radio` del portal.
  *
  * ────────────────────────────────────────────────────────────────────────────
- * LA CLASE SE LLAMA `marca-disco` Y NO `marca`, Y NO ES UN CAPRICHO
+ * LA V VA CALADA, NO PINTADA
  * ────────────────────────────────────────────────────────────────────────────
- * `.marca` YA EXISTÍA: es el bloque de identidad de la barra lateral, con
- * `padding: 1.15rem 1.25rem 1rem`. Al reutilizar ese nombre, el padding cayó
- * sobre el SVG y —con `box-sizing: border-box`— dejó 4 px de contenido dentro
- * de una caja de 44. El disco salía como un punto.
+ * Los archivos del diseñador trazan la V en el color del fondo: #F4F6F5 en el
+ * tema claro, #0D1614 en el oscuro. Eso se ve idéntico sobre el fondo del
+ * portal y se rompe en cuanto la marca se para sobre otra superficie — dentro
+ * de una tarjeta, que es #FFFFFF, la V quedaría gris.
  *
- * Costó media hora de diagnóstico porque la pista apuntaba a otro lado: la
- * matriz del SVG daba escala 0.0625, que es exactamente 4/64, y eso parecía un
- * problema de `viewBox` o de la máscara. No lo era. La caja medía 44×44 por
- * fuera y 4 px por dentro.
+ * Calada en espacio negativo, la V toma lo que haya detrás: sobre el fondo se
+ * ve exactamente como en la hoja aprobada, y sobre una tarjeta se ve blanca sin
+ * que nadie elija un color. Un solo trazado sirve para los tres usos —claro,
+ * oscuro y sello monocromo—, y el color del contenedor entra por `--marca`.
  *
- * OJO: la variante de 16 px NO es esta reducida. Va sin umbral, porque la
- * separación óptica no sobrevive al rasterizado. Vive en el favicon.
+ * ────────────────────────────────────────────────────────────────────────────
+ * OJO CON EL NOMBRE DE LA CLASE
+ * ────────────────────────────────────────────────────────────────────────────
+ * Se llama `marca-disco` por historia y NO puede llamarse `marca`: esa clase ya
+ * existe, es el bloque de identidad de la barra lateral y tiene padding. Con
+ * `box-sizing: border-box` dejaba 4 px de contenido dentro de una caja de 44, y
+ * la marca salía como un punto. Costó media hora porque la matriz del SVG daba
+ * escala 0.0625 —que es 4/64— y eso apuntaba al `viewBox` o a la máscara,
+ * cuando el problema era el padding heredado.
  */
 
 export function Marca({
@@ -52,16 +53,15 @@ export function Marca({
       <mask id={id} maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
         <rect width="64" height="64" fill="#fff" />
         <path
-          d="M21 14.4 L32 38.4 L43 14.4"
+          d="M20 20 L32 44 L44 20"
           fill="none"
           stroke="#000"
-          strokeWidth="7"
+          strokeWidth="8"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <path d="M23.5 49.8 H40.5" fill="none" stroke="#000" strokeWidth="5.6" strokeLinecap="round" />
       </mask>
-      <circle cx="32" cy="32" r="28" fill="currentColor" mask={`url(#${id})`} />
+      <rect x="4" y="4" width="56" height="56" rx="15" fill="currentColor" mask={`url(#${id})`} />
     </svg>
   )
 }
@@ -70,8 +70,8 @@ export function Marca({
  * La marca con el nombre al lado, para el acceso.
  *
  * El nombre va en tinta, no en naranja: #E8590C rinde 3.58:1 sobre blanco y no
- * alcanza el 4.5:1 que pide un texto. El naranja es el disco; la palabra es
- * texto y se lee como texto.
+ * alcanza el 4.5:1 que pide un texto. El contenedor hace el trabajo; la letra
+ * no compite — por eso es una grotesca neutra con el tracking .16em del portal.
  */
 export function MarcaConNombre({ tamano = 40 }: { tamano?: number }) {
   return (

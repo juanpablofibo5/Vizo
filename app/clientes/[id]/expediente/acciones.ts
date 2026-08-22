@@ -22,6 +22,12 @@ import {
   verificarExpediente,
 } from '../../../../src/persistencia/reverificacion'
 import {
+  DatoDePerfilInvalido,
+  registrarPerfil,
+  type DatosPerfil,
+} from '../../../../src/persistencia/perfil'
+import { montoCapturado } from '../../../../src/persistencia/operaciones'
+import {
   DeclaracionPepInvalida,
   RevisionPepImposible,
   registrarDeclaracionPep,
@@ -473,6 +479,74 @@ export async function evaluarRiesgo(
       return { ok: false, mensaje: 'Solo un administrador evalúa el Grado de Riesgo.' }
     }
     return { ok: false, mensaje: bruto }
+  } finally {
+    await db.end()
+  }
+}
+
+/**
+ * El Perfil transaccional del cliente (Art. 23 Ter 1).
+ *
+ * El monto lo declara el cliente; aquí solo se asienta. El vencimiento NO se
+ * captura —lo deriva la persistencia del catálogo y el trigger de la base lo
+ * vuelve a calcular—, así que desde esta pantalla no hay forma de comprar
+ * tiempo. Y el ancla es la fecha del acto, no la de hoy: por eso se elige cuál.
+ */
+export async function registrarPerfilDelCliente(
+  _previo: EstadoRevision,
+  form: FormData,
+): Promise<EstadoRevision> {
+  const sesion = await sesionRequerida()
+  const ctx = { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol }
+  const clienteId = String(form.get('clienteId') ?? '')
+  const origen = String(form.get('origen') ?? '') as DatosPerfil['origen']
+  const texto = (campo: string): string | undefined => {
+    const v = String(form.get(campo) ?? '').trim()
+    return v === '' ? undefined : v
+  }
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    const numero = texto('operacionesMaximasMensuales')
+    await registrarPerfil(db, {
+      sesion: ctx,
+      clienteId,
+      hoy: hoy(),
+      datos: {
+        origen,
+        fuente: (texto('fuente') ?? 'declarada_por_cliente') as DatosPerfil['fuente'],
+        montoMaximoMensual: montoCapturado(
+          String(form.get('montoMaximoMensual') ?? ''),
+          'el monto máximo mensual',
+        ),
+        operacionesMaximasMensuales: numero === undefined ? undefined : Number(numero),
+        frecuenciaEsperada: texto('frecuenciaEsperada'),
+        zonaGeografica: texto('zonaGeografica'),
+        origenRecursos: texto('origenRecursos'),
+        destinoRecursos: texto('destinoRecursos'),
+        actividadEconomica: texto('actividadEconomica'),
+        operacionId: texto('operacionId'),
+        motivo: texto('motivo'),
+      },
+    })
+
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return {
+      ok: true,
+      mensaje:
+        origen === 'reevaluacion'
+          ? 'Reevaluación asentada. La anterior se conserva: el histórico del perfil no se reescribe.'
+          : origen === 'correccion'
+            ? 'Corrección asentada, con el mismo vencimiento que la fila que corrige.'
+            : 'Perfil transaccional asentado. Desde ahora cada operación se contrasta contra lo que el cliente declaró.',
+    }
+  } catch (e) {
+    if (e instanceof DatoDePerfilInvalido) return { ok: false, mensaje: e.problemas.join(' ') }
+    return {
+      ok: false,
+      mensaje: e instanceof Error ? e.message : 'No se pudo asentar el Perfil transaccional.',
+    }
   } finally {
     await db.end()
   }

@@ -5,6 +5,22 @@ import { registrarEvaluacion } from './evaluaciones'
 import { evaluar } from '../dominio/motor'
 import { centavos, centavosAPesosTexto, pesosTextoACentavos, type Centavos } from '../dominio/dinero'
 import type { Evaluacion } from '../dominio/tipos'
+import { asentarPerfil, contrastarConSuPerfil, perfilVigenteDe } from './perfil'
+import type { ResultadoPerfil } from '../dominio/perfil-transaccional'
+
+/** Lo que el cliente estima, dicho por él, al realizar su acto. */
+export interface DeclaracionDelCliente {
+  /** `acto_unico` cuando la relación se extingue en este mismo acto (¶4). */
+  readonly origen: 'inicial' | 'acto_unico'
+  readonly fuente: 'declarada_por_cliente' | 'archivos_del_obligado'
+  readonly montoMaximoMensual: Centavos
+  readonly operacionesMaximasMensuales?: number | undefined
+  readonly frecuenciaEsperada?: string | undefined
+  readonly zonaGeografica?: string | undefined
+  readonly origenRecursos?: string | undefined
+  readonly destinoRecursos?: string | undefined
+  readonly actividadEconomica?: string | undefined
+}
 
 /**
  * Registro de operaciones.
@@ -57,6 +73,19 @@ export interface DatosOperacion {
    * normal. Con varias es obligatorio: ver la resolución más abajo.
    */
   actividadId?: string | undefined
+  /**
+   * Lo que el cliente declara AL MOMENTO DEL ACTO (Art. 23 Ter 1 ¶2): «la
+   * información que proporcione […] en ese momento, relativa a los montos
+   * máximos mensuales […] que los propios Clientes o Usuarias estimen
+   * realizar».
+   *
+   * Va aquí, y no en una pantalla aparte, porque el texto lo ata al acto: un
+   * perfil que se asienta después es un perfil que puede no asentarse nunca, y
+   * mientras tanto la operación que debía anclarlo levanta el hueco. Solo
+   * aplica cuando el cliente todavía no tiene perfil; si ya tiene, cambiarlo es
+   * una reevaluación o una corrección, con su razón asentada.
+   */
+  perfilDeclarado?: DeclaracionDelCliente | undefined
   /** Id de la operación que esta corrige. La anterior no se borra jamás. */
   corrigeA?: string | undefined
 
@@ -83,6 +112,12 @@ export interface ResultadoOperacion {
   evaluacionId: string
   evaluacion: Evaluacion
   alertas: string[]
+  /**
+   * El contraste contra el Perfil transaccional del cliente (Art. 23 Ter 2).
+   * Va en el mismo resultado que la evaluación de umbral porque ocurre en el
+   * mismo acto: son dos preguntas distintas sobre la misma operación.
+   */
+  perfil: ResultadoPerfil
 }
 
 /** Formas de pago que el catálogo del SAT considera efectivo. */
@@ -258,6 +293,38 @@ export async function registrarOperacion(
 
     const alertas = await crearAlertas(db, p.sesion, evaluacionId, evaluacion)
 
+    // Lo que el cliente declaró en este acto, antes de contrastar: el perfil
+    // que ancla el reloj es el de esta misma operación (Art. 23 Ter 1 ¶2).
+    if (d.perfilDeclarado !== undefined) {
+      const yaTiene = await perfilVigenteDe(db, {
+        sesion: p.sesion,
+        clienteId: d.clienteId,
+      })
+      if (yaTiene !== null) {
+        throw new OperacionInvalida([
+          'Este cliente ya tiene Perfil transaccional asentado, así que no vuelve a declararlo ' +
+            'con cada acto. Cambiarlo es una reevaluación o una corrección, y ambas piden decir ' +
+            'por qué.',
+        ])
+      }
+      await asentarPerfil(db, {
+        sesion: p.sesion,
+        clienteId: d.clienteId,
+        hoy: d.fechaOperacion,
+        datos: { ...d.perfilDeclarado, operacionId: operacionId },
+      })
+    }
+
+    // El sistema de alertas del Art. 23 Ter 2, en la misma transacción. Una
+    // operación guardada cuya desviación se calcula después es una desviación
+    // que puede no calcularse nunca.
+    const perfil = await contrastarConSuPerfil(db, {
+      sesion: p.sesion,
+      clienteId: d.clienteId,
+      operacion: { id: operacionId, fecha: d.fechaOperacion, monto: montoTotal },
+    })
+    if (perfil.alertaId !== null) alertas.push(perfil.alertaId)
+
     // REGLA DURA 3: montos y resultado sí; nombre, RFC y CURP del cliente NO.
     // El cliente va como id opaco, que es lo que permite auditar sin filtrar.
     await db.query('select app.bitacora_registrar($1,$2,$3,$4,$5::jsonb,$6)', [
@@ -280,7 +347,7 @@ export async function registrarOperacion(
       p.sesion.usuarioId,
     ])
 
-    return { operacionId, evaluacionId, evaluacion, alertas }
+    return { operacionId, evaluacionId, evaluacion, alertas, perfil: perfil.resultado }
   })
 }
 

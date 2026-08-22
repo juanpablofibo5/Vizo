@@ -22,3 +22,14 @@
 -- obligado esquivó lo mismo comparando como texto en triggers; aquí no se
 -- puede, porque la aserción escribe la fila.
 alter type tipo_alerta add value if not exists 'desviacion_perfil';
+
+-- Y un segundo valor, que NO es el mismo hecho aunque se parezca en pantalla.
+--
+-- «El cliente operó y nadie asentó lo que declaró» no es una desviación: no hay
+-- perfil del cual desviarse. Es el hueco del Art. 23 Ter 1 ¶2, y lo que hay que
+-- hacer con él —recabar la declaración— no se parece a lo que hay que hacer con
+-- una desviación —mirar la operación—. Meterlos en el mismo valor obligaría a
+-- que `alertas.perfil_id` fuera opcional para los dos, y entonces una
+-- desviación sin perfil también pasaría: se perdería la única comprobación que
+-- garantiza que la alerta pueda decir contra qué se desvió.
+alter type tipo_alerta add value if not exists 'perfil_ausente';

@@ -60,6 +60,35 @@ export async function crearOperacion(
             texto('nombreInstitucion') === '' ? undefined : texto('nombreInstitucion'),
           descripcionBien: texto('descripcionBien') === '' ? undefined : texto('descripcionBien'),
           corrigeA: texto('corrigeA') === '' ? undefined : texto('corrigeA'),
+          // Lo que el aportante declara en este mismo acto (Art. 23 Ter 1 ¶2).
+          // El formulario solo lo pide la primera vez; si el cliente ya tiene
+          // perfil y aun así llegara, `registrarOperacion` se detiene en vez de
+          // sobrescribirlo en silencio.
+          perfilDeclarado:
+            texto('perfilMontoMaximoMensual') === ''
+              ? undefined
+              : {
+                  origen: texto('perfilOrigen') === 'acto_unico' ? 'acto_unico' : 'inicial',
+                  fuente: 'declarada_por_cliente',
+                  montoMaximoMensual: montoCapturado(
+                    texto('perfilMontoMaximoMensual'),
+                    'Monto máximo mensual del perfil',
+                  ),
+                  operacionesMaximasMensuales:
+                    texto('perfilOperacionesMaximasMensuales') === ''
+                      ? undefined
+                      : Number(texto('perfilOperacionesMaximasMensuales')),
+                  origenRecursos:
+                    texto('perfilOrigenRecursos') === '' ? undefined : texto('perfilOrigenRecursos'),
+                  destinoRecursos:
+                    texto('perfilDestinoRecursos') === ''
+                      ? undefined
+                      : texto('perfilDestinoRecursos'),
+                  actividadEconomica:
+                    texto('perfilActividadEconomica') === ''
+                      ? undefined
+                      : texto('perfilActividadEconomica'),
+                },
         },
       })
     })

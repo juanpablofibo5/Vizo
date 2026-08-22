@@ -15,7 +15,9 @@ import { hoyEnMexico } from '../../../../src/dominio/fechas'
 import { SeccionPep } from './pep'
 import { estadoPepDelCliente, type EstadoPep } from '../../../../src/persistencia/pep'
 import { SeccionRiesgoCliente } from './riesgo'
+import { SeccionPerfilTransaccional } from './perfil'
 import { riesgoDelCliente, type RiesgoDelCliente } from '../../../../src/persistencia/riesgo'
+import { estadoDelPerfil, type EstadoPerfil } from '../../../../src/persistencia/perfil'
 
 export const dynamic = 'force-dynamic'
 
@@ -206,6 +208,12 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       hoy: hoyEnMexico(),
     })
 
+    const perfil: EstadoPerfil = await estadoDelPerfil(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+      hoy: hoyEnMexico(),
+    })
+
     await db.query('rollback')
 
     const faltantes = evaluado ? completitud.faltantes : []
@@ -342,6 +350,16 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
         <SeccionRiesgoCliente
           clienteId={clienteId}
           riesgo={riesgo}
+          puede={sesion.rol === 'admin'}
+        />
+
+        {/* Cap. III Ter. Va después del grado porque el Art. 23 Ter fr. I ata
+            las políticas de conocimiento a la metodología, y el Art. 23 Ter 3
+            exige monitoreo más estricto justo cuando el grado es alto. */}
+        <h2 id="perfil">Perfil transaccional</h2>
+        <SeccionPerfilTransaccional
+          clienteId={clienteId}
+          perfil={perfil}
           puede={sesion.rol === 'admin'}
         />
 

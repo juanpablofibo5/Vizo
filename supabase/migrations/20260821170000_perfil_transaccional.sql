@@ -370,7 +370,12 @@ alter table alertas
     foreign key (tenant_id, operacion_id) references operaciones(tenant_id, id),
   add constraint desviacion_nombra_perfil_y_operacion
     check (tipo <> 'desviacion_perfil'
-           or (perfil_id is not null and operacion_id is not null));
+           or (perfil_id is not null and operacion_id is not null)),
+  -- El hueco nombra su operación y NO puede nombrar un perfil: si hubiera uno,
+  -- la alerta estaría mal clasificada y la desviación quedaría sin levantar.
+  add constraint hueco_nombra_su_operacion_y_ningun_perfil
+    check (tipo <> 'perfil_ausente'
+           or (operacion_id is not null and perfil_id is null));
 
 -- ---------------------------------------------------------------------------
 -- 7. RLS y privilegios
@@ -597,6 +602,18 @@ begin
           'La operación se aparta del perfil declarado',
           '{"por":"monto_mensual"}'::jsonb)
   returning id into v_alerta;
+
+  -- 11. Y el hueco no se puede disfrazar de desviación colgándole un perfil.
+  v_rechazo := false;
+  begin
+    insert into alertas (tenant_id, tipo, perfil_id, operacion_id, titulo, detalle)
+    values (v_tenant, 'perfil_ausente', v_perfil, v_op1, 'Con perfil y sin perfil a la vez',
+            '{}'::jsonb);
+  exception when check_violation then v_rechazo := true;
+  end;
+  if not v_rechazo then
+    raise exception 'Una alerta de perfil ausente nombró un perfil. O el perfil existe —y entonces lo que faltaba era levantar la desviación— o no existe y no hay qué nombrar.';
+  end if;
 
   -- Limpieza.
   delete from alertas where tenant_id = v_tenant;

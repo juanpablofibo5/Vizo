@@ -31,6 +31,7 @@ export function FormularioOperacion({
   desarrollos,
   instrumentos,
   monedas,
+  yaDeclararon,
   hoy,
 }: {
   clientes: Opcion[]
@@ -38,6 +39,8 @@ export function FormularioOperacion({
   desarrollos: Opcion[]
   instrumentos: CodigoDeCatalogo[]
   monedas: CodigoDeCatalogo[]
+  /** Clientes que ya tienen Perfil transaccional: a esos no se les vuelve a preguntar. */
+  yaDeclararon: string[]
   hoy: string
 }) {
   const [estado, accion, enviando] = useActionState(crearOperacion, INICIAL)
@@ -51,6 +54,8 @@ export function FormularioOperacion({
     estado.valores[campo] ?? pordefecto
 
   const [efectivo, setEfectivo] = useState(false)
+  const [cliente, setCliente] = useState(previo('clienteId'))
+  const declara = cliente !== '' && !yaDeclararon.includes(cliente)
 
   useEffect(() => {
     if (estado.problemas.length === 0) return
@@ -75,7 +80,14 @@ export function FormularioOperacion({
       <div className="fila">
         <label>
           <span>Aportante</span>
-          <select name="clienteId" required defaultValue={previo('clienteId')}>
+          <select
+            name="clienteId"
+            required
+            defaultValue={previo('clienteId')}
+            onChange={(e) => {
+              setCliente(e.target.value)
+            }}
+          >
             <option value="">Elige…</option>
             {clientes.map((c) => (
               <option key={c.id} value={c.id}>
@@ -222,6 +234,73 @@ export function FormularioOperacion({
         <span>Descripción del bien <span className="pista">(opcional)</span></span>
         <input name="descripcionBien" defaultValue={previo('descripcionBien')} />
       </label>
+
+      {/* El Perfil transaccional se recaba AQUÍ porque el Art. 23 Ter 1 ¶2 lo
+          ata al acto: «la información que proporcione […] EN ESE MOMENTO». Un
+          perfil que se asienta después es un perfil que puede no asentarse
+          nunca, y mientras tanto la operación que debía anclarlo levanta el
+          hueco. Solo aparece la primera vez: después cambiarlo es una
+          reevaluación, con su razón. */}
+      {declara && (
+        <fieldset style={{ marginTop: '1rem' }}>
+          <legend>Perfil transaccional del aportante</legend>
+          <p className="sub" style={{ margin: '0 0 .75rem' }}>
+            Es la primera operación de este aportante. Pregúntale{' '}
+            <strong>cuánto estima operar al mes</strong> y captúralo tal cual: de eso, y no de lo
+            que ya operó, se detectan después las inconsistencias (Art. 23 Ter 1 ¶2 y 23 Ter 2).
+          </p>
+          <div className="fila">
+            <label>
+              <span>Monto máximo mensual que estima</span>
+              {/* Sin valor por omisión ni sugerencia calculada: si VIZO lo
+                  propusiera, el perfil describiría en vez de declarar y nunca
+                  se desviaría de sí mismo. */}
+              <input
+                name="perfilMontoMaximoMensual"
+                required
+                placeholder="500000.00"
+                defaultValue={previo('perfilMontoMaximoMensual')}
+              />
+            </label>
+            <label>
+              <span>
+                Operaciones al mes <span className="pista">(si lo declara)</span>
+              </span>
+              <input
+                name="perfilOperacionesMaximasMensuales"
+                inputMode="numeric"
+                defaultValue={previo('perfilOperacionesMaximasMensuales')}
+              />
+            </label>
+          </div>
+          <div className="fila">
+            <label>
+              <span>Origen de los recursos</span>
+              <input name="perfilOrigenRecursos" defaultValue={previo('perfilOrigenRecursos')} />
+            </label>
+            <label>
+              <span>Destino de los recursos</span>
+              <input name="perfilDestinoRecursos" defaultValue={previo('perfilDestinoRecursos')} />
+            </label>
+          </div>
+          <div className="fila">
+            <label>
+              <span>Actividad económica</span>
+              <input
+                name="perfilActividadEconomica"
+                defaultValue={previo('perfilActividadEconomica')}
+              />
+            </label>
+            <label>
+              <span>¿Se extingue la relación en este acto?</span>
+              <select name="perfilOrigen" defaultValue={previo('perfilOrigen', 'inicial')}>
+                <option value="inicial">No, seguirá operando</option>
+                <option value="acto_unico">Sí, es un acto único</option>
+              </select>
+            </label>
+          </div>
+        </fieldset>
+      )}
 
       <div style={{ display: 'flex', gap: '.6rem', marginTop: '1rem' }}>
         <button type="submit" disabled={enviando}>

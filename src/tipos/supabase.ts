@@ -3047,6 +3047,7 @@ export type Database = {
         | "screening"
         | "calendario"
         | "desviacion_perfil"
+        | "perfil_ausente"
       tipo_aviso: "normal" | "acumulacion" | "cero" | "modificatorio" | "24h"
       tipo_dato_campo: "texto" | "fecha" | "monto" | "catalogo" | "documento"
       tipo_figura: "fideicomiso" | "asociacion_en_participacion" | "otra"
@@ -3249,6 +3250,7 @@ export const Constants = {
         "screening",
         "calendario",
         "desviacion_perfil",
+        "perfil_ausente",
       ],
       tipo_aviso: ["normal", "acumulacion", "cero", "modificatorio", "24h"],
       tipo_dato_campo: ["texto", "fecha", "monto", "catalogo", "documento"],

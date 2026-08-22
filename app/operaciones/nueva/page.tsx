@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic'
 
 export default async function NuevaOperacion() {
   return conBase(async ({ db, sesion, perfil, obligado }) => {
-    const { clientes, sucursales, desarrollos, instrumentos, monedas } = await leerComoUsuario(
+    const { clientes, sucursales, desarrollos, instrumentos, monedas, yaDeclararon } =
+      await leerComoUsuario(
       db,
       sesion,
       async () => {
@@ -40,7 +41,14 @@ export default async function NuevaOperacion() {
         ).rows as Array<{ codigo: string; descripcion: string }>
       const instrumentos = await cat('instrumento_monetario')
       const monedas = await cat('moneda')
+      // Quién ya tiene Perfil transaccional. Decide si el formulario pide la
+      // declaración del Art. 23 Ter 1 ¶2: se pide UNA vez, al primer acto, y
+      // después cambiarla es una reevaluación con su razón asentada.
+      const yd = await db.query(
+        `select distinct cliente_id::text as id from perfiles_transaccionales`,
+      )
       return {
+        yaDeclararon: (yd.rows as Array<{ id: string }>).map((r) => r.id),
         desarrollos: (d.rows as Array<Record<string, string>>).map(
           (r): Opcion => ({
             id: String(r['id']),
@@ -104,6 +112,7 @@ export default async function NuevaOperacion() {
           desarrollos={desarrollos}
           instrumentos={instrumentos}
           monedas={monedas}
+          yaDeclararon={yaDeclararon}
           hoy={hoyEnMexico()}
         />
       </Marco>

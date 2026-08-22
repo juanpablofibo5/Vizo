@@ -1,0 +1,18 @@
+-- ---------------------------------------------------------------------------
+-- Un valor más en tipo_alerta: la aprobación de directivo que falta
+-- ---------------------------------------------------------------------------
+-- Art. 23 Ter 5 del Acuerdo 115/2026 (DOF 7-ago-2026, edición vespertina,
+-- código 5795797), exigible el 1 de marzo de 2027 (Transitorio Cuarto).
+--
+-- Va solo, por la misma regla de Postgres que separó `desviacion_perfil`: un
+-- valor de enum no se puede USAR en la transacción en que se agrega, y las
+-- aserciones de la migración que sigue escriben una alerta de este tipo.
+--
+-- POR QUÉ NO ALCANZA UN VALOR QUE YA EXISTE. `desviacion_perfil` dice que una
+-- operación se apartó de lo declarado; `perfil_ausente`, que falta la
+-- declaración. Esto es otra cosa: la operación puede ser perfectamente normal
+-- —dentro del perfil, bajo el umbral— y aun así faltar el consentimiento de un
+-- directivo, porque lo que la exige no es el monto sino QUIÉN es el cliente:
+-- Persona Políticamente Expuesta y, además, de Grado de Riesgo alto. Se
+-- atiende con una firma, no mirando la operación.
+alter type tipo_alerta add value if not exists 'aprobacion_directivo_pendiente';

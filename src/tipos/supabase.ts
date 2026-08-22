@@ -263,6 +263,106 @@ export type Database = {
         }
         Relationships: []
       }
+      aprobaciones_directivo: {
+        Row: {
+          alcance_previo: string | null
+          aprobador_cargo: string | null
+          aprobador_nombre: string | null
+          cliente_id: string
+          created_at: string
+          declaracion_pep_id: string
+          evaluacion_riesgo_id: string
+          fecha_aprobacion: string
+          id: string
+          momento: Database["public"]["Enums"]["momento_aprobacion"]
+          motivos: string | null
+          registrada_por: string
+          secuencia: number
+          tenant_id: string
+          via: Database["public"]["Enums"]["via_aprobacion"]
+          vigente_hasta: string | null
+        }
+        Insert: {
+          alcance_previo?: string | null
+          aprobador_cargo?: string | null
+          aprobador_nombre?: string | null
+          cliente_id: string
+          created_at?: string
+          declaracion_pep_id: string
+          evaluacion_riesgo_id: string
+          fecha_aprobacion: string
+          id?: string
+          momento: Database["public"]["Enums"]["momento_aprobacion"]
+          motivos?: string | null
+          registrada_por: string
+          secuencia?: number
+          tenant_id: string
+          via: Database["public"]["Enums"]["via_aprobacion"]
+          vigente_hasta?: string | null
+        }
+        Update: {
+          alcance_previo?: string | null
+          aprobador_cargo?: string | null
+          aprobador_nombre?: string | null
+          cliente_id?: string
+          created_at?: string
+          declaracion_pep_id?: string
+          evaluacion_riesgo_id?: string
+          fecha_aprobacion?: string
+          id?: string
+          momento?: Database["public"]["Enums"]["momento_aprobacion"]
+          motivos?: string | null
+          registrada_por?: string
+          secuencia?: number
+          tenant_id?: string
+          via?: Database["public"]["Enums"]["via_aprobacion"]
+          vigente_hasta?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aprobacion_cita_declaracion_del_mismo_cliente"
+            columns: ["tenant_id", "cliente_id", "declaracion_pep_id"]
+            isOneToOne: false
+            referencedRelation: "declaraciones_pep"
+            referencedColumns: ["tenant_id", "cliente_id", "id"]
+          },
+          {
+            foreignKeyName: "aprobacion_cita_evaluacion_del_mismo_cliente"
+            columns: ["tenant_id", "cliente_id", "evaluacion_riesgo_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_riesgo_vigente"
+            referencedColumns: ["tenant_id", "cliente_id", "evaluacion_id"]
+          },
+          {
+            foreignKeyName: "aprobacion_cita_evaluacion_del_mismo_cliente"
+            columns: ["tenant_id", "cliente_id", "evaluacion_riesgo_id"]
+            isOneToOne: false
+            referencedRelation: "evaluaciones_riesgo"
+            referencedColumns: ["tenant_id", "cliente_id", "id"]
+          },
+          {
+            foreignKeyName: "aprobaciones_directivo_registrada_por_fkey"
+            columns: ["registrada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aprobaciones_directivo_tenant_id_cliente_id_fkey"
+            columns: ["tenant_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_finales"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "aprobaciones_directivo_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aviso_lotes: {
         Row: {
           aviso_id: string
@@ -2138,6 +2238,59 @@ export type Database = {
           },
         ]
       }
+      operaciones_consentidas: {
+        Row: {
+          aprobacion_id: string
+          cliente_id: string
+          created_at: string
+          operacion_id: string
+          tenant_id: string
+        }
+        Insert: {
+          aprobacion_id: string
+          cliente_id: string
+          created_at?: string
+          operacion_id: string
+          tenant_id: string
+        }
+        Update: {
+          aprobacion_id?: string
+          cliente_id?: string
+          created_at?: string
+          operacion_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acto_consentido_es_del_mismo_cliente"
+            columns: ["tenant_id", "cliente_id", "operacion_id"]
+            isOneToOne: false
+            referencedRelation: "operaciones"
+            referencedColumns: ["tenant_id", "cliente_id", "id"]
+          },
+          {
+            foreignKeyName: "acto_consentido_es_del_mismo_cliente"
+            columns: ["tenant_id", "cliente_id", "operacion_id"]
+            isOneToOne: false
+            referencedRelation: "operaciones_vigentes"
+            referencedColumns: ["tenant_id", "cliente_id", "id"]
+          },
+          {
+            foreignKeyName: "acto_consentido_por_aprobacion_del_mismo_cliente"
+            columns: ["tenant_id", "cliente_id", "aprobacion_id"]
+            isOneToOne: false
+            referencedRelation: "aprobaciones_directivo"
+            referencedColumns: ["tenant_id", "cliente_id", "id"]
+          },
+          {
+            foreignKeyName: "operaciones_consentidas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parametros_motor: {
         Row: {
           actividad_id: string | null
@@ -3022,6 +3175,7 @@ export type Database = {
         | "prestamo_financiero"
         | "prestamo_no_financiero"
         | "financiamiento_bursatil"
+      momento_aprobacion: "previa" | "posterior"
       naturaleza_integrante: "fisica" | "moral" | "fideicomiso"
       objeto_sellado: "manifiesto" | "aviso"
       origen_apartado: "acreditado" | "acreditado_parcial" | "del_obligado"
@@ -3048,11 +3202,13 @@ export type Database = {
         | "calendario"
         | "desviacion_perfil"
         | "perfil_ausente"
+        | "aprobacion_directivo_pendiente"
       tipo_aviso: "normal" | "acumulacion" | "cero" | "modificatorio" | "24h"
       tipo_dato_campo: "texto" | "fecha" | "monto" | "catalogo" | "documento"
       tipo_figura: "fideicomiso" | "asociacion_en_participacion" | "otra"
       tipo_persona: "fisica" | "moral" | "fideicomiso" | "figura_juridica"
       tipo_umbral: "identificacion" | "aviso" | "efectivo"
+      via_aprobacion: "directivo" | "constancia_persona_fisica"
       vinculo_pep:
         | "titular"
         | "conyuge"
@@ -3224,6 +3380,7 @@ export const Constants = {
         "prestamo_no_financiero",
         "financiamiento_bursatil",
       ],
+      momento_aprobacion: ["previa", "posterior"],
       naturaleza_integrante: ["fisica", "moral", "fideicomiso"],
       objeto_sellado: ["manifiesto", "aviso"],
       origen_apartado: ["acreditado", "acreditado_parcial", "del_obligado"],
@@ -3251,12 +3408,14 @@ export const Constants = {
         "calendario",
         "desviacion_perfil",
         "perfil_ausente",
+        "aprobacion_directivo_pendiente",
       ],
       tipo_aviso: ["normal", "acumulacion", "cero", "modificatorio", "24h"],
       tipo_dato_campo: ["texto", "fecha", "monto", "catalogo", "documento"],
       tipo_figura: ["fideicomiso", "asociacion_en_participacion", "otra"],
       tipo_persona: ["fisica", "moral", "fideicomiso", "figura_juridica"],
       tipo_umbral: ["identificacion", "aviso", "efectivo"],
+      via_aprobacion: ["directivo", "constancia_persona_fisica"],
       vinculo_pep: [
         "titular",
         "conyuge",

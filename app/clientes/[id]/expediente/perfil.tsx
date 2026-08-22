@@ -162,8 +162,15 @@ export function SeccionPerfilTransaccional({
 
           <label style={{ display: 'grid', gap: '.25rem' }}>
             <span>Monto máximo mensual que el cliente estima operar</span>
-            {/* Sin defaultValue: VIZO no sugiere un número que el cliente no dijo. */}
-            <input name="montoMaximoMensual" inputMode="decimal" placeholder="500,000.00" required />
+            {/* Ni valor ni placeholder con magnitud. El placeholder enseña el
+                FORMATO, no una cantidad: un «500,000.00» de ejemplo es redondo
+                y plausible, y en el campo donde el cliente declara su tope eso
+                ancla a quien captura aunque nunca se guarde. En los montos de
+                la operación el mismo placeholder no estorba —ahí se transcribe
+                una cifra escrita en un documento—; aquí se captura una
+                estimación hablada, y es justo donde el ADR-22 dice que la
+                pantalla no sugiere ningún monto. */}
+            <input name="montoMaximoMensual" inputMode="decimal" placeholder="0.00" required />
           </label>
 
           <label style={{ display: 'grid', gap: '.25rem' }}>

@@ -254,11 +254,13 @@ export function FormularioOperacion({
               <span>Monto máximo mensual que estima</span>
               {/* Sin valor por omisión ni sugerencia calculada: si VIZO lo
                   propusiera, el perfil describiría en vez de declarar y nunca
-                  se desviaría de sí mismo. */}
+                  se desviaría de sí mismo. El placeholder tampoco lleva
+                  magnitud —solo formato—: un ejemplo redondo ancla a quien
+                  captura una cifra que el cliente dijo de viva voz. */}
               <input
                 name="perfilMontoMaximoMensual"
                 required
-                placeholder="500000.00"
+                placeholder="0.00"
                 defaultValue={previo('perfilMontoMaximoMensual')}
               />
             </label>

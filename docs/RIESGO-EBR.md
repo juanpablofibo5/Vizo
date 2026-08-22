@@ -174,7 +174,7 @@ Dos caminos, no uno: (a) obligado persona moral → aprobación de un directivo 
 
 - **Tabla de cuestionarios de origen/destino para riesgo alto**, que no existe. Art. 23 Ter 3 exige que puedan firmarse electrónicamente (Firma Electrónica) — eso es un campo de evidencia, no solo texto libre.
 
-- **Estado de aprobación de directivo (Art. 23 Ter 5), con dos caminos.** Mismo patrón que `designaciones_rec` (citado en `ACUERDO-115-2026.md §0`): un estado con transiciones, quién aprobó, cuándo, bloqueante para persona moral; y una rama distinta (constancia autogenerada, no bloqueante) cuando el obligado mismo es persona física. No es una casilla "aprobado sí/no": el artículo describe dos procedimientos distintos según el tipo de obligado.
+- ~~**Estado de aprobación de directivo (Art. 23 Ter 5), con dos caminos.**~~ ✅ **Construido el 22-ago-2026** (ADR-23). Este contraste acertó en que son **dos procedimientos y no una casilla**, y en que los separa qué es el obligado. Se equivocó en dos cosas, y las dos importan: **(1) no es «bloqueante para persona moral»** — el ¶1 contempla la detección «con posterioridad al acto», así que bloquear el registro volvería inexpresable el caso que el propio artículo relata; **(2) la constancia del ¶2 no es «autogenerada»** — el párrafo pide que el obligado «señale los motivos que consideró», y unos motivos que genera el sistema no son los que alguien consideró. Y lo que este contraste no vio: que el disparador tiene **tres** valores por mitad, no dos.
 
 ---
 

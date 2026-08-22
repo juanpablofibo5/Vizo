@@ -388,7 +388,112 @@ const aislamientoYPrivilegios: Recolector = async (db, tenantId) => {
   ]
 }
 
+/**
+ * Apartado IV: identificación y seguimiento reforzado de PEP.
+ *
+ * Acredita DÓNDE quedan las cosas, nunca QUIÉN puede autorizar — eso lo remite
+ * el propio Art. 23 Ter 5 al Manual, y es lo que este apartado sigue pidiendo
+ * al obligado en sus preguntas.
+ *
+ * NO AFIRMA CAPACIDADES DEL SISTEMA, SOLO HECHOS DE ESTE OBLIGADO. La primera
+ * versión de este recolector describía lo que VIZO sabe hacer —la red de
+ * vínculos, los relojes derivados, la aprobación con su evidencia atada— y por
+ * eso devolvía hechos incluso para un obligado recién creado que no ha
+ * preguntado a nadie si es PEP. Lo delató `recoleccion.test.ts`, que fija el
+ * invariante correcto: **un obligado que no ha demostrado nada sale en hueco**.
+ * Un catálogo de funciones no es evidencia de cumplimiento, y el ADR-20 existe
+ * justamente para no confundir las dos cosas.
+ */
+const pepYAprobacion: Recolector = async (db, tenantId, hoy) => {
+  const decl = await filas<{ total: string; revisadas: string }>(
+    db,
+    `select count(*)::text as total,
+            count(*) filter (where revisada_por is not null)::text as revisadas
+       from declaraciones_pep where tenant_id = $1`,
+    [tenantId],
+  )
+  const total = Number(decl[0]?.total ?? '0')
+  // Sin una sola declaración recabada no hay procedimiento que acreditar: la
+  // sección se degrada a hueco y el obligado la contesta él.
+  if (total === 0) return []
+
+  const revisadas = Number(decl[0]?.revisadas ?? '0')
+
+  const hechos: HechoAcreditado[] = [
+    {
+      afirmacion:
+        `Este obligado tiene ${String(total)} declaración(es) de carácter PEP recabada(s) como red declarada —vínculo por vínculo, con el cargo, el ámbito y las fechas—, que admite el cónyuge, la concubina o concubinario, el parentesco por consanguinidad o afinidad hasta el segundo grado y los socios con vínculos patrimoniales, conforme al Art. 23 Quáter, párrafo 3.`,
+      respaldo: 'declaraciones_pep y vinculos_pep · vínculos tipificados con sus fechas',
+    },
+    {
+      afirmacion:
+        'La vigencia del carácter PEP no se captura: se DERIVA de los dos plazos del Art. 23 Quáter, párrafos 4 y 5, que viven en el catálogo regulatorio con su fuente del DOF.',
+      respaldo: 'parametros_motor · los dos relojes del Art. 23 Quáter',
+    },
+  ]
+
+  if (revisadas > 0) {
+    hechos.push({
+      afirmacion: `${String(revisadas)} de esas declaraciones fueron revisadas por una persona, con su nombre y la hora, y quedaron congeladas como evidencia: una corrección es una declaración nueva, no una edición.`,
+      respaldo: 'declaraciones_pep.revisada_por y revisada_en · append-only',
+    })
+  }
+
+  const aps = await filas<{ total: string; via: string; actos: string }>(
+    db,
+    `select count(*)::text as total,
+            coalesce(max(a.via::text), '') as via,
+            coalesce(count(oc.operacion_id)::text, '0') as actos
+       from aprobaciones_directivo a
+       left join operaciones_consentidas oc on oc.aprobacion_id = a.id
+      where a.tenant_id = $1`,
+    [tenantId],
+  )
+  const nAp = Number(aps[0]?.total ?? '0')
+  if (nAp > 0) {
+    const esConstancia = aps[0]?.via === 'constancia_persona_fisica'
+    hechos.push({
+      afirmacion:
+        `Para operar con quien es Persona Políticamente Expuesta y, además, de Grado de Riesgo alto, consta(n) ${String(nAp)} ` +
+        (esConstancia
+          ? 'constancia(s) en la(s) que este obligado, por ser persona física, señaló los motivos que consideró (Art. 23 Ter 5, párrafo 2)'
+          : 'aprobación(es) de un directivo o su equivalente, con su nombre y su cargo (Art. 23 Ter 5, párrafo 1)') +
+        `, sobre ${aps[0]?.actos ?? '0'} acto(s) nombrado(s) uno por uno.`,
+      respaldo: 'aprobaciones_directivo y operaciones_consentidas · append-only',
+    })
+    hechos.push({
+      afirmacion:
+        'Cada aprobación cita la declaración PEP y la evaluación de Grado de Riesgo que la hicieron exigible, de modo que puede reconstruirse por qué se pidió, y no puede citar la evidencia de otra persona.',
+      respaldo: 'claves compuestas (tenant, cliente, evidencia) sobre aprobaciones_directivo',
+    })
+  } else {
+    // Que no haya aprobaciones puede ser correcto —ningún cliente reúne las dos
+    // mitades— o puede ser el faltante. La constancia no adivina cuál de las
+    // dos: dice desde cuándo aplica y deja la pregunta al obligado.
+    const exig = await filas<{ fecha: string }>(
+      db,
+      `select valor #>> '{}' as fecha from parametros_motor
+        where clave = 'exigibilidad_transitorio_cuarto' and actividad_id is null
+        order by vigente_desde desc limit 1`,
+      [],
+    )
+    const desde = exig[0]?.fecha
+    if (desde !== undefined) {
+      hechos.push({
+        afirmacion:
+          'No consta ninguna autorización del Art. 23 Ter 5 para este obligado. Es exigible ' +
+          `a partir de los actos u operaciones realizados el ${desde} (Transitorio Cuarto)` +
+          (hoy < desde ? ', que aún no llega.' : '.'),
+        respaldo: 'aprobaciones_directivo · sin filas para este obligado',
+      })
+    }
+  }
+
+  return hechos
+}
+
 const RECOLECTORES: Record<string, Recolector> = {
+  pep_y_aprobacion: pepYAprobacion,
   campos_del_expediente: camposDelExpediente,
   pipeline_del_aviso: pipelineDelAviso,
   conservacion_y_huellas: conservacionYHuellas,

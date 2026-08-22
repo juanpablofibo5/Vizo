@@ -84,7 +84,7 @@ Modelo comercial reflejado en software: **unidad de cobro = RFC obligado**; impl
 | Captura por enlace al comprador (magic-link) | F2 | Puerta abierta en el esquema; el Art. 23 Ter la valida con Firma Electrónica, pero es alcance nuevo |
 | ~~Rol REC como figura propia + aceptación de designación~~ | ✅ **construido el 15-ago** | Issue #12 cerrado. La designación es un estado con su tabla, sus transiciones y su paso de arranque. El REC sigue sin ser un rol de la app —es una figura con exposición personal— y eso no cambia |
 | Aviso modificatorio y aviso 24h | F2 / bloqueado | El 24h espera Resolución de formatos (Transitorio Quinto) |
-| ~~Grado de riesgo~~ · ~~perfil transaccional~~ · cuestionarios | ✅ **construidos el 20 y 21-ago** / F3 | ADR-21 y ADR-22. Faltan los cuestionarios del Art. 23 Ter 3, las medidas reforzadas del 23 Ter 4 y la aprobación de directivo del 23 Ter 5. Detalle en `ROADMAP-2027.md` |
+| ~~Grado de riesgo~~ · ~~perfil transaccional~~ · ~~aprobación de directivo~~ · cuestionarios | ✅ **construidos el 20, 21 y 22-ago** / F3 | ADR-21, ADR-22 y ADR-23. Faltan los cuestionarios del Art. 23 Ter 3 y las medidas reforzadas del 23 Ter 4. Detalle en `ROADMAP-2027.md` |
 | Manual de Políticas Internas | F2, **con frontera decidida** | ADR-20: VIZO acredita los 7 apartados que puede demostrar y deja el hueco en los otros 7. No redacta política |
 | Parser CFDI | F2 | Recortable desde el plan original; captura manual completa existe |
 | Notificaciones por correo | F2 | El semáforo cubre la necesidad en F1 |

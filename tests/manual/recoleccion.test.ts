@@ -79,18 +79,26 @@ describe('La evidencia sale del obligado, no del producto', () => {
     }
   })
 
-  it('y los siete que VIZO debería acreditar salen marcados como DEGRADADOS', async () => {
+  it('y los ocho que VIZO debería acreditar salen marcados como DEGRADADOS', async () => {
     // No es lo mismo «este apartado le toca al obligado» que «este lo debería
     // poder demostrar y no encontré nada». Lo segundo es una cuenta a medio
     // configurar, y tiene que verse.
+    //
+    // El IV entró a esta lista el 22-ago-2026, cuando pasó de hueco entero a
+    // parcial: VIZO acredita cómo queda registrado el carácter PEP y dónde
+    // queda la autorización del Art. 23 Ter 5 — pero solo si el obligado
+    // recabó alguna declaración. Sin una sola, no hay procedimiento que
+    // demostrar y la sección se degrada, que es justo lo que debe pasar.
     const c = await constancia()
 
-    expect([...c.degradados].sort()).toEqual(['I', 'VI', 'VII', 'VIII', 'X', 'XII', 'XIII'].sort())
+    expect([...c.degradados].sort()).toEqual(
+      ['I', 'IV', 'VI', 'VII', 'VIII', 'X', 'XII', 'XIII'].sort(),
+    )
   })
 
-  it('los siete huecos de catálogo NO se marcan degradados', async () => {
+  it('los seis huecos de catálogo NO se marcan degradados', async () => {
     const c = await constancia()
-    const deCatalogo = ['II', 'III', 'IV', 'V', 'IX', 'XI', 'XIV']
+    const deCatalogo = ['II', 'III', 'V', 'IX', 'XI', 'XIV']
 
     for (const f of deCatalogo) {
       expect(c.secciones.find((s) => s.fraccion === f)?.degradado).toBe(false)
@@ -118,6 +126,50 @@ describe('La evidencia sale del obligado, no del producto', () => {
       for (const h of i?.hechos ?? []) {
         expect(h.respaldo.length).toBeGreaterThan(0)
       }
+    })
+
+    it('la IV pasa a PARCIAL cuando el obligado recabó una declaración PEP', async () => {
+      // Y sigue diciendo qué le falta: quién puede autorizar lo remite el
+      // propio Art. 23 Ter 5 al Manual, así que nunca llega a «acreditado».
+      expect((await constancia()).secciones.find((s) => s.fraccion === 'IV')?.resolucion).toBe(
+        'hueco',
+      )
+
+      const cli = await db.query(
+        `insert into clientes_finales (tenant_id,tipo_persona,rfc,nombre_o_razon_social,nacionalidad)
+         values ($1,'fisica',$2,'Persona Declarante','MX') returning id::text`,
+        [sesion.tenantId, `PEP${String(Date.now()).slice(-9)}`],
+      )
+      const clienteId = (cli.rows[0] as { id: string }).id
+
+      // La declaración y su vínculo van juntas: la coherencia del Cap. III
+      // Quáter es diferida porque se escriben en dos statements.
+      await db.query('begin')
+      const d = await db.query(
+        `insert into declaraciones_pep (tenant_id,cliente_id,resultado,fecha_declaracion,capturada_por)
+         values ($1,$2,'pep_por_funcion',current_date,$3) returning id::text`,
+        [sesion.tenantId, clienteId, sesion.usuarioId],
+      )
+      await db.query(
+        `insert into vinculos_pep (tenant_id,declaracion_id,tipo,cargo,ambito,en_funciones)
+         values ($1,$2,'titular','Regidora','nacional',true)`,
+        [sesion.tenantId, (d.rows[0] as { id: string }).id],
+      )
+      await db.query('commit')
+
+      const c = await constancia()
+      const iv = c.secciones.find((s) => s.fraccion === 'IV')
+
+      expect(iv?.resolucion).toBe('parcial')
+      expect(iv?.degradado).toBe(false)
+      expect(iv?.hechos.length).toBeGreaterThan(0)
+      for (const h of iv?.hechos ?? []) {
+        expect(h.respaldo.length).toBeGreaterThan(0)
+      }
+      // Un parcial que deje de decir qué le falta es indistinguible de un
+      // acreditado, y eso sería afirmar de más ante una revisión.
+      expect(iv?.preguntas.length).toBeGreaterThan(0)
+      expect(iv?.porQueNo).toBeTruthy()
     })
 
     it('la VII sigue en hueco hasta que existe un documento de verdad', async () => {

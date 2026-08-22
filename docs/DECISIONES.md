@@ -296,6 +296,66 @@ Lo que **no** entrega: los «supuestos en que los actos u operaciones se aparten
 
 ---
 
+## ADR-23 · La aprobación del Art. 23 Ter 5 no es una compuerta, y su disparador no es un booleano — 2026-08-22
+
+**Contexto:** el Art. 23 Ter 5 cierra el Cap. III Ter. Exige, para operar con quien es Persona Políticamente Expuesta **y, además,** de Grado de Riesgo alto, «obtener la aprobación de un directivo o su equivalente que consienta los actos u operaciones respectivos». Es la última pieza del capítulo que ya tenía de qué colgarse: el grado alto lo produce el Cap. III Bis (ADR-21) y el carácter PEP lo registra el Cap. III Quáter, ambos construidos.
+
+**Dos preguntas de diseño, y las dos las contesta el texto.**
+
+### 1. ¿Impide operar?
+
+No, y no por prudencia. El ¶1 dice «**previamente o con posterioridad** al acto u operación […] detecten». Si esto fuera una compuerta que niega el registro, el caso que el propio artículo relata —enterarse después— sería **inexpresable**: la operación ya ocurrió en el mundo, y lo único que se conseguiría es que no quedara asentada en ningún lado.
+
+> **VIZO registra la realidad y señala el faltante. No la esconde.**
+
+Es el mismo criterio que la regla dura 5 aplicado al revés: allá VIZO no presenta el aviso por su cuenta; aquí VIZO no impide el acto por su cuenta. En los dos casos la decisión con peso legal es de una persona, y lo que el sistema aporta es que quede registrada y que el faltante sea visible.
+
+### 2. ¿El disparador es «PEP && alto»?
+
+No, y esta es la parte que se puede escribir mal sin que nada reviente. La conjunción tiene dos mitades y **cada mitad tiene tres estados**: sí, no, y todavía no se sabe. Un cliente sin declaración PEP no es un cliente que no sea PEP. Un obligado que no ha configurado su metodología de riesgo no tiene clientes de grado bajo: tiene clientes **sin clasificar**.
+
+Colapsar «no se sabe» a «no» devuelve «no se requiere aprobación», que **suena a respuesta y es una omisión** — la regla dura 6 en su forma más cara, porque no lanza ninguna excepción y el número es plausible.
+
+Se resuelve con lógica de tres valores. La tabla, con la celda que sorprende marcada:
+
+| PEP \ ALTO | sí | no | no se sabe |
+|---|---|---|---|
+| **sí** | EXIGIBLE | no exigible | INDETERMINABLE |
+| **no** | no exigible | no exigible | **no exigible** ← |
+| **no se sabe** | INDETERMINABLE | **no exigible** ← | INDETERMINABLE |
+
+**Un falso definitivo en cualquiera de las dos mitades cierra la conjunción**, sin importar lo que valga la otra. Si consta que el cliente no es de grado alto, el Art. 23 Ter 5 no le aplica aunque nadie sepa si es PEP. No tapa nada: la declaración PEP que falta es un incumplimiento del Cap. III Quáter que se señala por su cuenta, en su propia sección del expediente.
+
+**Y un solo principio para la caducidad**, del que salen dos casos que parecen asimétricos y no lo son:
+
+> **Que un dato esté vencido nunca reduce la obligación.**
+
+Un grado alto vencido sigue exigiendo la firma —caducar no degrada a nadie—. Un grado no-alto vencido deja de ser un «no» oponible: el Art. 23 Bis 1 declaró viejo ese dato al vencer los seis meses, y sostener un «no se requiere» sobre él sería apoyarse en algo que la norma ya descartó.
+
+**Decisión.**
+
+> **La operación se registra siempre. La exigencia se calcula con los hechos que ya existen y se cita, nunca se copia. Y cuando no se puede saber, se dice que no se sabe.**
+
+En la pantalla eso significa que **nunca aparece «no se requiere aprobación» por falta de un dato**: aparece qué falta, y el formulario **no se ofrece**. Firmar sin saber si era exigible produce evidencia de algo que nadie comprobó.
+
+**Lo que VIZO no decide, y es la frontera de siempre:** quién es «un directivo o su equivalente». Lo dice el Manual —el propio artículo lo remite: «de acuerdo con lo que al efecto se establezca en su Manual de Políticas Internas»—, y el apartado IV del Art. 37 Bis lo pregunta con todas sus letras: *«¿quién autoriza operar con una PEP, y dónde queda esa autorización?»*. **VIZO responde la segunda mitad.** Asienta quién aprobó, con qué cargo, cuándo y sobre qué actos; no valida la facultad, porque la facultad la define un documento que VIZO no redacta (ADR-20).
+
+**Las dos ramas del ¶2 son excluyentes, y no las separa una preferencia:** las separa qué es el obligado. Una persona física no tiene directivos que firmen, y el ¶2 no le ofrece una alternativa cómoda —dice que la constancia **subsana** la aprobación—. Una moral que se emitiera «constancia de motivos» a sí misma estaría saltándose la firma que el ¶1 le exige. Por eso `via` no es un campo del formulario: se deriva de `tenants.tipo_persona`, y un trigger lo hace inexpresable en la base.
+
+**La evidencia se cita por clave compuesta con el cliente.** La aprobación apunta a la declaración PEP y a la evaluación de riesgo que la hicieron exigible. Apuntar a la declaración de una persona y a la evaluación de otra produciría una fila impecable por fuera e indefendible por dentro; con la clave compuesta no es una validación que alguien pueda olvidar llamar, es una fila que no entra.
+
+**Alternativas descartadas:**
+
+- **(a) Bloquear el registro de la operación hasta que exista la aprobación.** Vuelve inexpresable el caso del propio ¶1 (detección posterior) y empuja la operación fuera del sistema, que es el único lugar donde podría quedar asentada. Además el artículo no prohíbe operar: obliga a obtener la aprobación.
+- **(b) Tratar el disparador como un `&&` de dos booleanos.** Es la alternativa que ningún test atraparía por accidente: devuelve «no se requiere» donde debía decir «no se sabe». Por eso la prueba que lo vigila recorre la tabla celda por celda, y el primer sabotaje del arnés es exactamente ese cambio.
+- **(c) Una tabla de personas facultadas para aprobar, que VIZO valide.** Sería VIZO haciendo cumplir una regla que el Manual define, sobre un apartado que precisamente está marcado como del obligado. Lo que sí queda: quién aprobó y **quién lo registró** son campos distintos, con fecha, y todo append-only. Eso es evidencia; validar la facultad no es de VIZO.
+
+**Una decisión de ruido, dicha para que se pueda discutir:** con la exigencia **indeterminable** no se levanta alerta por operación. Lo que suele causarla —que el obligado no tenga metodología de riesgo vigente— es un hueco único y global, ya señalado en Configuración y en la sección de riesgo del expediente; levantarlo otra vez por cada operación daría N alertas para un solo arreglo, y un panel que nadie mira es peor que uno corto. El hueco se muestra en el expediente, con lo que falta. Si en la práctica resulta que se pasa por alto, la corrección es alertar una vez por cliente, no una por acto.
+
+**Lo que abre:** del Cap. III Ter quedan el **Art. 23 Ter 3** (cuestionarios de origen y destino para riesgo alto, con Firma Electrónica, que es evidencia y no texto libre) y el **Art. 23 Ter 4** (medidas reforzadas: cónyuge y dependientes económicos para personas físicas, accionistas verificados contra la Secretaría de Economía para morales, y documentación adicional para PEP extranjeras).
+
+---
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 1. **Sellado del manifiesto** (ADR-10): ¿una constancia NOM-151 sobre el manifiesto con los hashes de todos los documentos satisface la exigencia de fecha cierta, o la autoridad espera constancia por documento?

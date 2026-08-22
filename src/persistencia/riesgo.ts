@@ -73,6 +73,18 @@ export class DatoDeRiesgoInvalido extends Error {
   }
 }
 
+export class PlazoDeRiesgoAusente extends Error {
+  constructor(clave: string) {
+    super(
+      `El catálogo regulatorio no tiene el plazo "${clave}", y de él se deriva cuándo hay que ` +
+        'reevaluar el Grado de Riesgo (Art. 23 Bis 1). Se detiene en vez de suponer seis meses: ' +
+        'un valor cableado aquí sobreviviría a la reforma que lo cambie y nadie lo notaría hasta ' +
+        'una revisión. La regla se siembra con su fuente del DOF, no se adivina (regla dura 1).',
+    )
+    this.name = 'PlazoDeRiesgoAusente'
+  }
+}
+
 export class ModeloNoActivable extends Error {
   constructor(mensaje: string) {
     super(mensaje)
@@ -139,6 +151,13 @@ const aModelo = async (db: EjecutorSql, f: FilaModelo): Promise<ModeloGuardado> 
 })
 
 /** Todo lo que la pantalla de configuración necesita saber. */
+/** El plazo del catálogo, o el alto. Nunca un seis supuesto. */
+function plazoDeReevaluacion(rows: unknown[]): number {
+  const m = (rows[0] as { meses: number } | undefined)?.meses
+  if (m === undefined) throw new PlazoDeRiesgoAusente('reevaluacion_grado_meses')
+  return m
+}
+
 export async function estadoDelRiesgo(
   db: EjecutorSql,
   p: { sesion: ContextoSesion; hoy: string },
@@ -178,8 +197,13 @@ export async function estadoDelRiesgo(
   }))
 
   const cat = pa.rows[0] as { desde: string; minimo: number } | undefined
-  const minimo = cat?.minimo ?? 3
-  const exigibleDesde = cat?.desde ?? '2027-03-01'
+  // El piso de tres clasificaciones es del Art. 23 Bis ¶2 y la fecha del
+  // Transitorio Cuarto: los dos son texto del DOF, no defaults razonables. Si
+  // el catálogo no cargó, la pantalla diría «te faltan 3 grados» sin saber si
+  // son tres, que es peor que no decir nada.
+  if (cat === undefined) throw new PlazoDeRiesgoAusente('minimo_clasificaciones_riesgo')
+  const minimo = cat.minimo
+  const exigibleDesde = cat.desde
 
   // El hueco, dicho como lo que le falta al obligado. Nunca se rellena por él.
   const falta: string[] = []
@@ -463,7 +487,12 @@ export async function evaluarClienteYRegistrar(
         where clave = 'reevaluacion_grado_meses' and actividad_id is null
         order by vigente_desde desc limit 1`,
     )
-    const m = (meses.rows[0] as { meses: number } | undefined)?.meses ?? 6
+    // Sin plazo no se sella un vencimiento. Este es el caso caro de los dos:
+    // aquí el número entra a una fila APPEND-ONLY que después se opone a una
+    // revisión, así que un seis supuesto quedaría escrito para siempre como si
+    // alguien lo hubiera decidido.
+    const m = (meses.rows[0] as { meses: number } | undefined)?.meses
+    if (m === undefined) throw new PlazoDeRiesgoAusente('reevaluacion_grado_meses')
 
     const { rows } = await db.query(
       `insert into evaluaciones_riesgo
@@ -591,6 +620,6 @@ export async function riesgoDelCliente(
     factores: estado.vigente?.factores ?? [],
     vigente: evaluaciones[0] ?? null,
     historico: evaluaciones.slice(1),
-    reevaluacionMeses: (meses.rows[0] as { meses: number } | undefined)?.meses ?? 6,
+    reevaluacionMeses: plazoDeReevaluacion(meses.rows),
   }
 }

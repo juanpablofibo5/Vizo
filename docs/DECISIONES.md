@@ -356,6 +356,31 @@ En la pantalla eso significa que **nunca aparece «no se requiere aprobación» 
 
 ---
 
+## ADR-24 · El expediente es la puerta: las cinco secciones de conocimiento del cliente viven detrás de él — 2026-08-22
+
+**Contexto:** la página del expediente tiene un retorno temprano. Cuando el cliente existe pero **no tiene expediente abierto**, la pantalla muestra solo su nombre y un botón «Abrir expediente». Detrás de ese retorno quedaron, una tras otra según se construyeron, cinco secciones: revisión anual (Art. 21), Grado de Riesgo (Cap. III Bis), Perfil transaccional (Cap. III Ter), aprobación para operar (Art. 23 Ter 5) y declaración PEP (Cap. III Quáter).
+
+**Se anotó como «accidente» dos veces y no lo es.** Lo que empezó como el orden en que se fueron pegando las secciones resultó tener un fundamento, y conviene escribirlo antes de que alguien lo «arregle»:
+
+> **En la Fracción V Bis se integra expediente de cada aportante, sin importar el monto.** Abrirlo no es un paso opcional que se pueda posponer: es la primera obligación, y precede a todas las demás.
+
+Las cinco secciones son **conocimiento del cliente**, y el conocimiento del cliente se asienta *en su expediente*. Ofrecer la clasificación de riesgo, el perfil transaccional o la aprobación de directivo sobre alguien que todavía no tiene expediente sería ofrecer construir el segundo piso antes que el primero — y peor, produciría filas colgando de un cliente cuya identificación nadie ha empezado a integrar.
+
+**Decisión.** Se queda como está, y ahora por escrito:
+
+> **El expediente abierto es la precondición de las cinco secciones de conocimiento del cliente. La pantalla de «Abrir expediente» no es un error de layout: es la puerta, y dice cuál es el siguiente paso.**
+
+**Lo que sí cambia, y es lo que motivó escribir esto hoy:** esa pantalla es un **estado vacío**, y los estados vacíos son uno de los cuatro territorios donde el naranja de marca entra (decisión de identidad del 16-ago). Hoy es una línea de texto y un botón. Que sea la puerta de todo lo demás significa que tiene que decirlo: qué se integra, por qué precede al resto, y qué se desbloquea al abrirlo. Se rediseña en la sesión de diseño, no antes.
+
+**Alternativas descartadas:**
+
+- **(a) Mover las secciones arriba del retorno.** Haría capturables un Grado de Riesgo y un Perfil transaccional sobre un cliente sin expediente. El Art. 23 Ter fr. IV liga el perfil a «la revisión y actualización del expediente de identificación»: sin expediente, esa liga no tiene a dónde apuntar.
+- **(b) Mostrarlas deshabilitadas, con un candado.** Suena amable y enseña cinco cosas que no se pueden hacer en la pantalla de alguien que solo necesita hacer una. La versión honesta de un candado es decir qué lo abre, y para eso basta la puerta.
+
+**Lo que abre:** cuando existan las secciones del Art. 23 Ter 3 y 23 Ter 4, serán **siete** detrás de la misma puerta. El patrón de sección del expediente se diseña para siete, no para cinco.
+
+---
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 1. **Sellado del manifiesto** (ADR-10): ¿una constancia NOM-151 sobre el manifiesto con los hashes de todos los documentos satisface la exigencia de fecha cierta, o la autoridad espera constancia por documento?

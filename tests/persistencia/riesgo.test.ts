@@ -5,6 +5,7 @@ import { enTransaccionDeSesion, type ContextoSesion } from '../../src/persistenc
 import {
   DatoDeRiesgoInvalido,
   ModeloNoActivable,
+  PlazoDeRiesgoAusente,
   activarModelo,
   agregarFactor,
   crearModelo,
@@ -54,6 +55,65 @@ describe('El modelo de Riesgos del obligado', () => {
     await definirGrado(db, { sesion: admin, clave: 'medio', nombre: 'Medio', orden: 2, esAlto: false, puntajeMinimo: 35, vigenteDesde: '2027-03-01' })
     await definirGrado(db, { sesion: admin, clave: 'alto', nombre: 'Alto', orden: 3, esAlto: true, puntajeMinimo: 70, vigenteDesde: '2027-03-01' })
   }
+
+  it('sin el plazo del catálogo NO supone seis meses: se detiene', async () => {
+    // El caso caro es la ruta de ESCRITURA: ese número entra a una fila
+    // append-only que después se opone a una revisión, así que un seis supuesto
+    // quedaría escrito para siempre como si alguien lo hubiera decidido.
+    //
+    // Se borra el parámetro dentro de una transacción que se revierte, para no
+    // dejar el catálogo tocado para las demás pruebas.
+    await escalaCompleta()
+    const { modeloId } = await crearModelo(db, { sesion: admin, metodoMedicion: 'suma_ponderada' })
+    const el = await db.query(`select id from elementos_riesgo where clave = 'tipo_cliente'`)
+    await agregarFactor(db, {
+      sesion: admin,
+      modeloId,
+      elementoId: (el.rows[0] as { id: string }).id,
+      factor: 'Factor de prueba',
+      peso: 80,
+    })
+    await activarModelo(db, { sesion: admin, modeloId, vigenteDesde: '2027-03-01' })
+
+    // OJO CON CÓMO SE QUITA EL PARÁMETRO, que es donde me equivoqué primero.
+    //
+    // La versión inicial hacía `begin` … `delete` … `rollback`. No funciona:
+    // `evaluarClienteYRegistrar` abre su propia transacción de sesión, y su
+    // `commit` cierra la de afuera —es el `begin` anidado que documenta
+    // `src/persistencia/transaccion.ts`—. El DELETE quedó CONFIRMADO y tumbó
+    // 22 pruebas de otros archivos que sí necesitan el catálogo.
+    //
+    // La compensación tiene que ser explícita: se guarda la fila y se vuelve a
+    // sembrar en el `finally`, pase lo que pase con las transacciones de en
+    // medio.
+    const guardada = await db.query(
+      `select valor::text, descripcion, vigente_desde::text as desde, fuente
+         from parametros_motor where clave = 'reevaluacion_grado_meses'`,
+    )
+    const fila = guardada.rows[0] as {
+      valor: string
+      descripcion: string
+      desde: string
+      fuente: string
+    }
+    await db.query(`delete from parametros_motor where clave = 'reevaluacion_grado_meses'`)
+    try {
+      await expect(
+        evaluarClienteYRegistrar(db, {
+          sesion: admin,
+          clienteId,
+          factoresPresentes: [],
+          hoy: HOY,
+        }),
+      ).rejects.toThrow(PlazoDeRiesgoAusente)
+    } finally {
+      await db.query(
+        `insert into parametros_motor (actividad_id, clave, valor, descripcion, vigente_desde, fuente)
+         values (null, 'reevaluacion_grado_meses', $1::jsonb, $2, $3::date, $4)`,
+        [fila.valor, fila.descripcion, fila.desde, fila.fuente],
+      )
+    }
+  })
 
   it('EL HUECO DEL ADR-21: sin modelo configurado no clasifica ni escribe', async () => {
     const r = await evaluarClienteYRegistrar(db, {

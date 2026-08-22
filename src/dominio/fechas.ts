@@ -57,6 +57,20 @@ export function restarMeses(fecha: FechaISO, meses: number): FechaISO {
 }
 
 /**
+ * Suma meses a una fecha, con el MISMO recorte de día que `restarMeses`.
+ *
+ * Tiene que coincidir con Postgres, y coincide: `date '2027-08-31' + interval
+ * '6 months'` devuelve `2028-02-29`, no un 31 de febrero desbordado. Importa
+ * porque el vencimiento del Perfil transaccional se deriva aquí y el trigger
+ * `app.perfil_transaccional_coherente` lo vuelve a calcular allá: si las dos
+ * aritméticas discreparan un día, ningún perfil anclado a fin de mes se
+ * podría guardar.
+ */
+export function sumarMeses(fecha: FechaISO, meses: number): FechaISO {
+  return restarMeses(fecha, -meses)
+}
+
+/**
  * Inicio de la ventana de acumulación: `meses` hacia atrás desde la fecha de
  * la operación evaluada. La ventana es DESLIZANTE (se cuenta desde cada
  * operación) y no periodos fijos de calendario.

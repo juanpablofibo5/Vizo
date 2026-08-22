@@ -28,6 +28,10 @@ import {
 } from '../../../../src/persistencia/perfil'
 import { montoCapturado } from '../../../../src/persistencia/operaciones'
 import {
+  DatoDeAprobacionInvalido,
+  asentarAprobacion,
+} from '../../../../src/persistencia/aprobacion'
+import {
   DeclaracionPepInvalida,
   RevisionPepImposible,
   registrarDeclaracionPep,
@@ -547,6 +551,66 @@ export async function registrarPerfilDelCliente(
       ok: false,
       mensaje: e instanceof Error ? e.message : 'No se pudo asentar el Perfil transaccional.',
     }
+  } finally {
+    await db.end()
+  }
+}
+
+/**
+ * La aprobación de directivo del Art. 23 Ter 5, o la constancia que la subsana.
+ *
+ * La vía NO llega del formulario: la impone qué es el obligado (¶2). Y la
+ * evidencia que la aprobación cita tampoco: se deriva del estado del cliente.
+ * Si el disparador todavía no se puede resolver, la persistencia se niega — el
+ * hueco no se cierra firmando.
+ */
+export async function asentarAprobacionDirectivo(
+  _previo: EstadoRevision,
+  form: FormData,
+): Promise<EstadoRevision> {
+  const sesion = await sesionRequerida()
+  const ctx = { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol }
+  const clienteId = String(form.get('clienteId') ?? '')
+  const momento = String(form.get('momento') ?? '') === 'previa' ? 'previa' : 'posterior'
+  const texto = (campo: string): string | undefined => {
+    const v = String(form.get(campo) ?? '').trim()
+    return v === '' ? undefined : v
+  }
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await asentarAprobacion(db, {
+      sesion: ctx,
+      clienteId,
+      hoy: hoy(),
+      datos: {
+        momento,
+        aprobadorNombre: texto('aprobadorNombre'),
+        aprobadorCargo: texto('aprobadorCargo'),
+        motivos: texto('motivos'),
+        alcancePrevio: texto('alcancePrevio'),
+        vigenteHasta: texto('vigenteHasta'),
+        operaciones: form.getAll('operaciones').map(String),
+      },
+    })
+
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    revalidatePath('/alertas')
+    return {
+      ok: true,
+      mensaje:
+        momento === 'previa'
+          ? 'Aprobación previa asentada, con su alcance y su plazo. Cubre los actos que ocurran dentro de esa ventana.'
+          : 'Aprobación asentada sobre los actos que nombra. Queda con tu nombre y la hora, y no se reescribe.',
+    }
+  } catch (e) {
+    if (e instanceof DatoDeAprobacionInvalido) return { ok: false, mensaje: e.problemas.join(' ') }
+    const bruto = e instanceof Error ? e.message : String(e)
+    if (/insufficient_privilege|admin|row-level security/i.test(bruto)) {
+      return { ok: false, mensaje: 'Solo un administrador asienta la aprobación del Art. 23 Ter 5.' }
+    }
+    return { ok: false, mensaje: bruto }
   } finally {
     await db.end()
   }

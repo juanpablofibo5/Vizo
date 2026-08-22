@@ -19,11 +19,15 @@ interface FilaAlerta {
 }
 
 const ORDEN: Record<string, number> = {
-  aviso_requerido: 0,
-  revision_identidad: 1,
-  desviacion_perfil: 2,
-  perfil_ausente: 3,
-  proximidad: 4,
+  // La aprobación del Art. 23 Ter 5 va arriba del aviso a propósito: el aviso
+  // tiene plazo hasta el día 17 del mes siguiente; una operación con PEP de
+  // grado alto sin consentimiento ya ocurrió y sigue sin firma.
+  aprobacion_directivo_pendiente: 0,
+  aviso_requerido: 1,
+  revision_identidad: 2,
+  desviacion_perfil: 3,
+  perfil_ausente: 4,
+  proximidad: 5,
 }
 
 export default async function Alertas() {

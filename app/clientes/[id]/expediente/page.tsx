@@ -16,8 +16,13 @@ import { SeccionPep } from './pep'
 import { estadoPepDelCliente, type EstadoPep } from '../../../../src/persistencia/pep'
 import { SeccionRiesgoCliente } from './riesgo'
 import { SeccionPerfilTransaccional } from './perfil'
+import { SeccionAprobacionDirectivo } from './aprobacion'
 import { riesgoDelCliente, type RiesgoDelCliente } from '../../../../src/persistencia/riesgo'
 import { estadoDelPerfil, type EstadoPerfil } from '../../../../src/persistencia/perfil'
+import {
+  estadoDeAprobacion,
+  type EstadoAprobacion,
+} from '../../../../src/persistencia/aprobacion'
 
 export const dynamic = 'force-dynamic'
 
@@ -214,6 +219,12 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       hoy: hoyEnMexico(),
     })
 
+    const aprobacion: EstadoAprobacion = await estadoDeAprobacion(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+      hoy: hoyEnMexico(),
+    })
+
     await db.query('rollback')
 
     const faltantes = evaluado ? completitud.faltantes : []
@@ -360,6 +371,17 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
         <SeccionPerfilTransaccional
           clienteId={clienteId}
           perfil={perfil}
+          puede={sesion.rol === 'admin'}
+        />
+
+        {/* Art. 23 Ter 5. Va al final del bloque de conocimiento del cliente
+            porque depende de los tres anteriores: se dispara con el grado alto
+            del Cap. III Bis y con la declaración PEP del Cap. III Quáter, y sin
+            alguno de los dos no da «no se requiere» sino el hueco. */}
+        <h2 id="aprobacion">Aprobación para operar</h2>
+        <SeccionAprobacionDirectivo
+          clienteId={clienteId}
+          aprobacion={aprobacion}
           puede={sesion.rol === 'admin'}
         />
 

@@ -6,6 +6,8 @@ import { evaluar } from '../dominio/motor'
 import { centavos, centavosAPesosTexto, pesosTextoACentavos, type Centavos } from '../dominio/dinero'
 import type { Evaluacion } from '../dominio/tipos'
 import { asentarPerfil, contrastarConSuPerfil, perfilVigenteDe } from './perfil'
+import { contrastarAprobacionAlOperar } from './aprobacion'
+import type { ExigenciaDeAprobacion } from '../dominio/aprobacion-directivo'
 import type { ResultadoPerfil } from '../dominio/perfil-transaccional'
 
 /** Lo que el cliente estima, dicho por él, al realizar su acto. */
@@ -118,6 +120,11 @@ export interface ResultadoOperacion {
    * mismo acto: son dos preguntas distintas sobre la misma operación.
    */
   perfil: ResultadoPerfil
+  /**
+   * Si este acto necesitaba el consentimiento del Art. 23 Ter 5. No impide
+   * registrar: el ¶1 contempla detectarlo «con posterioridad al acto».
+   */
+  aprobacion: ExigenciaDeAprobacion
 }
 
 /** Formas de pago que el catálogo del SAT considera efectivo. */
@@ -325,6 +332,15 @@ export async function registrarOperacion(
     })
     if (perfil.alertaId !== null) alertas.push(perfil.alertaId)
 
+    // Art. 23 Ter 5. Va después del perfil porque responde otra pregunta: no
+    // si la operación es rara, sino si quien la hace exige que alguien firme.
+    const aprobacion = await contrastarAprobacionAlOperar(db, {
+      sesion: p.sesion,
+      clienteId: d.clienteId,
+      operacion: { id: operacionId, fecha: d.fechaOperacion },
+    })
+    if (aprobacion.alertaId !== null) alertas.push(aprobacion.alertaId)
+
     // REGLA DURA 3: montos y resultado sí; nombre, RFC y CURP del cliente NO.
     // El cliente va como id opaco, que es lo que permite auditar sin filtrar.
     await db.query('select app.bitacora_registrar($1,$2,$3,$4,$5::jsonb,$6)', [
@@ -347,7 +363,14 @@ export async function registrarOperacion(
       p.sesion.usuarioId,
     ])
 
-    return { operacionId, evaluacionId, evaluacion, alertas, perfil: perfil.resultado }
+    return {
+      operacionId,
+      evaluacionId,
+      evaluacion,
+      alertas,
+      perfil: perfil.resultado,
+      aprobacion: aprobacion.exigencia,
+    }
   })
 }
 

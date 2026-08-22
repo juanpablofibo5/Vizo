@@ -75,13 +75,33 @@ async function plazo(db: EjecutorSql, clave: string): Promise<{ meses: number; d
   return fila
 }
 
+/**
+ * La fecha del acto desde la que rige el Transitorio Cuarto.
+ *
+ * Vive en su propia fila del catálogo y no en el `vigente_desde` de un plazo.
+ * Antes se leía de ahí y daba la respuesta correcta por coincidencia: ese
+ * `vigente_desde` dice desde cuándo rige el PLAZO, no desde cuándo es exigible
+ * el capítulo. Dos hechos distintos con el mismo valor son justo lo que
+ * `RIESGO-EBR.md` §3.1 mandó no fusionar.
+ */
+export async function exigibilidadDelTransitorioCuarto(db: EjecutorSql): Promise<string> {
+  const { rows } = await db.query(
+    `select valor #>> '{}' as fecha from parametros_motor
+      where clave = 'exigibilidad_transitorio_cuarto' and actividad_id is null
+      order by vigente_desde desc limit 1`,
+  )
+  const f = (rows[0] as { fecha: string } | undefined)?.fecha
+  if (f === undefined) throw new PlazoDelPerfilAusente('exigibilidad_transitorio_cuarto')
+  return f
+}
+
 export async function plazosDelPerfil(db: EjecutorSql): Promise<PlazosVigentes> {
   const maduracion = await plazo(db, 'perfil_maduracion_meses')
   const cadencia = await plazo(db, 'reevaluacion_perfil_meses')
   return {
     maduracionMeses: maduracion.meses,
     cadenciaMeses: cadencia.meses,
-    exigibleDesde: maduracion.desde,
+    exigibleDesde: await exigibilidadDelTransitorioCuarto(db),
   }
 }
 

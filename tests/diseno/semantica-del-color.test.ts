@@ -131,6 +131,26 @@ describe('El naranja de marca no dice un estado', () => {
   })
 })
 
+describe('El color de la barra del navegador no se desfasa del fondo', () => {
+  const LAYOUT = readFileSync(new URL('../../app/layout.tsx', import.meta.url), 'utf8')
+
+  /**
+   * `themeColor` es una COPIA de `--fondo` que Next necesita en tiempo de
+   * build, y las copias se desfasan. Ya pasó una vez: quedó con la paleta fría
+   * cuando el rediseño movió el fondo al mundo cálido, y la barra del navegador
+   * pintaba el color viejo sobre el portal nuevo. Se descubrió leyendo el HTML
+   * que sirve el dominio, no en local — que es tarde.
+   */
+  it.each([0, 1])('el themeColor del tema %i es exactamente el --fondo de ese tema', (i) => {
+    const fondos = valoresDelToken('fondo')
+    const declarados = [...LAYOUT.matchAll(/color:\s*'(#[0-9A-Fa-f]{6})'/g)].map((m) =>
+      (m[1] ?? '').toUpperCase(),
+    )
+    expect(declarados).toHaveLength(2)
+    expect(declarados[i]).toBe(fondos[i]?.toUpperCase())
+  })
+})
+
 describe('El favicon es marca, y su V va sólida a propósito', () => {
   const ICONO = readFileSync(new URL('../../app/icon.svg', import.meta.url), 'utf8')
 

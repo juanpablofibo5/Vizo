@@ -96,6 +96,32 @@ describe('El naranja de marca no dice un estado', () => {
     expect(cuerpo).not.toMatch(/var\(\s*--marca/)
   })
 
+  /**
+   * EL HUECO QUE ESTA PRUEBA TENÍA HASTA EL 22-AGO-2026.
+   *
+   * Vigilaba los hexes literales y `--marca`, y con eso bastaba mientras
+   * `--acento` fuera el verdigrís. El rediseño movió el acento al naranja de
+   * marca —para que el verdigrís signifique SOLO «en regla»— y de golpe
+   * `.chip`, que usa `var(--acento)`, se volvió naranja sin que nada fallara.
+   *
+   * La regla de verdad no era «no uses estos hexes»: es que un selector que
+   * dice un estado no puede pintarse con el color de la ACCIÓN, se llame como
+   * se llame la ficha.
+   */
+  it.each(SEMAFORO)('%s no usa el token de acción', (selector) => {
+    const cuerpo = bloque(selector)
+    expect(cuerpo).not.toMatch(/var\(\s*--acento/)
+    expect(cuerpo).not.toMatch(/var\(\s*--enlace/)
+  })
+
+  it('el acento ES el naranja de marca: si dejara de serlo, la prueba de arriba sobra', () => {
+    // Si algún día vuelven a divergir, esta prueba falla y obliga a releer la
+    // de arriba en vez de dejarla vigilando algo que ya no aplica.
+    const acento = valoresDelToken('acento')
+    expect(acento[0]).toBe('#E8590C')
+    expect(acento[1]).toBe('#FF7A1A')
+  })
+
   it('los selectores del semáforo existen: si alguien los renombra, esto avisa', () => {
     // Sin esto, borrar `.estado.aviso` volvería verdes todas las pruebas de
     // arriba por vacuidad — pasarían por no encontrar nada que revisar.

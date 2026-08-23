@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import './globals.css'
+import { barlow, barlowCondensed } from './tipografia'
 
 export const metadata = {
   title: 'VIZO — cumplimiento PLD',
@@ -24,7 +25,7 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es-MX">
+    <html lang="es-MX" className={`${barlow.variable} ${barlowCondensed.variable}`}>
       <body>{children}</body>
     </html>
   )

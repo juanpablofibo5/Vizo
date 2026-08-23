@@ -93,28 +93,37 @@ export function PanelLateral({
       )}
 
       <aside className="lateral" id="panel-lateral" data-abierto={abierto ? 'sí' : 'no'}>
-        <div className="marca">
-          <span className="logo"><Marca tamano={20} />VIZO</span>
-          <span className="obligado" title={obligado.razonSocial}>
-            {obligado.razonSocial}
-          </span>
-          <span className="rfc">{obligado.rfc}</span>
-        </div>
-
-        <Navegacion
-          alertasAbiertas={alertasAbiertas}
-          alCambiarDeArea={() => setAbierto(false)}
-        />
-
-        <div className="usuario">
-          <div className="quien">
-            <span className="nombre">{perfil.nombre}</span>
-            <span className="chip">{perfil.rol}</span>
+        {/* El <aside> se queda pegado y transparente; este div es el panel
+            oscuro que flota dentro, con su radio y su respiro alrededor. */}
+        <div className="panel-lateral">
+          <div className="marca">
+            <span className="logo">
+              <Marca tamano={24} />
+              VIZO
+            </span>
+            <span className="obligado" title={obligado.razonSocial}>
+              {obligado.razonSocial}
+            </span>
+            <span className="rfc">{obligado.rfc}</span>
           </div>
-          <span className="correo" title={perfil.email}>
-            {perfil.email}
-          </span>
-          <Salir />
+
+          <Navegacion
+            alertasAbiertas={alertasAbiertas}
+            alCambiarDeArea={() => setAbierto(false)}
+          />
+
+          <div className="usuario">
+            <div className="quien">
+              <span className="nombre">{perfil.nombre}</span>
+              {/* `.rol` y no `.chip`: dice quién eres, no un estado
+                  regulatorio, y por eso puede llevar el naranja de marca. */}
+              <span className="rol">{perfil.rol}</span>
+            </div>
+            <span className="correo" title={perfil.email}>
+              {perfil.email}
+            </span>
+            <Salir />
+          </div>
         </div>
       </aside>
     </>

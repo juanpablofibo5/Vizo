@@ -1,97 +1,129 @@
 /* ─────────────────────────────────────────────────────────────────────────
    Sistema visual del portal.
 
-   Hasta la semana 10 este archivo empezaba diciendo "UI utilitaria a
-   propósito: el criterio de calidad del MVP es que el ciclo regulatorio
-   cierre, no que la pantalla se vea bonita". Eso dejó de ser cierto el
-   10 de agosto: el proyecto pasó a medirse como SaaS, y la pantalla es
-   ahora la mitad de la pregunta (ver docs/ALCANCE.md).
+   Un portal de cumplimiento se lee todos los días bajo presión de plazo: la
+   jerarquía tiene que decir en un vistazo qué está en regla y qué no. Los
+   colores semánticos —en regla, por vencer, vencido— son parte de la
+   INFORMACIÓN, no del estilo.
 
-   Sigue sin ser decoración. Un portal de cumplimiento se lee todos los
-   días bajo presión de plazo: la jerarquía tiene que decir en un vistazo
-   qué está en regla y qué no. Los colores semánticos —en regla, por
-   vencer, vencido— son parte de la información, no del estilo.
-   ───────────────────────────────────────────────────────────────────── */
+   ──────────────────────────────────────────────────────────────────────────
+   REDISEÑO DEL 22-AGO-2026, Y LO QUE ARREGLÓ DE FONDO
+   ──────────────────────────────────────────────────────────────────────────
+   Hasta hoy `--acento` y `--ok` eran EL MISMO HEX (#1D6B58): un botón primario
+   se veía idéntico a un chip «en regla». El color de acción y el color de un
+   estado regulatorio eran indistinguibles, y eso es exactamente lo que este
+   archivo dice que no debe pasar.
+
+   Al mover las acciones al naranja de marca, el verdigrís queda libre para
+   significar UNA sola cosa. La regla se vuelve más nítida, no más laxa:
+
+     · naranja  = acción y marca. Nunca un estado.
+     · verdigrís = en regla. Nunca un botón.
+     · ámbar     = por vencer.      · granate = vencido.
+
+   `tests/diseno/semantica-del-color.test.ts` lo vigila.
+
+   ──────────────────────────────────────────────────────────────────────────
+   TRES CORRECCIONES MEDIDAS SOBRE EL HANDOFF
+   ──────────────────────────────────────────────────────────────────────────
+   El handoff traía tres valores por debajo del 4.5:1 que pide un texto, y en
+   este producto el texto ES el dato:
+
+     · tenue    #827E76 → #706C65   (3.52:1 → 4.55:1 sobre el fondo)
+     · enlace   #C74A08 → #BD4608   (4.15:1 → 4.52:1)
+     · un cuarto nivel de texto, #A19C93, rendía 2.38:1. Corregirlo lo dejaba
+       idéntico al tenue: NO HAY ESPACIO para un cuarto nivel legible sobre
+       este fondo, así que no existe. Donde el diseño lo usaba va `--texto-tenue`.
+
+   Y en la barra lateral, las etiquetas de sección subieron de blanco al 38%
+   (3.56:1) al 55% (6.04:1); el correo del pie, de 45% a 55%.
+   ───────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* Neutrales con sesgo hacia el acento: un gris puro se lee sin elegir. */
-  --fondo:        #F4F6F5;
+  /* Neutrales CÁLIDOS. El sesgo dejó de ir hacia el verdigrís cuando el
+     verdigrís dejó de ser el acento. */
+  --fondo:        #F1EFEB;
   --superficie:   #FFFFFF;
-  --superficie-2: #FAFBFA;
-  --linea:        #E2E7E5;
-  --linea-fuerte: #C9D2CF;
+  --superficie-2: #F7F6F2;
+  --linea:        #E7E4DE;
+  --linea-fuerte: #E0DCD4;
 
-  --texto:        #14211E;
-  --texto-suave:  #475853;
-  --texto-tenue:  #728380;
+  --texto:        #201F1C;
+  --texto-suave:  #4C4943;
+  --texto-tenue:  #706C65;
 
-  /* Acento: verdigrís de sello oficial. */
-  --acento:       #1D6B58;
-  --acento-vivo:  #17836A;
-  --acento-suave: #E4F0EC;
+  /* Acento = acción. Es el naranja de marca. */
+  --acento:       #E8590C;
+  --acento-vivo:  #D14F0A;
+  --acento-suave: #FBE3D6;
+  --enlace:       #BD4608;
 
-  /* Semánticos. Dicen estado regulatorio, no decoran. */
+  /* Semánticos. Dicen estado regulatorio, y solo eso. */
   --ok:           #1D6B58;
   --ok-suave:     #E4F0EC;
-  /* Ámbar, no naranja quemado. Se corrió de #9C5416 el 22-ago-2026 para abrir
-     distancia contra el naranja de marca: pasó de 6.8° a 14.5° de separación
-     de matiz. La decisión de identidad del 16-ago lo ató a que entrara «el
-     mismo día que el logo, no antes», y así fue. */
   --alerta:       #A16207;
   --alerta-suave: #FAEEE2;
   --critico:      #8C2F2F;
   --critico-suave:#F7E8E8;
 
-  /* ── Marca ───────────────────────────────────────────────────────────
-     El naranja es la MARCA; el verdigrís de arriba es el ESTADO. Este token
-     solo entra donde no hay semáforo: barra lateral, acceso, onboarding y
-     estados vacíos. Nunca en un chip, un `.estado` ni un borde de tarjeta —
-     `tests/diseno/semantica-del-color.test.ts` lo vigila.
-
-     Y nunca como texto sobre fondo claro: rinde 3.58:1 sobre blanco y 3.30:1
-     sobre el #F4F6F5 del portal, por debajo del 4.5:1 que pide un texto. Como
-     relleno de un disco o de un icono grande, sí. */
+  /* La marca. Hoy coincide con el acento a propósito: la acción ES la marca. */
   --marca:        #E8590C;
 
-  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* La barra lateral es un panel oscuro flotante en LOS DOS temas. Por eso sus
+     fichas no viven en el bloque de tema: no se invierten. */
+  --lateral-fondo:    #191A1D;
+  --lateral-texto:    rgba(255,255,255,.68);
+  --lateral-etiqueta: rgba(255,255,255,.55);
+  --lateral-linea:    rgba(255,255,255,.08);
+  --lateral-hover:    rgba(255,255,255,.07);
+
+  --sans: var(--fuente-cuerpo), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --titulo: var(--fuente-titulo), var(--sans);
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  --radio: 7px;
-  --lateral: 15rem;
+  --radio:         14px;  /* tarjetas */
+  --radio-panel:   16px;  /* barra lateral y tarjeta de acceso */
+  --radio-control: 10px;  /* botones, inputs, ítems de nav */
+  --lateral: 16.5rem;
+
+  /* Interacción, definida UNA vez. Hover y active mueven fondo y elevación
+     del mismo color; nunca cambian de matiz hacia otro que signifique algo. */
+  --hover-superficie: #F7F6F2;
+  --hover-elevacion:  translateY(-2px);
+  --transicion:       .16s ease;
+  --foco:             2px solid var(--acento);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --fondo:        #0D1614;
-    --superficie:   #141F1D;
-    --superficie-2: #182422;
-    --linea:        #23322F;
-    --linea-fuerte: #354844;
+    /* El mismo mundo cálido, en oscuro. El fondo va MÁS oscuro que la barra
+       lateral para que el panel siga leyéndose como flotante. */
+    --fondo:        #100F0E;
+    --superficie:   #1A1917;
+    --superficie-2: #201F1C;
+    --linea:        #2C2A27;
+    --linea-fuerte: #3D3A36;
 
-    --texto:        #E7EDEB;
-    --texto-suave:  #B2C1BD;
-    --texto-tenue:  #7E8F8B;
+    --texto:        #F1EFEB;
+    --texto-suave:  #B8B3AA;
+    --texto-tenue:  #8A857C;
 
-    --acento:       #56B99B;
-    --acento-vivo:  #6ACFB0;
-    --acento-suave: #17302A;
+    --acento:       #FF7A1A;
+    --acento-vivo:  #FF8F42;
+    --acento-suave: #30200F;
+    --enlace:       #FF8A3D;
 
     --ok:           #56B99B;
     --ok-suave:     #17302A;
-    /* El hallazgo del 22-ago-2026: este valor estaba a 0.2° de matiz del
-       naranja de marca #FF7A1A — en modo oscuro, «por vencer» y la marca eran
-       literalmente el mismo color, y --alerta se usa como TEXTO en
-       `.estado.aviso`. La decisión del 16-ago solo había corregido el tema
-       claro. #D9A441 recupera 13.9° de separación y además sube el contraste
-       de 6.67:1 a 8.18:1 sobre el fondo: es mejor en los dos ejes. */
+    /* Los 13.9° de separación contra el naranja de marca, medidos el 22-ago. */
     --alerta:       #D9A441;
     --alerta-suave: #2C2018;
     --critico:      #D2706A;
     --critico-suave:#2E1B1A;
 
-    /* Sobre #0D1614 rinde 7.05:1 — aquí sí alcanzaría para texto, pero la
-       regla no cambia por tema: la marca es el disco, no la palabra. */
     --marca:        #FF7A1A;
+
+    --hover-superficie: #23221F;
   }
 }
 
@@ -108,19 +140,26 @@ body {
 a { color: var(--acento); text-underline-offset: 2px; }
 :focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; border-radius: 3px; }
 
-h1 { font-size: 1.45rem; letter-spacing: -.02em; margin: 0 0 .2rem; text-wrap: balance; }
-h2 { font-size: 1.08rem; letter-spacing: -.01em; margin: 2rem 0 .6rem; }
-h3 { font-size: .95rem; margin: 0 0 .3rem; }
 .sub { color: var(--texto-tenue); margin: 0 0 1.6rem; }
 
 /* ── El armazón ─────────────────────────────────────────────────────── */
 .portal { display: grid; grid-template-columns: var(--lateral) 1fr; min-height: 100vh; }
 
+/* LA BARRA LATERAL ES UN PANEL OSCURO FLOTANTE, en los dos temas.
+   El <aside> se queda pegado y transparente; el panel de dentro es el que
+   lleva el fondo y el radio, con un respiro alrededor. Por eso sus fichas
+   (--lateral-*) no viven en el bloque de tema: no se invierten. */
 .lateral {
-  background: var(--superficie);
-  border-right: 1px solid var(--linea);
-  display: flex; flex-direction: column;
   position: sticky; top: 0; height: 100vh;
+  padding: .75rem 0 .75rem .75rem;
+  display: flex;
+}
+.lateral > .panel-lateral {
+  background: var(--lateral-fondo);
+  border-radius: var(--radio-panel);
+  color: var(--lateral-texto);
+  display: flex; flex-direction: column;
+  flex: 1; overflow: hidden;
 }
 
 /* Solo aparece en pantalla angosta. */
@@ -132,20 +171,23 @@ h3 { font-size: .95rem; margin: 0 0 .3rem; }
 
 .marca {
   padding: 1.15rem 1.25rem 1rem;
-  border-bottom: 1px solid var(--linea);
+  border-bottom: 1px solid var(--lateral-linea);
   display: flex; flex-direction: column; gap: .15rem;
   flex-shrink: 0;
 }
 .marca .logo {
-  display: inline-flex; align-items: center; gap: .5rem;
-  font-weight: 680; letter-spacing: .16em; font-size: .95rem;
+  display: inline-flex; align-items: center; gap: .55rem;
+  font-weight: 680; letter-spacing: .16em; font-size: 1rem; color: #FFFFFF;
 }
 .marca .obligado {
-  font-size: .8rem; color: var(--texto-suave); line-height: 1.35;
+  font-size: .8rem; color: rgba(255,255,255,.52); line-height: 1.35;
   /* La razón social de una PM es larga; dos renglones y el resto al title. */
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.marca .rfc { font-family: var(--mono); font-size: .72rem; color: var(--texto-tenue); }
+/* El RFC se queda. El handoff lo quitó «a propósito», pero es el
+   identificador del obligado ante el SAT y es lo que se coteja cuando alguien
+   duda de en qué cuenta está parado. */
+.marca .rfc { font-family: var(--mono); font-size: .72rem; color: rgba(255,255,255,.38); }
 
 /* ── Navegación: grupos, áreas y sub-enlaces ────────────────────────── */
 nav.areas {
@@ -157,37 +199,33 @@ nav.areas ul { list-style: none; margin: 0; padding: 0; }
 nav.areas .grupo + .grupo { margin-top: .9rem; }
 nav.areas .grupo-titulo {
   font-size: .66rem; font-weight: 620; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--texto-tenue); margin: 0 0 .3rem; padding: 0 .7rem;
+  color: var(--lateral-etiqueta); margin: 0 0 .3rem; padding: 0 .7rem;
 }
 
 nav.areas .area > a, nav.areas span.pendiente {
-  position: relative;
-  display: flex; align-items: center; gap: .58rem;
-  padding: .46rem .7rem; border-radius: 6px;
-  font-size: .9rem; color: var(--texto-suave); text-decoration: none;
-  transition: background-color .13s ease, color .13s ease;
+  display: flex; align-items: center; gap: .6rem;
+  padding: .52rem .75rem; border-radius: var(--radio-control);
+  font-size: .9rem; color: var(--lateral-texto); text-decoration: none;
+  transition: background-color .14s ease, color .14s ease;
 }
 nav.areas .rotulo { flex: 1; min-width: 0; }
-nav.areas .icono { flex-shrink: 0; opacity: .72; transition: opacity .13s ease; }
+nav.areas .icono { flex-shrink: 0; opacity: .75; transition: opacity .14s ease; }
 
-nav.areas .area > a:hover { background: var(--superficie-2); color: var(--texto); }
+nav.areas .area > a:hover { background: var(--lateral-hover); color: #FFFFFF; }
 nav.areas .area > a:hover .icono { opacity: 1; }
 
+/* El activo es una PÍLDORA NARANJA. Ya no hace falta el riel de tres píxeles
+   que compensaba un fondo apenas distinguible: aquí el contraste lo dice todo. */
 nav.areas .area > a[aria-current='page'] {
-  background: var(--acento-suave); color: var(--acento); font-weight: 580;
+  background: var(--marca); color: #FFFFFF; font-weight: 600;
 }
 nav.areas .area > a[aria-current='page'] .icono { opacity: 1; }
-/* El riel: dice cuál es el área activa aun si el fondo no se distingue. */
-nav.areas .area > a[aria-current='page']::before {
-  content: ''; position: absolute; left: -.55rem; top: 50%; transform: translateY(-50%);
-  width: 3px; height: 1.05rem; border-radius: 0 2px 2px 0; background: var(--acento);
-}
 
-nav.areas span.pendiente { color: var(--texto-tenue); cursor: default; }
+nav.areas span.pendiente { color: rgba(255,255,255,.34); cursor: default; }
 nav.areas .marca-pendiente {
   font-family: var(--mono); font-size: .6rem; letter-spacing: .08em;
-  text-transform: uppercase; color: var(--texto-tenue);
-  border: 1px solid var(--linea-fuerte); border-radius: 3px; padding: .05rem .3rem;
+  text-transform: uppercase; color: rgba(255,255,255,.42);
+  border: 1px solid var(--lateral-linea); border-radius: 3px; padding: .05rem .3rem;
 }
 
 /* Se despliega con grid en vez de max-height: la altura real la calcula el
@@ -215,7 +253,7 @@ nav.areas ul.sub li:last-child a { padding-bottom: .42rem; }
    punta a punta. */
 nav.areas ul.sub::before {
   content: ''; position: absolute; left: 1.62rem; top: .3rem; bottom: .3rem;
-  width: 1px; background: var(--linea);
+  width: 1px; background: rgba(255,255,255,.16);
 }
 nav.areas ul.sub a {
   display: block; padding: .28rem .7rem .28rem .78rem;
@@ -228,31 +266,56 @@ nav.areas ul.sub a[aria-current='page'] { color: var(--acento); font-weight: 560
 
 /* ── El usuario y la salida ─────────────────────────────────────────── */
 .usuario {
-  border-top: 1px solid var(--linea); padding: .8rem 1.25rem .9rem;
+  border-top: 1px solid var(--lateral-linea); padding: .8rem 1.25rem .9rem;
   display: flex; flex-direction: column; gap: .12rem; flex-shrink: 0;
 }
-.usuario .quien { display: flex; align-items: center; gap: .1rem; min-width: 0; }
+.usuario .quien { display: flex; align-items: center; gap: .45rem; min-width: 0; }
 .usuario .nombre {
-  font-size: .88rem; font-weight: 560;
+  font-size: .88rem; font-weight: 560; color: #FFFFFF;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* El badge del rol usa el naranja de marca al 18%: dice quién eres, no un
+   estado regulatorio. Por eso puede ser naranja. */
+.usuario .rol {
+  font-family: var(--mono); font-size: .64rem; letter-spacing: .06em;
+  padding: .08rem .38rem; border-radius: 999px;
+  background: rgba(232,89,12,.18); color: #FFA269; flex: none;
+}
 .usuario .correo {
-  font-size: .76rem; color: var(--texto-tenue);
+  font-size: .76rem; color: rgba(255,255,255,.55);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .usuario .salir {
   margin-top: .55rem; align-self: flex-start;
   display: inline-flex; align-items: center; gap: .4rem;
   background: none; border: 0; padding: .25rem .4rem .25rem 0;
-  font: inherit; font-size: .82rem; color: var(--texto-tenue);
+  font: inherit; font-size: .82rem; color: rgba(255,255,255,.55);
   cursor: pointer; border-radius: 5px;
   transition: color .13s ease;
 }
-.usuario .salir:hover:not(:disabled) { color: var(--critico); }
+.usuario .salir:hover:not(:disabled) { color: #FFFFFF; background: none; }
 .usuario .salir:disabled { cursor: progress; opacity: .6; }
 
 .contenido { min-width: 0; }
-main { max-width: 64rem; margin: 0 auto; padding: 2rem 2rem 5rem; }
+main { max-width: 66rem; margin: 0 auto; padding: 2.4rem 2.5rem 5rem; }
+
+/* ── Tipografía del rediseño ────────────────────────────────────────── */
+/* Los títulos van en Barlow Condensed; el cuerpo en Barlow. La condensada
+   solo en títulos: en texto corrido cansa. */
+h1 {
+  font-family: var(--titulo); font-weight: 600;
+  font-size: 2.05rem; line-height: 1.1; letter-spacing: .005em;
+  margin: 0 0 .2rem; text-wrap: balance;
+}
+h2 {
+  font-family: var(--titulo); font-weight: 600;
+  font-size: 1.65rem; line-height: 1.15; margin: 2.2rem 0 .7rem;
+}
+h3 { font-family: var(--titulo); font-weight: 600; font-size: 1.2rem; margin: 0 0 .3rem; }
+.kicker {
+  font-family: var(--mono); font-size: .72rem; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--texto-tenue); margin: 0 0 .5rem;
+}
 /* Para que un enlace con ancla no deje el encabezado pegado al borde. */
 :target { scroll-margin-top: 1.5rem; }
 
@@ -322,87 +385,155 @@ main { max-width: 64rem; margin: 0 auto; padding: 2rem 2rem 5rem; }
 }
 
 /* ── Chips y estados ────────────────────────────────────────────────── */
+/* DOS COSAS DISTINTAS QUE ANTES SE PARECÍAN.
+   `.chip` etiqueta un TIPO —de alerta, de origen de perfil— y es neutro.
+   `.estado` dice un ESTADO REGULATORIO y lleva el color que significa.
+   Hasta el rediseño `.chip` usaba el acento, y cuando el acento pasó a ser el
+   naranja de marca se volvió naranja sin que nadie lo decidiera. Lo atrapó
+   `tests/diseno/semantica-del-color.test.ts`. */
 .chip {
-  display: inline-block; font-size: .74rem; padding: .12rem .5rem;
-  border-radius: 999px; background: var(--acento-suave); color: var(--acento);
-  margin-left: .45rem; font-weight: 550;
+  display: inline-flex; align-items: center;
+  font-family: var(--mono); font-size: .74rem;
+  padding: .16rem .5rem; border-radius: 999px;
+  background: var(--superficie-2); color: var(--texto-tenue);
+  margin-left: .45rem; white-space: nowrap;
 }
-.chip-alerta { background: var(--alerta-suave); color: var(--alerta); }
 
+/* La píldora de estado del rediseño: punto + texto, fondo derivado del propio
+   color para que no haya un fondo suave por estado que mantener a mano. */
 .estado {
-  display: inline-flex; align-items: center; gap: .35rem;
-  font-family: var(--mono); font-size: .68rem; letter-spacing: .06em;
-  text-transform: uppercase; padding: .16rem .45rem;
-  border: 1px solid currentColor; border-radius: 3px; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-size: .84rem; font-weight: 600;
+  padding: .3rem .75rem .32rem; border-radius: 999px;
+  white-space: nowrap; border: 0;
+  color: var(--texto-tenue);
+  background: color-mix(in srgb, currentColor 11%, var(--superficie));
+}
+.estado::before {
+  content: ''; width: .42rem; height: .42rem; border-radius: 50%;
+  background: currentColor; flex: none;
 }
 .estado.ok      { color: var(--ok); }
 .estado.aviso   { color: var(--alerta); }
 .estado.critico { color: var(--critico); }
 .estado.neutro  { color: var(--texto-tenue); }
 
+/* Se conserva porque hay pantallas que lo usan; es la píldora de «por vencer». */
+.chip-alerta {
+  background: color-mix(in srgb, var(--alerta) 11%, var(--superficie));
+  color: var(--alerta); font-family: inherit; font-weight: 600;
+}
+
 /* ── Superficies ────────────────────────────────────────────────────── */
 .tarjeta {
   background: var(--superficie); border: 1px solid var(--linea);
-  border-radius: var(--radio); padding: 1.15rem 1.25rem;
+  border-radius: var(--radio); padding: 1.5rem 1.6rem;
 }
+/* Sin sombras: la elevación es solo del hover. */
 .tarjeta-alerta { border-left: 3px solid var(--alerta); }
+.tarjeta-critico { border-left: 3px solid var(--critico); }
+.tarjeta-ok { border-left: 3px solid var(--ok); }
+
+/* El hover-lift del rediseño, definido UNA vez. Lo heredan las filas de
+   «Requiere tu atención», las métricas y las tarjetas de alerta. */
+.elevable {
+  transition: background var(--transicion), transform var(--transicion);
+}
+.elevable:hover {
+  background: var(--hover-superficie);
+  transform: var(--hover-elevacion);
+}
 
 .rejilla { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
 
 /* ── Formularios ────────────────────────────────────────────────────── */
-fieldset { border: 1px solid var(--linea); border-radius: var(--radio); padding: 1rem; margin: 0 0 1rem; background: var(--superficie); }
+fieldset {
+  border: 1px solid var(--linea); border-radius: var(--radio);
+  padding: 1rem; margin: 0 0 1rem; background: var(--superficie);
+}
 legend { font-weight: 600; padding: 0 .4rem; }
 label { display: block; margin-bottom: .8rem; }
-label span { display: block; font-size: .84rem; color: var(--texto-suave); margin-bottom: .22rem; }
-label .pista { color: var(--texto-tenue); font-weight: 400; }
+label > span { display: block; font-size: .84rem; font-weight: 500; color: var(--texto-suave); margin-bottom: .3rem; }
+
 input, select, textarea {
-  width: 100%; padding: .46rem .6rem; border: 1px solid var(--linea-fuerte);
-  border-radius: 5px; font: inherit; background: var(--superficie); color: var(--texto);
+  font: inherit; font-size: .95rem; width: 100%;
+  color: var(--texto); background: var(--superficie-2);
+  border: 1px solid var(--linea-fuerte); border-radius: var(--radio-control);
+  padding: .62rem .8rem; caret-color: var(--acento);
+  transition: border-color var(--transicion), background var(--transicion);
 }
-input[type='file'] { padding: .4rem; font-size: .9rem; }
-textarea { resize: vertical; min-height: 4rem; font-family: inherit; }
-.fila { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0 1rem; }
+input:hover, select:hover, textarea:hover { border-color: var(--texto-tenue); }
+input:focus, select:focus, textarea:focus {
+  border-color: var(--acento); background: var(--superficie); outline: none;
+}
+input[type='file'] { padding: .45rem; background: none; }
+input[type='checkbox'] { width: 1rem; height: 1rem; accent-color: var(--acento); }
 
-/* Una casilla se lee al revés que un campo: primero la marca, después qué
-   significa. El `label span` de arriba pone el rótulo en bloque, que aquí
-   partiría el renglón en dos. */
-label.casilla { display: flex; align-items: center; gap: .5rem; }
-label.casilla input[type='checkbox'] { width: auto; margin: 0; flex-shrink: 0; }
-label.casilla span { display: inline; margin: 0; font-size: .9rem; color: var(--texto); }
+.fila { display: grid; gap: .9rem; grid-template-columns: 1fr 1fr; }
 
+/* ── Botones ────────────────────────────────────────────────────────── */
+/* El primario es NARANJA, no verdigrís. Ese cambio es lo que libera al
+   verdigrís para significar solo «en regla»: hasta el rediseño, un botón
+   primario y un chip «en regla» eran el mismo color. */
 button, .boton {
-  font: inherit; padding: .5rem 1rem; border-radius: 5px; cursor: pointer;
-  border: 1px solid var(--acento); background: var(--acento); color: #fff;
-  text-decoration: none; display: inline-block;
+  font: inherit; font-weight: 600; font-size: .95rem;
+  padding: .55rem 1.05rem; border-radius: var(--radio-control); cursor: pointer;
+  border: 1px solid var(--acento); background: var(--acento); color: #FFFFFF;
+  transition: background var(--transicion), border-color var(--transicion), transform .14s ease;
 }
-button:hover, .boton:hover { background: var(--acento-vivo); border-color: var(--acento-vivo); }
-button.secundario, .boton.secundario { background: var(--superficie); color: var(--acento); }
-button.secundario:hover, .boton.secundario:hover { background: var(--acento-suave); }
+button:hover:not(:disabled), .boton:hover {
+  background: var(--acento-vivo); border-color: var(--acento-vivo);
+}
+button:active:not(:disabled), .boton:active { transform: scale(.98); }
+button.secundario, .boton.secundario {
+  background: var(--superficie); border-color: var(--linea-fuerte); color: var(--texto);
+}
+button.secundario:hover:not(:disabled), .boton.secundario:hover {
+  background: var(--hover-superficie); border-color: var(--linea-fuerte);
+}
 button:disabled { opacity: .5; cursor: not-allowed; }
 
+/* ── Foco ───────────────────────────────────────────────────────────── */
+/* Naranja, del rediseño. Se sostiene porque el naranja ya no significa
+   ningún estado: dice «esto es interactivo» y nada más. */
+*:focus-visible { outline: var(--foco); outline-offset: 2px; border-radius: 3px; }
+
+a { color: var(--enlace); text-underline-offset: 2px; }
+a:hover { color: var(--acento); }
+::selection { background: var(--acento-suave); }
+
 /* ── Mensajes ───────────────────────────────────────────────────────── */
+.error, .aviso, .exito {
+  padding: .6rem .9rem; border-radius: var(--radio-control);
+  margin-bottom: 1rem; font-size: .9rem;
+}
 .error {
-  background: var(--critico-suave); border: 1px solid var(--critico); color: var(--critico);
-  padding: .75rem 1rem; border-radius: 6px; margin-bottom: 1rem;
+  background: color-mix(in srgb, var(--critico) 8%, var(--superficie));
+  border: 1px solid color-mix(in srgb, var(--critico) 25%, var(--superficie));
+  color: var(--critico);
 }
 .error ul { margin: .4rem 0 0; padding-left: 1.2rem; }
 .aviso {
-  background: var(--alerta-suave); border: 1px solid var(--alerta); color: var(--alerta);
-  padding: .6rem .9rem; border-radius: 6px;
+  background: color-mix(in srgb, var(--alerta) 8%, var(--superficie));
+  border: 1px solid color-mix(in srgb, var(--alerta) 25%, var(--superficie));
+  color: var(--alerta);
 }
 .exito {
-  background: var(--ok-suave); border: 1px solid var(--ok); color: var(--ok);
-  padding: .6rem .9rem; border-radius: 6px;
+  background: color-mix(in srgb, var(--ok) 8%, var(--superficie));
+  border: 1px solid color-mix(in srgb, var(--ok) 25%, var(--superficie));
+  color: var(--ok);
 }
 
 /* ── Tablas ─────────────────────────────────────────────────────────── */
-.tabla-envoltura { overflow-x: auto; border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); }
+.tabla-envoltura {
+  overflow-x: auto; border: 1px solid var(--linea);
+  border-radius: var(--radio); background: var(--superficie);
+}
 table { width: 100%; border-collapse: collapse; background: var(--superficie); }
 /* `vertical-align: top` y no el centrado por omisión: en Operaciones, abrir
    «Por qué» hace crecer una sola celda hasta varias veces la altura del
    renglón, y con el centrado la fecha, el aportante y el monto quedaban
-   flotando a media altura, lejos del dato que describen. Arriba, la fila se
-   lee como lo que es: una operación, y debajo su explicación. */
+   flotando a media altura, lejos del dato que describen. */
 th, td {
   text-align: left; padding: .58rem .75rem;
   border-bottom: 1px solid var(--linea); vertical-align: top;
@@ -415,8 +546,10 @@ tr:last-child td { border-bottom: 0; }
 td.vacia { color: var(--texto-tenue); padding: 2.5rem; text-align: center; }
 td.num, .num { font-variant-numeric: tabular-nums; }
 
-/* La huella del documento. Se muestra COMPLETA a propósito: un hash truncado
-   no sirve para verificar nada, y verificar es para lo que existe. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
 .hash {
   display: block; font-family: var(--mono); font-size: .72rem; line-height: 1.4;
   word-break: break-all; color: var(--texto-tenue); margin: .2rem 0;

@@ -130,3 +130,24 @@ export function Chevron() {
     </svg>
   )
 }
+
+/** El ojo de mostrar/ocultar contraseña. Tachado cuando la clave está visible. */
+export function Ojo({ tachado }: { tachado: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="17"
+      height="17"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z" />
+      <circle cx="12" cy="12" r="2.8" />
+      {tachado && <path d="M4 20 20 4" />}
+    </svg>
+  )
+}

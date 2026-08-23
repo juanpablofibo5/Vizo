@@ -104,3 +104,29 @@ export function IconoArea({ nombre }: { nombre: Icono }) {
     </svg>
   )
 }
+
+/**
+ * El chevron de «esto lleva a algún lado».
+ *
+ * Va aquí y no suelto en la pantalla porque lo usan las filas de atención y
+ * las de alertas, y dos flechas dibujadas por separado divergen. Es geometría
+ * de 24 y trazo 1.8, más grueso que los iconos de navegación: vive dentro de
+ * un círculo de 1.8rem y a ese tamaño el 1.5 se deshace.
+ */
+export function Chevron() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="15"
+      height="15"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9 5.5 15.5 12 9 18.5" />
+    </svg>
+  )
+}

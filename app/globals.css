@@ -384,6 +384,59 @@ h3 { font-family: var(--titulo); font-weight: 600; font-size: 1.2rem; margin: 0 
   color: var(--texto); line-height: 1;
 }
 
+/* ── La regla del mes ───────────────────────────────────────────────── */
+.regla-mes { display: flex; align-items: flex-end; gap: 3px; height: 26px; margin-bottom: .4rem; }
+.regla-mes .dia {
+  flex: 1; border-radius: 99px; height: 10px; background: var(--linea);
+  transform-origin: bottom;
+  animation: sube-barra .55s cubic-bezier(.2,.7,.3,1) backwards;
+}
+/* Los días idos van un punto más oscuros: se distingue lo andado de lo que falta. */
+.regla-mes .dia.ido { background: var(--linea-fuerte); }
+.regla-mes .dia.hoy { height: 20px; background: var(--texto); }
+.regla-mes .dia.limite { height: 26px; }
+
+@keyframes sube-barra {
+  from { transform: scaleY(0); opacity: 0; }
+  to   { transform: scaleY(1); opacity: 1; }
+}
+
+.regla-leyenda {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: .64rem; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--texto-tenue);
+}
+
+/* ── El veredicto: una frase, no una etiqueta ───────────────────────── */
+.veredicto {
+  font-family: var(--titulo); font-weight: 600;
+  font-size: 2.6rem; line-height: 1.08; letter-spacing: .005em;
+  margin: .9rem 0 1.2rem; text-wrap: balance;
+}
+
+/* ── Filas de atención ──────────────────────────────────────────────── */
+.fila-atencion {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem;
+  width: 100%; text-align: left; font: inherit; font-weight: 400;
+  background: var(--superficie); color: var(--texto);
+  border: 1px solid var(--linea); border-left-width: 3px;
+  border-radius: var(--radio); padding: .85rem 1rem .85rem .85rem;
+  cursor: pointer; text-decoration: none;
+  transition: background var(--transicion), transform var(--transicion);
+}
+.fila-atencion:hover { background: var(--hover-superficie); transform: var(--hover-elevacion); }
+.fila-atencion .cuenta {
+  font-family: var(--mono); font-size: 1.05rem; font-weight: 620;
+  font-variant-numeric: tabular-nums; min-width: 1.4rem; text-align: right;
+}
+.fila-atencion .pie { display: block; font-size: .8rem; color: var(--texto-tenue); }
+/* El chevron en círculo: dice «esto lleva a algún lado» sin gritar. */
+.fila-atencion .chevron {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.8rem; height: 1.8rem; border-radius: 50%;
+  background: var(--superficie-2); color: var(--texto-tenue); flex: none;
+}
+
 /* ── Chips y estados ────────────────────────────────────────────────── */
 /* DOS COSAS DISTINTAS QUE ANTES SE PARECÍAN.
    `.chip` etiqueta un TIPO —de alerta, de origen de perfil— y es neutro.

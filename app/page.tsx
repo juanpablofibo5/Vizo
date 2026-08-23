@@ -6,7 +6,17 @@ import { fraccionLegible } from './componentes/fraccion'
 import { panoramaDePeriodos, type PeriodoPendiente } from '../src/persistencia/calendario'
 import { arranqueDelObligado } from '../src/persistencia/arranque'
 import { hoyEnMexico } from '../src/dominio/fechas'
+
+/** «sábado 22 de agosto de 2026», para el kicker. */
+function fechaLarga(iso: string): string {
+  const [a, m, d] = iso.split('-').map(Number)
+  return new Intl.DateTimeFormat('es-MX', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+  }).format(new Date(Date.UTC(a!, m! - 1, d!)))
+}
 import { EstadoAviso, PlazoBadge, nombreDePeriodo } from './avisos/estados'
+import { ReglaDelMes } from './componentes/regla-del-mes'
+import { Chevron } from './componentes/iconos'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,11 +38,60 @@ function elMasUrgente(pendientes: PeriodoPendiente[]): PeriodoPendiente | null {
   return [...pendientes].sort((a, b) => a.plazo.diasRestantes - b.plazo.diasRestantes)[0] ?? null
 }
 
-const TONO_FONDO: Record<string, { borde: string; fondo: string }> = {
-  vencido: { borde: 'var(--critico)', fondo: 'var(--critico-suave)' },
-  vence_hoy: { borde: 'var(--critico)', fondo: 'var(--critico-suave)' },
-  por_vencer: { borde: 'var(--alerta)', fondo: 'var(--alerta-suave)' },
-  holgado: { borde: 'var(--linea-fuerte)', fondo: 'var(--superficie)' },
+const TONO_FONDO: Record<string, { borde: string; fondo: string; tinta: string }> = {
+  vencido: { borde: 'var(--critico)', fondo: 'var(--critico-suave)', tinta: 'var(--critico)' },
+  vence_hoy: { borde: 'var(--critico)', fondo: 'var(--critico-suave)', tinta: 'var(--critico)' },
+  por_vencer: { borde: 'var(--alerta)', fondo: 'var(--alerta-suave)', tinta: 'var(--alerta)' },
+  holgado: { borde: 'var(--linea-fuerte)', fondo: 'var(--superficie)', tinta: 'var(--ok)' },
+}
+
+/**
+ * El veredicto: una frase, no una etiqueta.
+ *
+ * Es la apuesta del rediseño y vale la pena decir por qué se sostiene. La
+ * pregunta con la que alguien abre este portal es «¿estoy en regla hoy?», y un
+ * chip que diga «VENCIDO» obliga a traducir: vencido *qué*, desde *cuándo*, y
+ * si eso significa que estoy mal. Una oración lo contesta de una vez.
+ *
+ * SE DERIVA DEL ESTADO, NUNCA SE ESCRIBE A MANO. Cada rama sale de datos que
+ * el motor ya calculó —el periodo más urgente y su plazo—, así que la frase no
+ * puede decir algo que los chips de abajo contradigan.
+ */
+function veredicto(
+  urgente: PeriodoPendiente | null,
+  arranqueCompleto: boolean,
+): { frase: string; tinta: string } {
+  if (urgente === null) {
+    return arranqueCompleto
+      ? { frase: 'Hoy estás en regla.', tinta: 'var(--ok)' }
+      : {
+          frase: 'Aún no hay periodos que presentar.',
+          tinta: 'var(--texto-tenue)',
+        }
+  }
+
+  const mes = nombreDePeriodo(urgente.periodo).toLowerCase()
+  const dias = urgente.plazo.diasRestantes
+
+  if (urgente.plazo.estado === 'vencido') {
+    return {
+      frase: `Hoy no estás en regla: ${mes} quedó sin presentar.`,
+      tinta: 'var(--critico)',
+    }
+  }
+  if (urgente.plazo.estado === 'vence_hoy') {
+    return { frase: `${nombreDePeriodo(urgente.periodo)} vence hoy.`, tinta: 'var(--critico)' }
+  }
+  if (urgente.plazo.estado === 'por_vencer') {
+    return {
+      frase: `Te quedan ${String(dias)} día(s) para presentar ${mes}.`,
+      tinta: 'var(--alerta)',
+    }
+  }
+  return {
+    frase: `${nombreDePeriodo(urgente.periodo)} está pendiente, con plazo holgado.`,
+    tinta: 'var(--texto)',
+  }
 }
 
 export default async function Inicio() {
@@ -103,34 +162,59 @@ export default async function Inicio() {
     const urgente = elMasUrgente(pendientes)
     const tono = TONO_FONDO[urgente?.plazo.estado ?? 'holgado'] ?? TONO_FONDO['holgado']
 
-    const atencion: Array<{ texto: string; ruta: '/alertas' | '/avisos' | '/clientes' }> = []
+    // Cada renglón: cuántos, qué, y de dónde sale. El número va aparte del
+    // texto porque en el rediseño se lee primero — es lo que dice si esto
+    // urge— y el pie dice de qué obligación viene.
+    const atencion: Array<{
+      n: number
+      texto: string
+      pie: string
+      tinta: string
+      ruta: '/alertas' | '/avisos' | '/clientes'
+    }> = []
     if (datos.resumen.esperan_aprobacion > 0) {
       atencion.push({
-        texto: `${String(datos.resumen.esperan_aprobacion)} aviso(s) esperando tu aprobación`,
+        n: datos.resumen.esperan_aprobacion,
+        texto: 'aviso(s) esperando tu aprobación',
+        pie: 'Generados y validados contra el XSD; falta la decisión humana.',
+        tinta: 'var(--critico)',
         ruta: '/avisos',
       })
     }
     if (datos.resumen.alertas > 0) {
       atencion.push({
-        texto: `${String(datos.resumen.alertas)} alerta(s) del motor sin revisar`,
+        n: datos.resumen.alertas,
+        texto: 'alerta(s) del motor sin revisar',
+        pie: 'Una alerta no es un aviso: es lo que alguien tiene que mirar.',
+        tinta: 'var(--alerta)',
         ruta: '/alertas',
       })
     }
     if (datos.resumen.identidad_por_revisar > 0) {
       atencion.push({
-        texto: `${String(datos.resumen.identidad_por_revisar)} cliente(s) sin RFC ni CURP: la acumulación no puede resolverlos`,
+        n: datos.resumen.identidad_por_revisar,
+        texto: 'cliente(s) sin RFC ni CURP',
+        pie: 'La acumulación del Art. 19 no puede resolver su identidad.',
+        tinta: 'var(--alerta)',
         ruta: '/clientes',
       })
     }
     if (datos.resumen.revisiones_pendientes > 0) {
       atencion.push({
-        texto: `${String(datos.resumen.revisiones_pendientes)} expediente(s) con revisión anual por vencer (Art. 21)`,
+        n: datos.resumen.revisiones_pendientes,
+        texto: 'expediente(s) con revisión anual por vencer',
+        pie: 'Art. 21 · solo aplica a clientes con Relación de negocios.',
+        tinta: 'var(--alerta)',
         ruta: '/clientes',
       })
     }
 
+    const v = veredicto(urgente, datos.arranque.completo)
+    const hoy = hoyEnMexico()
+
     return (
       <Marco obligado={obligado} perfil={perfil} alertasAbiertas={datos.resumen.alertas}>
+        <p className="kicker">{fechaLarga(hoy)}</p>
         <h1>{obligado.razonSocial}</h1>
         <p className="sub">
           {datos.actividad === null ? (
@@ -148,13 +232,16 @@ export default async function Inicio() {
             un obligado del que no se sabe nada es la peor mentira que este
             producto puede contar. */}
         {datos.arranque.puedeEvaluar && (
+          <>
+          <p className="veredicto" style={{ color: v.tinta }}>
+            {v.frase}
+          </p>
           <div
             className="tarjeta"
             style={{
               borderColor: tono?.borde,
               background: tono?.fondo,
               borderWidth: '1.5px',
-              padding: '1.5rem 1.6rem',
             }}
           >
             {urgente === null ? (
@@ -201,12 +288,24 @@ export default async function Inicio() {
                   {pendientes.length > 1 &&
                     ` Hay ${String(pendientes.length - 1)} periodo(s) más pendiente(s).`}
                 </p>
-                <Link href="/avisos" className="boton">
-                  Ir a avisos
-                </Link>
+                <ReglaDelMes
+                  hoy={hoy}
+                  fechaLimite={urgente.plazo.fechaLimite}
+                  tinta={tono?.tinta ?? 'var(--texto)'}
+                />
+
+                <div style={{ display: 'flex', gap: '.7rem', marginTop: '1.3rem' }}>
+                  <Link href="/avisos" className="boton">
+                    Ir a avisos
+                  </Link>
+                  <Link href="/calendario" className="boton secundario">
+                    Ver el calendario del periodo
+                  </Link>
+                </div>
               </>
             )}
           </div>
+          </>
         )}
 
         {/* ── El arranque, mientras falte algo ─────────────────────────── */}
@@ -217,6 +316,9 @@ export default async function Inicio() {
 
         {/* ── Lo que pide una acción ──────────────────────────────────── */}
         <h2>Requiere tu atención</h2>
+        <p className="sub" style={{ margin: '0 0 .8rem' }}>
+          Cada renglón lleva a la acción que lo cierra. Lo que no está aquí, no está pendiente.
+        </p>
         {atencion.length === 0 ? (
           <div className="tarjeta">
             <p className="tenue" style={{ margin: 0 }}>
@@ -231,10 +333,19 @@ export default async function Inicio() {
               <Link
                 key={a.texto}
                 href={a.ruta}
-                className="tarjeta tarjeta-alerta"
-                style={{ textDecoration: 'none', color: 'inherit', padding: '.85rem 1rem' }}
+                className="fila-atencion"
+                style={{ borderLeftColor: a.tinta }}
               >
-                {a.texto}
+                <span className="cuenta" style={{ color: a.tinta }}>
+                  {a.n}
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: 'block' }}>{a.texto}</span>
+                  <span className="pie">{a.pie}</span>
+                </span>
+                <span className="chevron">
+                  <Chevron />
+                </span>
               </Link>
             ))}
           </div>
@@ -243,19 +354,19 @@ export default async function Inicio() {
         {/* ── El mes en números ───────────────────────────────────────── */}
         <h2>Este mes</h2>
         <div className="rejilla">
-          <div className="tarjeta">
+          <div className="tarjeta elevable">
             <span className="tenue pequeno">Operaciones capturadas</span>
             <div style={{ fontSize: '1.6rem', fontWeight: 620 }} className="num">
               {datos.resumen.operaciones_del_mes}
             </div>
           </div>
-          <div className="tarjeta">
+          <div className="tarjeta elevable">
             <span className="tenue pequeno">Periodos pendientes</span>
             <div style={{ fontSize: '1.6rem', fontWeight: 620 }} className="num">
               {pendientes.length}
             </div>
           </div>
-          <div className="tarjeta">
+          <div className="tarjeta elevable">
             <span className="tenue pequeno">Alertas abiertas</span>
             <div style={{ fontSize: '1.6rem', fontWeight: 620 }} className="num">
               {datos.resumen.alertas}

@@ -105,6 +105,37 @@ describe('El naranja de marca no dice un estado', () => {
   })
 })
 
+describe('El favicon es marca, y su V va sólida a propósito', () => {
+  const ICONO = readFileSync(new URL('../../app/icon.svg', import.meta.url), 'utf8')
+
+  it('lleva el naranja de marca en los dos temas', () => {
+    expect(ICONO.toUpperCase()).toContain('#E8590C')
+    expect(ICONO.toUpperCase()).toContain('#FF7A1A')
+  })
+
+  it('no lleva ningún color semántico: un favicon no dice un estado', () => {
+    for (const semantico of ['#1D6B58', '#A16207', '#8C2F2F', '#56B99B', '#D9A441', '#D2706A']) {
+      expect(ICONO.toUpperCase()).not.toContain(semantico)
+    }
+  })
+
+  it('la V va SÓLIDA, no calada — y esto es la parte que se va a querer «arreglar»', () => {
+    // Dentro del portal la V se cala para tomar el color de lo que haya
+    // detrás. En un favicon eso sería un error: vive en la barra de pestañas,
+    // cuyo color no controlamos, y calada tomaría un color impredecible.
+    // Sólida en blanco se lee igual en cualquier navegador.
+    expect(ICONO).toContain('stroke="#FFFFFF"')
+    expect(ICONO).not.toContain('<mask')
+  })
+
+  it('llena el mosaico: a 16 px no sobra margen', () => {
+    // La marca del portal deja 4 u de margen; a 16 px eso es 1 px por lado
+    // desperdiciado sobre un dibujo que ya solo mide 16.
+    expect(ICONO).toMatch(/<rect[^>]*width="64"[^>]*height="64"/)
+    expect(ICONO).not.toMatch(/<rect[^>]*x="4"/)
+  })
+})
+
 describe('El ámbar de «por vencer» se distingue del naranja de marca', () => {
   // Medido el 22-ago-2026: el par claro aprobado (#A16207 contra #E8590C)
   // separa 14.5°. El oscuro venía a 0.2° —eran el mismo color— y por eso se

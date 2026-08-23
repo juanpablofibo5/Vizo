@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!--
+    El favicon de VIZO. Es «el contenedor», la marca del portal, con dos
+    ajustes ópticos que solo tienen sentido a 16 px:
+
+    1. LLENA EL MOSAICO. La marca del portal deja 4 u de margen
+       (rect x=4 y=4 w=56 h=56). A 16 px ese margen es 1 px desperdiciado en
+       cada lado, sobre un dibujo que ya solo mide 16. Aquí el cuadrado ocupa
+       las 64 u y el radio sube a 17 para conservar la misma curva relativa
+       de la esquina (15/56 = 17/64).
+
+    2. LA V VA SÓLIDA, NO CALADA. Dentro del portal la V se cala para que tome
+       el color de lo que haya detrás — sobre el fondo, sobre una tarjeta
+       blanca, sobre el sello monocromo. Un favicon vive en la barra de
+       pestañas, cuyo color NO controlamos: calada, la letra tomaría un color
+       impredecible y en algunos temas desaparecería. Sólida en blanco se lee
+       igual en cualquier navegador.
+
+    3. El trazo sube de 8 a 9 u. A 16 px, 8 u dan 2 px exactos y el
+       antialiasing se los come a medias; 9 dan 2.25 y el vértice sobrevive.
+
+    El color del contenedor sí sigue el tema del sistema: los favicon SVG
+    aceptan `prefers-color-scheme`, y #FF7A1A tiene más presencia sobre una
+    barra de pestañas oscura.
+  -->
+  <style>
+    .contenedor { fill: #E8590C; }
+    @media (prefers-color-scheme: dark) {
+      .contenedor { fill: #FF7A1A; }
+    }
+  </style>
+  <rect class="contenedor" width="64" height="64" rx="17"/>
+  <path d="M18 18 L32 46 L46 18" fill="none" stroke="#FFFFFF"
+        stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

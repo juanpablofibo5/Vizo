@@ -579,6 +579,106 @@ h3 { font-family: var(--titulo); font-weight: 600; font-size: 1.2rem; margin: 0 
 
 .rejilla { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
 
+/* ── Expediente: el riel y las siete secciones ──────────────────────── */
+/* Los tonos del riel son SEMÁFORO, nunca acción: misma regla que .estado. */
+.tono-ok      { color: var(--ok); }
+.tono-aviso   { color: var(--alerta); }
+.tono-critico { color: var(--critico); }
+.tono-neutro  { color: var(--texto-tenue); }
+
+.expediente-rejilla {
+  display: grid; grid-template-columns: 14rem 1fr;
+  gap: 1.6rem; align-items: start;
+}
+
+.riel {
+  position: sticky; top: 1.5rem;
+  background: var(--superficie); border: 1px solid var(--linea);
+  border-radius: var(--radio); overflow: hidden;
+}
+.riel-titulo {
+  margin: 0; padding: .6rem .8rem;
+  font-size: .66rem; font-weight: 620; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--texto-tenue); border-bottom: 1px solid var(--linea);
+}
+.riel-item {
+  display: grid; grid-template-columns: 1.1rem 1fr; gap: .5rem; align-items: start;
+  width: 100%; text-align: left; font: inherit; font-weight: 400;
+  background: transparent; border: 0; border-radius: 0;
+  border-bottom: 1px solid var(--linea); padding: .55rem .8rem;
+  cursor: pointer; color: inherit;
+  transition: background var(--transicion);
+}
+.riel-item:last-child { border-bottom: 0; }
+.riel-item:hover:not(:disabled), .riel-item[data-abierta='sí'] { background: var(--superficie-2); }
+.riel-item:active:not(:disabled) { transform: none; }
+.riel-num { font-family: var(--mono); font-size: .7rem; color: var(--texto-tenue); line-height: 1.5; }
+.riel-texto { min-width: 0; }
+.riel-nombre { display: block; font-size: .82rem; line-height: 1.35; color: var(--texto); }
+.riel-estado {
+  display: block; font-family: var(--mono); font-size: .62rem;
+  letter-spacing: .06em; text-transform: uppercase; margin-top: .15rem;
+}
+
+.secciones { display: grid; gap: .7rem; min-width: 0; }
+.seccion {
+  background: var(--superficie); border: 1px solid var(--linea);
+  border-radius: var(--radio); overflow: hidden; scroll-margin-top: 1.5rem;
+  border-left: 3px solid var(--texto-tenue);
+}
+.seccion[data-tono='ok']      { border-left-color: var(--ok); }
+.seccion[data-tono='aviso']   { border-left-color: var(--alerta); }
+.seccion[data-tono='critico'] { border-left-color: var(--critico); }
+.seccion-cabeza {
+  display: grid; grid-template-columns: 1.6rem 1fr auto auto; gap: .8rem; align-items: center;
+  width: 100%; text-align: left; font: inherit; font-weight: 400;
+  background: transparent; border: 0; border-radius: 0; color: inherit;
+  padding: .85rem 1rem; cursor: pointer;
+  transition: background var(--transicion);
+}
+.seccion-cabeza:hover:not(:disabled) { background: var(--superficie-2); }
+.seccion-cabeza:active:not(:disabled) { transform: none; }
+.seccion-num {
+  font-family: var(--mono); font-size: .78rem; color: var(--texto-tenue);
+  font-variant-numeric: tabular-nums;
+}
+.seccion-rotulo { min-width: 0; }
+.seccion-titulo { display: block; font-size: .95rem; font-weight: 560; }
+.seccion-reloj { display: block; font-size: .78rem; color: var(--texto-tenue); }
+.seccion-flecha { color: var(--texto-tenue); font-size: .75rem; font-family: var(--mono); }
+.seccion-cuerpo { padding: 1rem 1rem 1.1rem 3.4rem; border-top: 1px solid var(--linea); }
+/* Las cinco secciones construidas traen su propia .tarjeta como raíz; dentro
+   de una sección ya-tarjeta sería un marco dentro del marco. Se neutraliza
+   aquí y no en cada componente: siguen siendo tarjetas donde vivan solas. */
+.seccion-cuerpo > .tarjeta { border: 0; border-radius: 0; padding: 0; background: transparent; }
+
+/* La tarjeta de aprobación del expediente: texto a la izquierda, acción a la
+   derecha, como en el diseño. */
+.tarjeta-aprobacion {
+  display: grid; grid-template-columns: 1fr minmax(16rem, 20rem);
+  gap: 1rem 1.6rem; align-items: center;
+  padding: 1.15rem 1.25rem; margin-bottom: 1.5rem;
+}
+
+/* El <dl> de pares clave→valor de las secciones. */
+.pares {
+  margin: 0; display: grid; grid-template-columns: auto 1fr;
+  gap: .3rem 1.2rem; font-size: .85rem;
+}
+.pares dt { color: var(--texto-tenue); white-space: nowrap; }
+.pares dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+.migaja { margin: 0 0 .35rem; font-size: .8rem; }
+.migaja a { text-decoration: none; }
+.migaja a:hover { text-decoration: underline; }
+
+@media (max-width: 960px) {
+  .expediente-rejilla { grid-template-columns: 1fr; }
+  .riel { position: static; }
+  .seccion-cuerpo { padding-left: 1rem; }
+  .tarjeta-aprobacion { grid-template-columns: 1fr; }
+}
+
 /* ── Formularios ────────────────────────────────────────────────────── */
 fieldset {
   border: 1px solid var(--linea); border-radius: var(--radio);

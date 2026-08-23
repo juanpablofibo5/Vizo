@@ -23,6 +23,16 @@ import {
   estadoDeAprobacion,
   type EstadoAprobacion,
 } from '../../../../src/persistencia/aprobacion'
+import { ConocimientoDelCliente, type SeccionDeConocimiento } from './conocimiento'
+import {
+  rielAprobacion,
+  rielGradoDeRiesgo,
+  rielPep,
+  rielPerfil,
+  rielPorConstruir,
+  rielRevisionAnual,
+  seccionAbiertaPorDefecto,
+} from './riel'
 
 export const dynamic = 'force-dynamic'
 
@@ -281,15 +291,159 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
     })
 
 
+    /**
+     * Los estados del riel: presentación pura de lo que la persistencia ya
+     * derivó. La sección abierta al cargar es la más grave — si ninguna pide
+     * atención, todas amanecen cerradas y el riel cuenta la historia.
+     */
+    const estadoRevision = rielRevisionAnual({
+      relacionNegocios: cliente.relacion_negocios,
+      vence: expediente.vence,
+      hoy: hoyEnMexico(),
+    })
+    const estadoRiesgo = rielGradoDeRiesgo(riesgo)
+    const estadoPerfil = rielPerfil(perfil)
+    const estadoAprobacionRiel = rielAprobacion(aprobacion)
+    const estadoPepRiel = rielPep(estadoPep)
+    const estadoPorConstruir = rielPorConstruir(aprobacion.exigibleDesde)
+
+    const secciones: SeccionDeConocimiento[] = [
+      {
+        id: 'revision',
+        numero: '01',
+        titulo: 'Revisión anual',
+        articulo: 'Art. 21',
+        ...estadoRevision,
+        contenido: (
+          <SeccionRevisionAnual
+            clienteId={clienteId}
+            expedienteId={expediente.id}
+            relacionNegocios={cliente.relacion_negocios}
+            verificadoEn={expediente.verificado_en}
+            venceEn={expediente.vence}
+            aprobado={expediente.estatus === 'aprobado'}
+            puede={sesion.rol === 'admin'}
+          />
+        ),
+      },
+      {
+        id: 'riesgo',
+        numero: '02',
+        titulo: 'Grado de riesgo',
+        articulo: 'Cap. III Bis',
+        ...estadoRiesgo,
+        contenido: (
+          <SeccionRiesgoCliente clienteId={clienteId} riesgo={riesgo} puede={sesion.rol === 'admin'} />
+        ),
+      },
+      {
+        id: 'perfil',
+        numero: '03',
+        titulo: 'Perfil transaccional',
+        articulo: 'Art. 23 Ter 1 y 2',
+        ...estadoPerfil,
+        contenido: (
+          <SeccionPerfilTransaccional
+            clienteId={clienteId}
+            perfil={perfil}
+            puede={sesion.rol === 'admin'}
+          />
+        ),
+      },
+      {
+        id: 'aprobacion',
+        numero: '04',
+        titulo: 'Aprobación para operar',
+        articulo: 'Art. 23 Ter 5',
+        ...estadoAprobacionRiel,
+        contenido: (
+          <SeccionAprobacionDirectivo
+            clienteId={clienteId}
+            aprobacion={aprobacion}
+            puede={sesion.rol === 'admin'}
+          />
+        ),
+      },
+      {
+        id: 'pep',
+        numero: '05',
+        titulo: 'Declaración PEP',
+        articulo: 'Art. 23 Quáter',
+        ...estadoPepRiel,
+        contenido:
+          estadoPep !== null ? (
+            <SeccionPep
+              clienteId={clienteId}
+              estado={estadoPep}
+              esAdmin={sesion.rol === 'admin'}
+              hoy={hoyEnMexico()}
+            />
+          ) : (
+            <p className="pequeno tenue" style={{ margin: 0, maxWidth: '42rem' }}>
+              La declaración del Art. 23 Quáter es de personas físicas: pregunta por cargos,
+              parentescos y socios de una persona. Para una persona moral, la pregunta
+              equivalente es quién está detrás — el Beneficiario Controlador del Art. 23
+              Quinquies.
+            </p>
+          ),
+      },
+      {
+        id: 'cuestionario',
+        numero: '06',
+        titulo: 'Cuestionario de origen y destino',
+        articulo: 'Art. 23 Ter 3',
+        ...estadoPorConstruir,
+        contenido: (
+          <div style={{ display: 'grid', gap: '.7rem' }}>
+            <p className="pequeno tenue" style={{ margin: 0, maxWidth: '42rem' }}>
+              Los cuestionarios de origen y destino de recursos para clientes de grado alto
+              todavía no están construidos en VIZO. La sección aparece desde hoy a propósito:
+              un hueco visible es información; uno escondido es una omisión silenciosa.
+            </p>
+            <dl className="pares">
+              <dt>Exigible cuando</dt>
+              <dd>el Grado de riesgo es alto</dd>
+              <dt>Desde</dt>
+              <dd className="mono">{aprobacion.exigibleDesde}</dd>
+            </dl>
+          </div>
+        ),
+      },
+      {
+        id: 'reforzadas',
+        numero: '07',
+        titulo: 'Medidas reforzadas',
+        articulo: 'Art. 23 Ter 4',
+        ...estadoPorConstruir,
+        contenido: (
+          <div style={{ display: 'grid', gap: '.7rem' }}>
+            <p className="pequeno tenue" style={{ margin: 0, maxWidth: '42rem' }}>
+              Las medidas reforzadas de identificación para grado alto todavía no están
+              construidas. Cuando entren, lo hacen aquí — sin mover ninguna de las seis
+              secciones de arriba.
+            </p>
+            <dl className="pares">
+              <dt>Exigible cuando</dt>
+              <dd>el Grado de riesgo es alto</dd>
+              <dt>Desde</dt>
+              <dd className="mono">{aprobacion.exigibleDesde}</dd>
+            </dl>
+          </div>
+        ),
+      },
+    ]
+
     return (
       <Marco obligado={obligado} perfil={sesion}>
+        <p className="migaja">
+          <Link href="/clientes">← Clientes</Link>
+        </p>
         <h1>{cliente.nombre_o_razon_social}</h1>
         <p className="sub">
           {cliente.tipo_persona === 'fisica' ? 'Persona física' : 'Persona moral'} ·{' '}
-          {cliente.rfc ?? 'sin RFC'} ·{' '}
-          <span className="chip">{evaluado ? completitud.estatus : 'sin evaluar'}</span>{' '}
+          <span className="mono">{cliente.rfc ?? 'sin RFC'}</span> ·{' '}
           {evaluado
-            ? `${completitud.cubiertos} de ${completitud.totalObligatorios} requisitos`
+            ? `${completitud.cubiertos} de ${completitud.totalObligatorios} requisitos documentales`
             : 'la completitud aún no se ha calculado'}
         </p>
 
@@ -306,12 +460,14 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
             corresponden al cliente, y quién fue queda en el historial de abajo.
           </div>
         ) : (
-          <div className="tarjeta" style={{ marginBottom: '1.5rem' }}>
-            <h3>Aprobación del expediente</h3>
-            <p className="tenue pequeno" style={{ margin: '0 0 .8rem' }}>
-              Estar completo es que no falte nada. Aprobarlo es que alguien haya
-              comprobado que lo que hay sirve — y esas dos cosas no son la misma.
-            </p>
+          <div className="tarjeta tarjeta-aprobacion">
+            <div>
+              <h3 style={{ fontSize: '.95rem', margin: '0 0 .3rem' }}>Aprobación del expediente</h3>
+              <p className="tenue pequeno" style={{ margin: 0 }}>
+                Estar completo es que no falte nada. Aprobarlo es que alguien haya
+                comprobado que lo que hay sirve — y esas dos cosas no son la misma.
+              </p>
+            </div>
             <BotonAprobarExpediente
               expedienteId={expediente.id}
               clienteId={clienteId}
@@ -341,64 +497,22 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
           </div>
         )}
 
-        {/* El ciclo anual del Art. 21. Va antes de «Subir documento» porque
-            cuando algo vence, lo primero que hay que saber es que venció. */}
-        <h2 id="revision">Revisión anual</h2>
-        <SeccionRevisionAnual
-          clienteId={clienteId}
-          expedienteId={expediente.id}
-          relacionNegocios={cliente.relacion_negocios}
-          verificadoEn={expediente.verificado_en}
-          venceEn={expediente.vence}
-          aprobado={expediente.estatus === 'aprobado'}
-          puede={sesion.rol === 'admin'}
+        {/*
+          El orden de las secciones no es estético: la aprobación (04) depende
+          del grado (02) y de la declaración PEP (05) — y sin alguno de los dos
+          no da «no se requiere» sino el hueco. Las dos últimas (23 Ter 3 y 4)
+          existen antes de estar construidas: el patrón es de siete secciones,
+          no de las cinco que hay hoy.
+        */}
+        <h2>Conocimiento del cliente</h2>
+        <p className="sub" style={{ maxWidth: '44rem' }}>
+          Siete secciones, cada una con su propio reloj. El riel de la izquierda es el
+          estado completo; abrir una sección no pierde de vista a las otras seis.
+        </p>
+        <ConocimientoDelCliente
+          secciones={secciones}
+          abiertaInicial={seccionAbiertaPorDefecto(secciones)}
         />
-
-        {/* Cap. III Bis. Va antes de PEP porque el grado alto es lo que
-            dispara las medidas reforzadas del Cap. III Ter, incluida la
-            aprobación de directivo cuando además es PEP (Art. 23 Ter 5). */}
-        <h2 id="riesgo">Grado de riesgo</h2>
-        <SeccionRiesgoCliente
-          clienteId={clienteId}
-          riesgo={riesgo}
-          puede={sesion.rol === 'admin'}
-        />
-
-        {/* Cap. III Ter. Va después del grado porque el Art. 23 Ter fr. I ata
-            las políticas de conocimiento a la metodología, y el Art. 23 Ter 3
-            exige monitoreo más estricto justo cuando el grado es alto. */}
-        <h2 id="perfil">Perfil transaccional</h2>
-        <SeccionPerfilTransaccional
-          clienteId={clienteId}
-          perfil={perfil}
-          puede={sesion.rol === 'admin'}
-        />
-
-        {/* Art. 23 Ter 5. Va al final del bloque de conocimiento del cliente
-            porque depende de los tres anteriores: se dispara con el grado alto
-            del Cap. III Bis y con la declaración PEP del Cap. III Quáter, y sin
-            alguno de los dos no da «no se requiere» sino el hueco. */}
-        <h2 id="aprobacion">Aprobación para operar</h2>
-        <SeccionAprobacionDirectivo
-          clienteId={clienteId}
-          aprobacion={aprobacion}
-          puede={sesion.rol === 'admin'}
-        />
-
-        {/* Art. 23 Quáter: la declaración PEP, solo de personas físicas. Va
-            junto a la revisión anual porque las dos son conocimiento del
-            cliente que caduca — una por calendario, otra por los dos relojes. */}
-        {estadoPep !== null && (
-          <>
-            <h2 id="pep">Persona Políticamente Expuesta</h2>
-            <SeccionPep
-              clienteId={clienteId}
-              estado={estadoPep}
-              esAdmin={sesion.rol === 'admin'}
-              hoy={hoyEnMexico()}
-            />
-          </>
-        )}
 
         <h2>Subir documento</h2>
         {/*
@@ -506,12 +620,12 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
           </table>
         </div>
 
-        <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.5rem' }}>
-          <Link href="/clientes">← Volver a clientes</Link>
+        {/* «Volver a clientes» vive arriba, en la migaja. */}
+        <p style={{ marginTop: '1.5rem' }}>
           <Link href={`/clientes/${clienteId}/expediente/historico`}>
             ¿Cómo estaba en una fecha? →
           </Link>
-        </div>
+        </p>
       </Marco>
     )
   } finally {

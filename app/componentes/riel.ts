@@ -275,8 +275,61 @@ export const SECCIONES_DEL_CONOCIMIENTO = [
   {
     id: 'cuestionario',
     numero: '06',
-    titulo: 'Cuestionario de origen y destino',
+    titulo: 'Cuestionario de identificación',
     articulo: 'Art. 23 Ter 3',
   },
   { id: 'reforzadas', numero: '07', titulo: 'Medidas reforzadas', articulo: 'Art. 23 Ter 4' },
 ] as const
+
+export interface CuestionarioParaRiel {
+  readonly exigencia:
+    | { readonly estado: 'exigible'; readonly conGradoVencido: boolean }
+    | { readonly estado: 'no_exigible'; readonly porque: string }
+    | { readonly estado: 'indeterminable'; readonly falta: string }
+  readonly cobertura:
+    | { readonly estado: 'sin_cuestionario' }
+    | { readonly estado: 'cubierto'; readonly cuestionario: { readonly fechaAplicacion: string } }
+    | {
+        readonly estado: 'sobre_otra_clasificacion'
+        readonly cuestionario: { readonly fechaAplicacion: string }
+      }
+  readonly anticipado: boolean
+  readonly exigibleDesde: string
+}
+
+/**
+ * El cuestionario del Art. 23 Ter 3, en una palabra.
+ *
+ * `sobre_otra_clasificacion` sale ÁMBAR y no granate, y la palabra no dice
+ * «vencido»: el artículo no da plazo de vigencia. Que haya una clasificación
+ * más nueva es un hecho que alguien tiene que mirar, no un incumplimiento que
+ * el sistema pueda declarar por su cuenta.
+ */
+export function rielCuestionario(c: CuestionarioParaRiel): EstadoDeRiel {
+  if (c.exigencia.estado === 'no_exigible')
+    return { estado: 'No requerido', tono: 'neutro', reloj: 'el grado no es alto' }
+  if (c.exigencia.estado === 'indeterminable')
+    return { estado: 'No se sabe', tono: 'aviso', reloj: 'sin Grado de riesgo' }
+
+  switch (c.cobertura.estado) {
+    case 'sin_cuestionario':
+      return {
+        estado: 'Falta aplicarlo',
+        // Antes del Transitorio Cuarto la obligación todavía no corre.
+        tono: c.anticipado ? 'aviso' : 'critico',
+        reloj: c.anticipado ? `exigible desde el ${c.exigibleDesde}` : 'el grado es alto',
+      }
+    case 'sobre_otra_clasificacion':
+      return {
+        estado: 'De otra clasificación',
+        tono: 'aviso',
+        reloj: `aplicado el ${c.cobertura.cuestionario.fechaAplicacion}`,
+      }
+    case 'cubierto':
+      return {
+        estado: 'Aplicado',
+        tono: 'ok',
+        reloj: `el ${c.cobertura.cuestionario.fechaAplicacion}`,
+      }
+  }
+}

@@ -1,6 +1,6 @@
 # El calendario que escribió el regulador
 
-**Contrastado contra el DOF el 16 de agosto de 2026.** Fuente: `regulatorio/dof/acuerdo-115-2026.txt` (código 5795797, edición vespertina del 7-ago-2026, SHA-256 `19af24b3…`). Cada renglón cita su artículo transitorio y su capítulo. Lo que no pude confirmar en el texto va marcado **⚠️**.
+**Contrastado contra el DOF el 16 de agosto de 2026.** Fuente: `regulatorio/dof/acuerdo-115-2026.doc` (código 5795797, edición vespertina del 7-ago-2026, SHA-256 `19af24b3…`); el `.txt` del mismo directorio es la extracción de ese archivo y tiene huella propia (`b9e50b4e…`). *Corregido el 23-ago-2026: esta línea le atribuía al `.txt` el hash del `.doc`, y toda la disciplina del proyecto descansa en que esas huellas se puedan verificar.* Cada renglón cita su artículo transitorio y su capítulo. Lo que no pude confirmar en el texto va marcado **⚠️**.
 
 **Qué es esto:** el índice de lo que deja de ser apuesta y pasa a ser lista con vencimientos.
 **Qué NO es:** un plan ni un compromiso. Ninguna fecha de aquí es una fecha de VIZO — son las del obligado. Que VIZO construya cada pieza, y cuándo, es una decisión de producto que este documento no toma.
@@ -65,7 +65,9 @@ Perfil transaccional, alertas ante desviaciones, y para riesgo alto cuestionario
 
 **En VIZO (22-ago-2026): construida también la aprobación del Art. 23 Ter 5.** `aprobaciones_directivo` asienta el consentimiento —o la constancia de motivos que lo subsana cuando el obligado es persona física, que son ramas excluyentes según `tenants.tipo_persona`— y `operaciones_consentidas` nombra qué actos consiente, porque el ¶1 dice «los actos u operaciones respectivos». **No es una compuerta:** la operación se registra y queda su alerta, porque el ¶1 contempla detectar esto «con posterioridad al acto». El disparador se resuelve con lógica de tres valores: sin declaración PEP o sin modelo de riesgo la respuesta no es «no se requiere», es que no se puede saber. ADR-23.
 
-**Lo que falta de este capítulo:** los **cuestionarios de origen y destino** del Art. 23 Ter 3 para riesgo alto (con Firma Electrónica, que es evidencia y no texto libre) y las **medidas reforzadas** del Art. 23 Ter 4 —cónyuge y dependientes económicos para físicas, accionistas verificados contra la Secretaría de Economía para morales, y documentación adicional para PEP extranjeras—.
+**En VIZO (23-ago-2026): construido el cuestionario del Art. 23 Ter 3.** `cuestionarios_riesgo_alto` guarda append-only las cinco respuestas que el artículo nombra —la actividad preponderante del ¶1, y el origen y destino de los recursos más los actos que realiza *o pretende* del ¶2—, atadas por FK compuesta a la evaluación de riesgo que las exigió. Tres lecturas decidieron el modelo: la «Firma Electrónica» del ¶3 es la del **Código de Comercio** (Art. 3 fr. VIII Ter), no la e.firma del SAT (fr. VIII Quáter), así que VIZO registra su huella sin producirla ni validarla; el «los cuales» del ¶3 ata esa firma a la **vía remota**, no al cuestionario, y por eso el presencial no la necesita; y el artículo **no da plazo de vigencia**, así que cuando el cliente se reclasifica el sistema dice «sobre otra clasificación» y nunca «vencido». ADR-25.
+
+**Lo que falta de este capítulo:** las **medidas reforzadas** del Art. 23 Ter 4 —cónyuge y dependientes económicos para físicas, accionistas verificados contra la Secretaría de Economía para morales, y documentación adicional para PEP extranjeras—.
 
 ### Cap. III Quinquies · Beneficiario Controlador — **1 mar 2027**
 Art. 23 Quinquies, orden de prelación **literal**:

@@ -42,6 +42,12 @@ import {
 import { evaluarClienteYRegistrar } from '../../../../src/persistencia/riesgo'
 import { DocumentoInvalido } from '../../../../src/dominio/documentos'
 import { hoyEnMexico } from '../../../../src/dominio/fechas'
+import { createHash } from 'node:crypto'
+import {
+  DatoDeCuestionarioInvalido,
+  asentarCuestionario,
+} from '../../../../src/persistencia/cuestionario'
+import type { EvidenciaDeFirma } from '../../../../src/dominio/cuestionario'
 
 export interface EstadoSubida {
   problemas: string[]
@@ -611,6 +617,100 @@ export async function asentarAprobacionDirectivo(
       return { ok: false, mensaje: 'Solo un administrador asienta la aprobación del Art. 23 Ter 5.' }
     }
     return { ok: false, mensaje: bruto }
+  } finally {
+    await db.end()
+  }
+}
+
+/** El resultado de una captura con varios problemas posibles a la vez. */
+export interface EstadoCaptura {
+  ok: boolean | null
+  mensaje: string
+  problemas: string[]
+}
+
+/**
+ * Asienta el cuestionario del Art. 23 Ter 3.
+ *
+ * La huella del archivo firmado se calcula AQUÍ, del stream que llegó, y no se
+ * acepta como parámetro. Un hash que viaja en el formulario es un hash que
+ * quien captura puede escribir a mano, y entonces la evidencia acredita lo que
+ * alguien tecleó en vez de lo que el cliente firmó.
+ *
+ * VIZO no valida la firma en sí: el ¶3 pide que el documento «contenga la
+ * Firma Electrónica», y determinar si un mecanismo concreto cumple el estándar
+ * del Código de Comercio es una pregunta jurídica (ALCANCE §0.5). Lo que VIZO
+ * garantiza es que el archivo que se guardó es el mismo que se subió.
+ */
+export async function accionAplicarCuestionario(
+  _previo: EstadoCaptura,
+  datos: FormData,
+): Promise<EstadoCaptura> {
+  const clienteId = String(datos.get('clienteId') ?? '')
+  const sesion = await sesionRequerida()
+  const remoto = datos.get('remoto') === 'si'
+
+  let firma: EvidenciaDeFirma | undefined
+  if (remoto) {
+    const archivo = datos.get('firma')
+    if (!(archivo instanceof File) || archivo.size === 0) {
+      return {
+        ok: false,
+        mensaje: 'Falta el archivo firmado.',
+        problemas: [
+          'Un cuestionario aplicado por vía remota debe contener la Firma Electrónica de quien ' +
+            'lo suscribe (Art. 23 Ter 3 ¶3).',
+        ],
+      }
+    }
+    const bytes = Buffer.from(await archivo.arrayBuffer())
+    firma = {
+      hashSha256: createHash('sha256').update(bytes).digest('hex'),
+      archivo: archivo.name,
+      tamanoBytes: bytes.byteLength,
+      mime: archivo.type === '' ? 'application/octet-stream' : archivo.type,
+    }
+  }
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await asentarCuestionario(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+      hoy: hoyEnMexico(),
+      datos: {
+        modalidad: remoto ? 'remoto_digital' : 'presencial',
+        fechaAplicacion: String(datos.get('fechaAplicacion') ?? ''),
+        suscritoPor: String(datos.get('suscritoPor') ?? ''),
+        actividadPreponderante: String(datos.get('actividadPreponderante') ?? ''),
+        origenRecursos: String(datos.get('origenRecursos') ?? ''),
+        destinoRecursos: String(datos.get('destinoRecursos') ?? ''),
+        actosQueRealiza: String(datos.get('actosQueRealiza') ?? ''),
+        actosQuePretende: String(datos.get('actosQuePretende') ?? ''),
+        ...(firma === undefined ? {} : { firma }),
+      },
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return {
+      ok: true,
+      mensaje: 'Cuestionario asentado. Queda atado a la clasificación de riesgo que lo exigió.',
+      problemas: [],
+    }
+  } catch (e) {
+    if (e instanceof DatoDeCuestionarioInvalido) {
+      return { ok: false, mensaje: 'No se asentó el cuestionario.', problemas: e.problemas }
+    }
+    const bruto = e instanceof Error ? e.message : String(e)
+    if (/permission denied|admin/i.test(bruto)) {
+      return {
+        ok: false,
+        mensaje:
+          'Solo un administrador asienta el cuestionario. La regla la aplica la base de datos.',
+        problemas: [],
+      }
+    }
+    return { ok: false, mensaje: bruto, problemas: [] }
   } finally {
     await db.end()
   }

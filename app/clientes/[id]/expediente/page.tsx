@@ -24,11 +24,17 @@ import {
   type EstadoAprobacion,
 } from '../../../../src/persistencia/aprobacion'
 import { ConocimientoDelCliente, type SeccionDeConocimiento } from './conocimiento'
+import { SeccionCuestionario } from './cuestionario'
+import {
+  estadoDelCuestionario,
+  type EstadoDelCuestionario,
+} from '../../../../src/persistencia/cuestionario'
 import {
   rielAprobacion,
   rielGradoDeRiesgo,
   rielPep,
   rielPerfil,
+  rielCuestionario,
   rielPorConstruir,
   rielRevisionAnual,
   seccionAbiertaPorDefecto,
@@ -267,6 +273,12 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       hoy: hoyEnMexico(),
     })
 
+    const cuestionario: EstadoDelCuestionario = await estadoDelCuestionario(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+      hoy: hoyEnMexico(),
+    })
+
     const aprobacion: EstadoAprobacion = await estadoDeAprobacion(db, {
       sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
       clienteId,
@@ -343,6 +355,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
     const estadoPerfil = rielPerfil(perfil)
     const estadoAprobacionRiel = rielAprobacion(aprobacion)
     const estadoPepRiel = rielPep(estadoPep)
+    const estadoCuestionario = rielCuestionario(cuestionario)
     const estadoPorConstruir = rielPorConstruir(aprobacion.exigibleDesde)
 
     const secciones: SeccionDeConocimiento[] = [
@@ -412,21 +425,13 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       },
       {
         ...SECCIONES_DEL_CONOCIMIENTO[5],
-        ...estadoPorConstruir,
+        ...estadoCuestionario,
         contenido: (
-          <div style={{ display: 'grid', gap: '.7rem' }}>
-            <p className="pequeno tenue" style={{ margin: 0, maxWidth: '42rem' }}>
-              Los cuestionarios de origen y destino de recursos para clientes de grado alto
-              todavía no están construidos en VIZO. La sección aparece desde hoy a propósito:
-              un hueco visible es información; uno escondido es una omisión silenciosa.
-            </p>
-            <dl className="pares">
-              <dt>Exigible cuando</dt>
-              <dd>el Grado de riesgo es alto</dd>
-              <dt>Desde</dt>
-              <dd className="mono">{aprobacion.exigibleDesde}</dd>
-            </dl>
-          </div>
+          <SeccionCuestionario
+            clienteId={clienteId}
+            estado={cuestionario}
+            puede={sesion.rol === 'admin'}
+          />
         ),
       },
       {

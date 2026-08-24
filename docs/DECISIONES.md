@@ -381,6 +381,31 @@ Las cinco secciones son **conocimiento del cliente**, y el conocimiento del clie
 
 ---
 
+## ADR-25 · El cuestionario del Art. 23 Ter 3: tres lecturas del texto que decidieron el modelo — 2026-08-23
+
+**Contexto:** el Art. 23 Ter 3 es el último pendiente grande del Cap. III Ter junto con las medidas reforzadas del 23 Ter 4. Tiene **tres párrafos** y cada uno pide otra cosa: el ¶1 pide mayor información sobre la **actividad preponderante** y monitoreo más estricto; el ¶2 pide **cuestionarios de identificación** sobre el **origen y destino de los recursos** y sobre los actos «que realicen o que pretendan llevar a cabo»; el ¶3 dice que puede aplicarse por vía remota, «los cuales en todo caso deberán contener la **Firma Electrónica** de quien los suscribe».
+
+**Decisión.** Se construye como registro con evidencia, append-only, atado por FK compuesta a la evaluación de riesgo que lo exigió. Tres lecturas del texto lo decidieron, y ninguna es obvia:
+
+**1. «Firma Electrónica» no es la e.firma del SAT.** El propio Acuerdo define las dos por separado en su Art. 3: la **fr. VIII Ter** es «Firma Electrónica» —datos electrónicos que identifican al suscriptor y prueban que aprueba el contenido, «conforme al **Código de Comercio**»— y la **fr. VIII Quáter** es «Firma Electrónica **Avanzada**», que sí es «el certificado digital que refiere el Código Fiscal». El ¶3 pide la primera.
+
+Cambia la frontera: si pidiera la avanzada, VIZO no podría tocarla (`ALCANCE.md` §0.3). Al ser la del Código de Comercio, el cliente puede suscribir sin certificado del SAT. Aun así **VIZO no produce ni valida la firma**: calcula y registra la huella SHA-256 del archivo firmado, igual que hace con el acuse del SPPLD. Si un mecanismo concreto alcanza el estándar del Código de Comercio es pregunta jurídica → **POR CONFIRMAR-9**.
+
+**2. La Firma Electrónica la exige la vía remota, no el cuestionario.** El «los cuales» del ¶3 se refiere a «los medios digitales o electrónicos», no al cuestionario en abstracto. Un cuestionario aplicado en persona y firmado de puño y letra ya tiene una firma autógrafa y el artículo no le pide otra. Por eso la modalidad es una columna y el CHECK ata la evidencia de firma **solo** a `remoto_digital`. Exigirla también en el presencial sería inventar una obligación — y eso cuesta lo mismo que omitir una.
+
+**3. El artículo no da plazo de vigencia, así que el sistema no inventa ninguno.** No dice cada cuánto se repite el cuestionario ni cuándo caduca. Lo que sí dice es a quién se aplica: a los catalogados de Grado alto «así como a los Clientes nuevos clasificados como tal». Por eso el cuestionario **cita** la evaluación que lo motivó, y cuando el cliente se reclasifica el sistema dice **«sobre otra clasificación»** —un hecho— y nunca «vencido», que sería una regla que nadie promulgó. Si una reclasificación obliga a repetirlo → **POR CONFIRMAR-10**.
+
+**Lo que la base hace inexpresable** (diez aserciones en la migración): un cuestionario citando una evaluación que no clasificó alto; citando la evaluación de otro cliente; remoto sin Firma Electrónica; con «pendiente» escrito donde va una huella; con media evidencia de archivo; con una respuesta del piso en blanco; aplicado antes de la clasificación que lo motiva; y editado o borrado después de asentado.
+
+**Un error propio, registrado porque volverá a tentar:** el trigger de coherencia nació `deferrable initially deferred`, copiando el patrón de la declaración PEP sin preguntarse si aplicaba. Ahí el diferimiento es necesario —la coherencia depende de vínculos que se insertan después—; aquí no, porque el cuestionario cita una evaluación que ya existe. Diferirlo tenía un costo real: el error llegaba en el commit y no en el INSERT. Lo delató la aserción 2, que pasó cuando debía morir.
+
+**Alternativas descartadas:**
+
+- **(a) Que VIZO proponga las preguntas.** El ¶2 dice «conforme a su **Manual de Políticas Internas**». Mismo criterio del ADR-21 con los factores de riesgo: VIZO pone el registro y el piso que el artículo nombra; el obligado pone el criterio. Lo que pregunte de más vive en `respuestas_del_manual`.
+- **(b) Una sola columna «origen y destino».** El artículo los nombra juntos pero son dos hechos, y el ¶2 además distingue los actos que el cliente **realiza** de los que **pretende** — dos tiempos verbales, y lo que pretende es lo único de todo el capítulo que mira hacia adelante. Cuatro columnas, no una.
+
+**Lo que abre:** del Cap. III Ter queda solo el Art. 23 Ter 4. La sección 06 del expediente dejó de decir «Por construir»; queda la 07.
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 1. **Sellado del manifiesto** (ADR-10): ¿una constancia NOM-151 sobre el manifiesto con los hashes de todos los documentos satisface la exigencia de fecha cierta, o la autoridad espera constancia por documento?
@@ -426,3 +451,5 @@ Las cinco secciones son **conocimiento del cliente**, y el conocimiento del clie
 5. **Registro real de los asesores inmobiliarios:** qué porcentaje está dado de alta en el SPPLD por cuenta propia (Fr. V/XI) vs. operando bajo el RFC de la inmobiliaria. Define si la tercera rama del flujo multi-parte existe de verdad (ADR-15).
 
 Las preguntas 1–3 ya están redactadas en detalle en `02_FASE_0_PROVEEDORES.md §C`; aquí se listan porque el MVP toma postura provisional en todas y debe decirse en la demo.
+9. **El estándar de la Firma Electrónica** (ADR-25): el Art. 23 Ter 3 ¶3 pide la del **Código de Comercio** (Art. 3 fr. VIII Ter), no la e.firma. ¿Qué mecanismo concreto de suscripción remota resiste una verificación? VIZO registra la huella del archivo firmado sin pronunciarse sobre su validez.
+10. **¿Una reclasificación obliga a repetir el cuestionario?** (ADR-25): el artículo no da plazo de vigencia. Mientras no haya respuesta, VIZO enseña el hecho —«se aplicó sobre otra clasificación»— sin llamarlo vencido.

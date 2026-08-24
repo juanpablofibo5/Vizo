@@ -253,3 +253,30 @@ export function rielExpediente(e: ExpedienteParaRiel): EstadoDeRiel {
   // Completo y sin aprobar: nadie ha mirado que los documentos sirvan.
   return { estado: 'Falta aprobar', tono: 'aviso', reloj: cuenta }
 }
+
+/**
+ * Las siete secciones del conocimiento del cliente, en su orden.
+ *
+ * Vive aquí y no en la página del expediente porque hay DOS pantallas que las
+ * nombran: el expediente, que las pinta, y la puerta del ADR-24, que promete
+ * cuáles se desbloquean al abrirlo. Con dos listas escritas a mano, la puerta
+ * se queda prometiendo cinco el día que el expediente pase a siete —y nadie
+ * se entera, porque las dos pantallas se ven bien por separado.
+ *
+ * El orden no es estético: la 04 depende de la 02 y de la 05, y sin alguna de
+ * las dos no da «no se requiere» sino el hueco.
+ */
+export const SECCIONES_DEL_CONOCIMIENTO = [
+  { id: 'revision', numero: '01', titulo: 'Revisión anual', articulo: 'Art. 21' },
+  { id: 'riesgo', numero: '02', titulo: 'Grado de riesgo', articulo: 'Cap. III Bis' },
+  { id: 'perfil', numero: '03', titulo: 'Perfil transaccional', articulo: 'Art. 23 Ter 1 y 2' },
+  { id: 'aprobacion', numero: '04', titulo: 'Aprobación para operar', articulo: 'Art. 23 Ter 5' },
+  { id: 'pep', numero: '05', titulo: 'Declaración PEP', articulo: 'Art. 23 Quáter' },
+  {
+    id: 'cuestionario',
+    numero: '06',
+    titulo: 'Cuestionario de origen y destino',
+    articulo: 'Art. 23 Ter 3',
+  },
+  { id: 'reforzadas', numero: '07', titulo: 'Medidas reforzadas', articulo: 'Art. 23 Ter 4' },
+] as const

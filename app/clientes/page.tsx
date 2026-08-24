@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { conBase, leerComoUsuario } from '../../src/supabase/conexion'
 import { Marco } from '../componentes/marco'
 import { conocimientoDeClientes } from '../../src/persistencia/conocimiento'
+import { Vacio } from '../componentes/vacio'
 import { hoyEnMexico } from '../../src/dominio/fechas'
 import { formatearPesosTexto as pesos } from '../../src/dominio/dinero'
 import {
@@ -108,6 +109,22 @@ export default async function Clientes() {
           </Link>
         </div>
 
+        {clientes.length === 0 ? (
+          <Vacio
+            titulo="Todavía no hay clientes"
+            accion={{ texto: 'Dar de alta el primero', href: '/clientes/nuevo' }}
+          >
+            <p>
+              Un cliente aquí es <strong>cada aportante</strong> de una operación: quien pone
+              el dinero, aunque no firme la escritura. De cada uno se integra expediente sin
+              importar el monto.
+            </p>
+            <p>
+              Al darlo de alta se abre su expediente, y con él las siete secciones de
+              conocimiento del cliente.
+            </p>
+          </Vacio>
+        ) : (
         <div className="tabla-envoltura">
           <table>
             <thead>
@@ -120,14 +137,7 @@ export default async function Clientes() {
               </tr>
             </thead>
             <tbody>
-              {clientes.length === 0 ? (
-                <tr>
-                  <td className="vacia" colSpan={5}>
-                    Todavía no hay clientes dados de alta.
-                  </td>
-                </tr>
-              ) : (
-                clientes.map((c) => {
+              {clientes.map((c) => {
                   const exp = rielExpediente({
                     estatus: c.estatus_expediente,
                     cubiertos: c.cubiertos,
@@ -196,11 +206,11 @@ export default async function Clientes() {
                       </td>
                     </tr>
                   )
-                })
-              )}
+              })}
             </tbody>
           </table>
         </div>
+        )}
 
         <p className="sub pequeno" style={{ marginTop: '1rem' }}>
           «Conocimiento» resume las cinco secciones del expediente —revisión anual, grado de

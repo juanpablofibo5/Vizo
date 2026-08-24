@@ -93,13 +93,16 @@ export function DesgloseDelVeredicto({
           </p>
         )}
 
+        {/* La línea separa esta rejilla del motivo de arriba. Si el motivo no
+            está —porque quien llama ya lo enseñó—, la línea no separa nada:
+            queda flotando en el borde de la caja. Se vio en la tarjeta de
+            alerta, no en operaciones, que sí lleva motivo. */}
         <div
           style={{
             display: 'grid',
             gap: '.7rem 1.4rem',
             gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))',
-            borderTop: '1px solid var(--linea)',
-            paddingTop: '.8rem',
+            ...(sinMotivo ? {} : { borderTop: '1px solid var(--linea)', paddingTop: '.8rem' }),
           }}
         >
           <Dato etiqueta="UMA aplicada">

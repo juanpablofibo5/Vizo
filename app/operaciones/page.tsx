@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { conBase, leerComoUsuario } from '../../src/supabase/conexion'
 import { Marco } from '../componentes/marco'
+import { Vacio } from '../componentes/vacio'
 import { EtiquetaVeredicto, VeredictoExplicable } from '../componentes/veredicto'
 import { veredictosDeOperaciones, type Veredicto } from '../../src/persistencia/veredicto'
 import { formatearPesosTexto as pesos } from '../../src/dominio/dinero'
@@ -87,6 +88,22 @@ export default async function Operaciones() {
           </Link>
         </div>
 
+        {filas.length === 0 ? (
+          <Vacio
+            titulo="Todavía no hay operaciones"
+            accion={{ texto: 'Registrar la primera', href: '/operaciones/nueva' }}
+          >
+            <p>
+              Cada operación se evalúa <strong>al registrarse</strong>: el motor la compara
+              contra el umbral vigente ese día y contra lo acumulado del aportante en seis
+              meses, y guarda el desglose del cálculo.
+            </p>
+            <p>
+              Un mes sin operaciones no es un mes sin obligación — se presenta el informe en
+              cero igual.
+            </p>
+          </Vacio>
+        ) : (
         <div className="tabla-envoltura">
         <table>
           <thead>
@@ -99,14 +116,7 @@ export default async function Operaciones() {
             </tr>
           </thead>
           <tbody>
-            {filas.length === 0 ? (
-              <tr>
-                <td className="vacia" colSpan={5}>
-                  Todavía no hay operaciones registradas.
-                </td>
-              </tr>
-            ) : (
-              filas.map((f) => {
+            {filas.map((f) => {
                 const veredicto: Veredicto | undefined = veredictos.get(f.id)
                 return (
                 <tr key={f.id}>
@@ -141,11 +151,11 @@ export default async function Operaciones() {
                   </td>
                 </tr>
                 )
-              })
-            )}
+            })}
           </tbody>
         </table>
         </div>
+        )}
       </Marco>
     )
   })

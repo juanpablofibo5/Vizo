@@ -202,3 +202,64 @@ describe('El ámbar de «por vencer» se distingue del naranja de marca', () => 
     ).toBeGreaterThan(SEPARACION_MINIMA)
   })
 })
+
+/**
+ * El contraste de lo que se lee, medido y no supuesto.
+ *
+ * Se mide con la fórmula de la WCAG 2.1 (relative luminance + ratio). No es
+ * una prueba de accesibilidad completa: es el guardián de los pocos valores
+ * que ya se eligieron midiendo, para que nadie los mueva de vuelta.
+ */
+function luminancia(hex: string): number {
+  const c = hex.replace('#', '')
+  const canal = (i: number) => {
+    const v = parseInt(c.slice(i * 2, i * 2 + 2), 16) / 255
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+  }
+  return 0.2126 * canal(0) + 0.7152 * canal(1) + 0.0722 * canal(2)
+}
+
+function contraste(a: string, b: string): number {
+  const [x, y] = [luminancia(a), luminancia(b)].sort((p, q) => q - p) as [number, number]
+  return (x + 0.05) / (y + 0.05)
+}
+
+describe('el botón deshabilitado se puede leer', () => {
+  it('la fórmula reproduce un valor conocido: negro sobre blanco es 21:1', () => {
+    expect(contraste('#000000', '#FFFFFF')).toBeCloseTo(21, 1)
+  })
+
+  it('LO QUE SE REEMPLAZÓ: blanco sobre el naranja al 50% era ilegible', () => {
+    // `opacity: .5` sobre una tarjeta blanca mezcla el naranja con el fondo.
+    const mezcla = (fg: string, bg: string, a: number) =>
+      '#' +
+      [0, 1, 2]
+        .map((i) => {
+          const f = parseInt(fg.slice(1 + i * 2, 3 + i * 2), 16)
+          const b = parseInt(bg.slice(1 + i * 2, 3 + i * 2), 16)
+          return Math.round(f * a + b * (1 - a))
+            .toString(16)
+            .padStart(2, '0')
+        })
+        .join('')
+    const naranjaAlMedio = mezcla('#E8590C', '#FFFFFF', 0.5)
+    // El texto también se difumina, pero incluso ignorando eso ya no llega.
+    expect(contraste('#FFFFFF', naranjaAlMedio)).toBeLessThan(2.5)
+  })
+
+  it('lo que hay ahora: tinta tenue sobre la superficie apagada pasa el 4.5:1', () => {
+    expect(contraste('#706C65', '#F7F6F2')).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('y en oscuro también', () => {
+    // `--superficie-2` es la superficie más CLARA del tema oscuro: el peor
+    // caso para una tinta tenue. El #8A857C original se quedaba en 4.494.
+    expect(contraste('#8B867D', '#201F1C')).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('el CSS ya no apaga el botón con opacidad', () => {
+    const regla = CSS.slice(CSS.indexOf('button:disabled'), CSS.indexOf('button:disabled') + 260)
+    expect(regla).not.toMatch(/opacity:\s*\.5/)
+    expect(regla).toContain('var(--texto-tenue)')
+  })
+})

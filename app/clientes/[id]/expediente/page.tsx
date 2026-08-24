@@ -32,6 +32,7 @@ import {
   rielPorConstruir,
   rielRevisionAnual,
   seccionAbiertaPorDefecto,
+  SECCIONES_DEL_CONOCIMIENTO,
 } from '../../../componentes/riel'
 
 export const dynamic = 'force-dynamic'
@@ -105,17 +106,54 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       [clienteId],
     )
 
+    /*
+      LA PUERTA (ADR-24).
+      Sin expediente abierto no se ofrece ninguna de las siete secciones: el
+      conocimiento del cliente se asienta EN su expediente, y capturar un
+      Grado de Riesgo sobre alguien cuya identificación nadie ha empezado a
+      integrar sería construir el segundo piso antes que el primero.
+      El ADR pedía que esta pantalla dijera tres cosas —qué se integra, por
+      qué precede al resto, y qué se desbloquea— en vez de una línea y un
+      botón. Las siete que promete salen de la MISMA lista que el expediente
+      pinta, así que no pueden divergir.
+    */
     if (exp.rows.length === 0) {
       const abrirEste = abrir.bind(null, clienteId)
       return (
         <Marco obligado={obligado} perfil={sesion}>
+          <p className="migaja">
+            <Link href="/clientes">← Clientes</Link>
+          </p>
           <h1>{cliente.nombre_o_razon_social}</h1>
           <p className="sub">
-            En Fracción V Bis se integra expediente de cada aportante, sin importar el monto.
+            {cliente.tipo_persona === 'fisica' ? 'Persona física' : 'Persona moral'} ·{' '}
+            <span className="mono">{cliente.rfc ?? 'sin RFC'}</span>
           </p>
-          <form action={abrirEste}>
-            <button type="submit">Abrir expediente</button>
-          </form>
+
+          <div className="vacio">
+            <h2 className="vacio-titulo">Este cliente todavía no tiene expediente</h2>
+            <div className="vacio-cuerpo">
+              <p>
+                En Fracción V Bis se integra expediente de <strong>cada aportante</strong>, sin
+                importar el monto. No es un paso que se pueda posponer hasta que la operación
+                sea grande: es la primera obligación, y precede a todas las demás.
+              </p>
+              <p>
+                Abrirlo desbloquea las siete secciones de conocimiento del cliente, cada una
+                con su propio reloj:
+              </p>
+              <ul className="vacio-lista">
+                {SECCIONES_DEL_CONOCIMIENTO.map((s) => (
+                  <li key={s.id}>
+                    {s.titulo} · {s.articulo}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <form action={abrirEste}>
+              <button type="submit">Abrir expediente</button>
+            </form>
+          </div>
         </Marco>
       )
     }
@@ -309,10 +347,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
 
     const secciones: SeccionDeConocimiento[] = [
       {
-        id: 'revision',
-        numero: '01',
-        titulo: 'Revisión anual',
-        articulo: 'Art. 21',
+        ...SECCIONES_DEL_CONOCIMIENTO[0],
         ...estadoRevision,
         contenido: (
           <SeccionRevisionAnual
@@ -327,20 +362,14 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
         ),
       },
       {
-        id: 'riesgo',
-        numero: '02',
-        titulo: 'Grado de riesgo',
-        articulo: 'Cap. III Bis',
+        ...SECCIONES_DEL_CONOCIMIENTO[1],
         ...estadoRiesgo,
         contenido: (
           <SeccionRiesgoCliente clienteId={clienteId} riesgo={riesgo} puede={sesion.rol === 'admin'} />
         ),
       },
       {
-        id: 'perfil',
-        numero: '03',
-        titulo: 'Perfil transaccional',
-        articulo: 'Art. 23 Ter 1 y 2',
+        ...SECCIONES_DEL_CONOCIMIENTO[2],
         ...estadoPerfil,
         contenido: (
           <SeccionPerfilTransaccional
@@ -351,10 +380,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
         ),
       },
       {
-        id: 'aprobacion',
-        numero: '04',
-        titulo: 'Aprobación para operar',
-        articulo: 'Art. 23 Ter 5',
+        ...SECCIONES_DEL_CONOCIMIENTO[3],
         ...estadoAprobacionRiel,
         contenido: (
           <SeccionAprobacionDirectivo
@@ -365,10 +391,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
         ),
       },
       {
-        id: 'pep',
-        numero: '05',
-        titulo: 'Declaración PEP',
-        articulo: 'Art. 23 Quáter',
+        ...SECCIONES_DEL_CONOCIMIENTO[4],
         ...estadoPepRiel,
         contenido:
           estadoPep !== null ? (
@@ -388,10 +411,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
           ),
       },
       {
-        id: 'cuestionario',
-        numero: '06',
-        titulo: 'Cuestionario de origen y destino',
-        articulo: 'Art. 23 Ter 3',
+        ...SECCIONES_DEL_CONOCIMIENTO[5],
         ...estadoPorConstruir,
         contenido: (
           <div style={{ display: 'grid', gap: '.7rem' }}>
@@ -410,10 +430,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
         ),
       },
       {
-        id: 'reforzadas',
-        numero: '07',
-        titulo: 'Medidas reforzadas',
-        articulo: 'Art. 23 Ter 4',
+        ...SECCIONES_DEL_CONOCIMIENTO[6],
         ...estadoPorConstruir,
         contenido: (
           <div style={{ display: 'grid', gap: '.7rem' }}>

@@ -37,6 +37,11 @@
 
    Y en la barra lateral, las etiquetas de sección subieron de blanco al 38%
    (3.56:1) al 55% (6.04:1); el correo del pie, de 45% a 55%.
+
+   Una cuarta, del pase de interacción del 23-ago: el tenue del tema OSCURO
+   (#8A857C) rendía 4.494:1 sobre `--superficie-2`, que es la superficie más
+   clara de ese tema y por tanto su peor caso. Un paso más claro —#8B867D— lo
+   deja en 4.555. Se encontró midiendo el botón deshabilitado, no mirándolo.
    ───────────────────────────────────────────────────────────────────────── */
 
 :root {
@@ -106,7 +111,11 @@
 
     --texto:        #F1EFEB;
     --texto-suave:  #B8B3AA;
-    --texto-tenue:  #8A857C;
+    /* Un paso más claro que el #8A857C con el que nació. Sobre `--superficie-2`
+       —la superficie MÁS CLARA del tema oscuro, y por tanto el peor caso—
+       rendía 4.494:1: por debajo del 4.5 que este archivo se impuso arriba, y
+       por tan poco que solo se ve midiendo. Ahora da 4.555. */
+    --texto-tenue:  #8B867D;
 
     --acento:       #FF7A1A;
     --acento-vivo:  #FF8F42;
@@ -138,7 +147,6 @@ body {
 }
 
 a { color: var(--acento); text-underline-offset: 2px; }
-:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; border-radius: 3px; }
 
 .sub { color: var(--texto-tenue); margin: 0 0 1.6rem; }
 
@@ -609,6 +617,13 @@ h3 { font-family: var(--titulo); font-weight: 600; font-size: 1.2rem; margin: 0 
   cursor: pointer; color: inherit;
   transition: background var(--transicion);
 }
+/* EL ANILLO DE FOCO VA POR DENTRO.
+   `.riel` y `.seccion` llevan `overflow: hidden` para que el radio recorte a
+   sus hijos, y el hijo llena el contenedor de borde a borde: un anillo con
+   offset positivo se dibuja fuera y el `overflow` se lo come. Se veía tabulando
+   —el anillo salía arriba y abajo, y los lados cortados—, no leyendo el CSS.
+   Con offset negativo el anillo se dibuja dentro y se ve entero. */
+.riel-item:focus-visible, .seccion-cabeza:focus-visible { outline-offset: -2px; }
 .riel-item:last-child { border-bottom: 0; }
 .riel-item:hover:not(:disabled), .riel-item[data-abierta='sí'] { background: var(--superficie-2); }
 .riel-item:active:not(:disabled) { transform: none; }
@@ -724,7 +739,22 @@ button.secundario, .boton.secundario {
 button.secundario:hover:not(:disabled), .boton.secundario:hover {
   background: var(--hover-superficie); border-color: var(--linea-fuerte);
 }
-button:disabled { opacity: .5; cursor: not-allowed; }
+/* UN BOTÓN DESHABILITADO SE TIENE QUE PODER LEER.
+   Estaba en `opacity: .5`, y el primario es naranja con texto blanco: al 50 %
+   sobre una tarjeta blanca eso da 1.9:1 — el rótulo desaparecía. Aquí importa
+   porque el botón apagado siempre dice algo («faltan requisitos», «solo un
+   administrador»), y el texto de al lado explica por qué: si el botón no se
+   lee, la explicación queda huérfana.
+
+   Se cambia por una superficie apagada de verdad: gris del sistema, tinta
+   tenue y borde visible. 4.76:1, medido en `semantica-del-color.test.ts`.
+   Sigue leyéndose como «esto no está disponible» sin necesidad de borrarse. */
+button:disabled, .boton:disabled {
+  opacity: 1; cursor: not-allowed;
+  background: var(--superficie-2);
+  border-color: var(--linea-fuerte);
+  color: var(--texto-tenue);
+}
 
 /* UN BOTÓN NO SE ESTIRA.
    Casi todos los formularios del portal son `display: grid`, y un botón que
@@ -791,6 +821,10 @@ th {
   color: var(--texto-tenue); font-weight: 500; white-space: nowrap;
 }
 tr:last-child td { border-bottom: 0; }
+/* Seguir un renglón de cinco columnas con la vista es más fácil si el renglón
+   se marca. No es una pista de que sea pulsable —no lo es; lo pulsable es el
+   nombre— sino de dónde está parado el ojo. */
+tbody tr:hover td { background: var(--superficie-2); }
 td.vacia { color: var(--texto-tenue); padding: 2.5rem; text-align: center; }
 td.num, .num { font-variant-numeric: tabular-nums; }
 
@@ -816,6 +850,11 @@ label .pista { display: inline; margin: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  /* Acortar la transición no evita el salto: el elemento sigue moviéndose 2 px,
+     solo que de golpe. Quien pide menos movimiento pide que NO se mueva, así
+     que la elevación y la escala del `active` se apagan de raíz. */
+  :root { --hover-elevacion: none; }
+  button:active:not(:disabled), .boton:active { transform: none; }
 }
 
 .hash {
@@ -908,3 +947,36 @@ label .pista { display: inline; margin: 0; }
 .casilla.parrafo { align-items: baseline; margin-bottom: 0; }
 .casilla input[type='checkbox'] { flex: none; margin: 0; width: 1rem; }
 .casilla > span { display: inline; margin: 0; font-size: .95rem; color: var(--texto); }
+
+/* ── Estados vacíos ─────────────────────────────────────────────────── */
+/* Territorio de la marca: aquí no hay ningún estado regulatorio que decir, y
+   por eso el naranja puede aparecer sin competir con el semáforo. */
+.vacio {
+  display: grid; justify-items: center; text-align: center;
+  gap: .55rem; padding: 3.2rem 1.5rem;
+  background: var(--superficie); border: 1px solid var(--linea);
+  border-radius: var(--radio);
+}
+.vacio-marca { color: var(--marca); margin-bottom: .2rem; }
+.vacio-titulo {
+  font-family: var(--titulo); font-weight: 600; font-size: 1.5rem;
+  margin: 0; letter-spacing: .01em;
+}
+.vacio-cuerpo {
+  color: var(--texto-tenue); font-size: .92rem; max-width: 34rem; margin: 0;
+}
+.vacio-cuerpo p { margin: 0 0 .5rem; }
+.vacio-cuerpo p:last-child { margin-bottom: 0; }
+.vacio .boton {
+  margin-top: .6rem; display: inline-block; text-decoration: none;
+}
+/* Las siete secciones que la puerta del expediente desbloquea (ADR-24). */
+.vacio-lista {
+  list-style: none; margin: .2rem 0 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: .35rem; justify-content: center;
+}
+.vacio-lista li {
+  font-size: .78rem; color: var(--texto-tenue);
+  border: 1px solid var(--linea); border-radius: 999px;
+  padding: .2rem .6rem;
+}

@@ -1,7 +1,9 @@
+import Link from 'next/link'
 import { conBase, leerComoUsuario } from '../../src/supabase/conexion'
 import { Marco } from '../componentes/marco'
 import { formatearPesosTexto } from '../../src/dominio/dinero'
-import { VeredictoExplicable } from '../componentes/veredicto'
+import { DesgloseDelVeredicto } from '../componentes/veredicto'
+import { TarjetaDeAlerta } from './tarjeta'
 import { veredictosDeOperaciones } from '../../src/persistencia/veredicto'
 
 export const dynamic = 'force-dynamic'
@@ -13,6 +15,7 @@ interface FilaAlerta {
   detalle: Record<string, unknown>
   created_at: string
   operacion_id: string | null
+  cliente_id: string | null
   cliente: string | null
   fecha_operacion: string | null
   monto_base: string | null
@@ -44,7 +47,7 @@ export default async function Alertas() {
       const r = await db.query(
         `select a.id, a.tipo::text, a.titulo, a.detalle, a.created_at::text,
                 o.id::text as operacion_id,
-                c.nombre_o_razon_social as cliente,
+                c.id::text as cliente_id, c.nombre_o_razon_social as cliente,
                 o.fecha_operacion::text, o.monto_base::text
            from alertas a
            left join evaluaciones_umbral e on e.id = a.evaluacion_id
@@ -76,48 +79,50 @@ export default async function Alertas() {
         </p>
 
         {ordenadas.length === 0 ? (
-          <p className="vacia">
-            No hay alertas abiertas. Cada operación registrada se evalúa; si ninguna cruzó un
-            umbral, no hay nada pendiente.
-          </p>
+          <div className="tarjeta">
+            <p className="tenue" style={{ margin: 0 }}>
+              No hay alertas abiertas. Cada operación registrada se evalúa; si ninguna cruzó un
+              umbral, no hay nada pendiente.
+            </p>
+          </div>
         ) : (
-          ordenadas.map((a) => (
-            <div key={a.id} className={a.tipo === 'proximidad' ? 'tarjeta' : 'tarjeta tarjeta-alerta'}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
-                <strong>{a.titulo}</strong>
-                <span className="chip">{a.tipo.replace(/_/g, ' ')}</span>
-              </div>
-
-              <p style={{ margin: '.5rem 0' }}>{String(a.detalle['motivo'] ?? '')}</p>
-              {a.operacion_id !== null && veredictos.get(a.operacion_id) !== undefined && (
-                <VeredictoExplicable v={veredictos.get(a.operacion_id)!} />
-              )}
-
-              {a.cliente !== null && (
-                <p className="sub" style={{ margin: 0 }}>
-                  {a.cliente} · operación del {a.fecha_operacion}
-                  {a.monto_base !== null && ` · ${formatearPesosTexto(a.monto_base)}`}
-                </p>
-              )}
-
-              {a.detalle['acumulado_del_mes'] !== undefined && (
-                <p className="sub" style={{ margin: '.25rem 0 0' }}>
-                  Acumulado del mes {String(a.detalle['mes'])}:{' '}
-                  <strong>{formatearPesosTexto(String(a.detalle['acumulado_del_mes']))}</strong> en{' '}
-                  {String(a.detalle['operaciones_del_mes'])} operación(es).
-                </p>
-              )}
-
-              {a.detalle['suma_ventana'] !== undefined && (
-                <p className="sub" style={{ margin: '.25rem 0 0' }}>
-                  Suma de la ventana:{' '}
-                  <strong>{formatearPesosTexto(String(a.detalle['suma_ventana']))}</strong> en{' '}
-                  {String(a.detalle['operaciones_en_ventana'])} operaciones de{' '}
-                  {String(a.detalle['ventana_meses'])} meses.
-                </p>
-              )}
-            </div>
-          ))
+          <div className="alertas">
+            {ordenadas.map((a) => {
+              const v = a.operacion_id === null ? undefined : veredictos.get(a.operacion_id)
+              return (
+                <TarjetaDeAlerta
+                  key={a.id}
+                  tipo={a.tipo}
+                  titulo={a.titulo}
+                  detalle={a.detalle}
+                  pie={
+                    a.cliente === null || a.cliente_id === null ? null : (
+                      <p className="alerta-pie">
+                        <Link
+                          href={`/clientes/${a.cliente_id}/expediente`}
+                          className="nombre-cliente"
+                        >
+                          {a.cliente}
+                        </Link>{' '}
+                        · operación del {a.fecha_operacion}
+                        {a.monto_base !== null && ` · ${formatearPesosTexto(a.monto_base)}`}
+                      </p>
+                    )
+                  }
+                  /* El MISMO desglose que en operaciones: una alerta y su
+                     operación no pueden explicar el veredicto de dos formas. */
+                  desglose={
+                    v === undefined ? null : (
+                      <DesgloseDelVeredicto
+                        v={v}
+                        sinMotivo={a.detalle['motivo'] === v.motivo}
+                      />
+                    )
+                  }
+                />
+              )
+            })}
+          </div>
         )}
       </Marco>
     )

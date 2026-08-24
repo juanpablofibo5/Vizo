@@ -44,32 +44,54 @@ export function EtiquetaVeredicto({ v }: { v: Veredicto }) {
   return <span className={`estado ${r.tono}`}>{r.texto}</span>
 }
 
-export function VeredictoExplicable({ v }: { v: Veredicto }) {
+/**
+ * El desglose, SIN su disclosure.
+ *
+ * Se separó del `<details>` porque dos pantallas lo abren de formas distintas:
+ * operaciones con su propio `<details>` por renglón, y alertas dentro de la
+ * caja del «Por qué» que ya trae la tarjeta. Anidar un `<details>` dentro de
+ * otro abierto se lee como un error de maquetación, y duplicar el desglose
+ * para evitarlo sería peor: una alerta y su operación no pueden explicar el
+ * mismo veredicto de dos maneras.
+ */
+export function DesgloseDelVeredicto({
+  v,
+  sinMotivo = false,
+}: {
+  v: Veredicto
+  /**
+   * Omite la frase del motor porque quien llama ya la enseñó.
+   *
+   * Pasa en alertas: para un `aviso_requerido`, el `motivo` de la alerta ES
+   * `ev.motivo` —el mismo string, copiado al crearla—, así que la tarjeta lo
+   * pintaba como párrafo y el desglose lo repetía entero unas líneas abajo.
+   * No se decide aquí ni por tipo de alerta: quien llama compara los dos
+   * textos, y si difieren se enseñan los dos. Así nunca se pierde una frase
+   * por deduplicar de más.
+   */
+  sinMotivo?: boolean
+}) {
   const umbralAviso = v.umbrales.find((u) => u.tipo === 'aviso')
   const identificacion = v.umbrales.find((u) => u.tipo === 'identificacion')
 
   return (
-    <details style={{ marginTop: '.4rem' }}>
-      {/* `--enlace` y no `--acento`: el naranja de marca es para lo que se
-          pulsa —botones, píldora activa—, y este es texto que se lee como
-          enlace. La misma separación que sostiene el semáforo. */}
-      <summary className="por-que">Por qué</summary>
-
+    <>
       <div
         style={{
-          marginTop: '.7rem',
           padding: '.9rem 1rem',
           background: 'var(--superficie-2)',
           border: '1px solid var(--linea)',
-          borderRadius: 'var(--radio)',
+          borderRadius: 'var(--radio-control)',
           display: 'grid',
           gap: '.9rem',
         }}
       >
         {/* Lo que el motor escribió al decidir, palabra por palabra. */}
-        <p className="pequeno" style={{ margin: 0 }}>
-          {v.motivo}
-        </p>
+        {!sinMotivo && (
+          <p className="pequeno" style={{ margin: 0 }}>
+            {v.motivo}
+          </p>
+        )}
 
         <div
           style={{
@@ -184,6 +206,20 @@ export function VeredictoExplicable({ v }: { v: Veredicto }) {
           </span>
           <span className="hash">{v.catalogoVersion}</span>
         </div>
+      </div>
+    </>
+  )
+}
+
+export function VeredictoExplicable({ v }: { v: Veredicto }) {
+  return (
+    <details style={{ marginTop: '.4rem' }}>
+      {/* `--enlace` y no `--acento`: el naranja de marca es para lo que se
+          pulsa —botones, píldora activa—, y este es texto que se lee como
+          enlace. La misma separación que sostiene el semáforo. */}
+      <summary className="por-que">Por qué</summary>
+      <div style={{ marginTop: '.7rem' }}>
+        <DesgloseDelVeredicto v={v} />
       </div>
     </details>
   )

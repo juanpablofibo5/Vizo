@@ -819,3 +819,52 @@ label .pista { display: inline; margin: 0; }
   width: fit-content;
 }
 .por-que:hover { color: var(--acento); }
+
+/* ── Alertas: tarjetas con su «Por qué» ─────────────────────────────── */
+.alertas { display: grid; gap: .7rem; }
+.alerta {
+  background: var(--superficie); border: 1px solid var(--linea);
+  border-radius: var(--radio); padding: 1.05rem 1.15rem;
+  border-left: 3px solid var(--texto-tenue);
+}
+.alerta[data-tono='ok']      { border-left-color: var(--ok); }
+.alerta[data-tono='aviso']   { border-left-color: var(--alerta); }
+.alerta[data-tono='critico'] { border-left-color: var(--critico); }
+.alerta-cabeza {
+  display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start;
+}
+.alerta-cabeza .chip { margin-left: 0; }
+.alerta-motivo { margin: .5rem 0 .6rem; font-size: .9rem; color: var(--texto-suave); max-width: 44rem; }
+.alerta-pie { margin: 0; font-size: .83rem; color: var(--texto-tenue); }
+.alerta .por-que {
+  margin-top: .7rem; font: inherit; font-size: .82rem;
+  background: none; border: 0; padding: 0;
+}
+.alerta .por-que:hover:not(:disabled) { background: none; }
+.alerta .por-que:active:not(:disabled) { transform: none; }
+.alerta-calculo { margin-top: .7rem; display: grid; gap: .7rem; }
+
+.calculo-caja {
+  border: 1px solid var(--linea); border-radius: var(--radio-control);
+  background: var(--superficie-2); padding: .8rem .9rem;
+}
+.calculo-titulo {
+  margin: 0 0 .5rem; font-family: var(--mono); font-size: .64rem;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--texto-tenue);
+}
+/* Cada par es su propia rejilla: así una etiqueta larga no estira la columna
+   de todos los demás, que es lo que pasa con un `dl` de dos columnas. */
+.calculo-pares { margin: 0; display: grid; gap: .28rem 1.2rem; font-size: .83rem; }
+.calculo-par { display: grid; grid-template-columns: minmax(auto, 14rem) 1fr; gap: 1.2rem; }
+.calculo-par dt { color: var(--texto-tenue); }
+.calculo-par dd {
+  margin: 0; font-variant-numeric: tabular-nums;
+  font-family: var(--mono); font-size: .8rem;
+}
+@media (max-width: 640px) {
+  .calculo-par { grid-template-columns: 1fr; gap: 0; }
+}
+
+/* El hover-lift no aplica cuando la tarjeta está desplegada: mover una caja
+   que se está leyendo es ruido, no respuesta. */
+.alerta:has(.alerta-calculo):hover { transform: none; }

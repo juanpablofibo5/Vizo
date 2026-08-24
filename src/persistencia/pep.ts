@@ -53,6 +53,14 @@ export interface VinculoRegistrado extends VinculoDeclarado {
   catalogacion: CatalogacionPep
 }
 
+/** Por qué el cliente está —o no— catalogado como PEP hoy. */
+export type MotivoPep =
+  | 'sin_declaracion'
+  | 'declaro_que_no'
+  | 'por_funcion'
+  | 'asimilada'
+  | 'relojes_vencidos'
+
 export interface EstadoPep {
   declaracion: {
     id: string
@@ -65,7 +73,7 @@ export interface EstadoPep {
   } | null
   /** Derivado a `hoy` con los relojes del catálogo. */
   catalogado: boolean
-  motivo: 'sin_declaracion' | 'declaro_que_no' | 'por_funcion' | 'asimilada' | 'relojes_vencidos'
+  motivo: MotivoPep
   /** Desde cuándo es exigible la regla del catálogo (Transitorio Primero). */
   exigibleDesde: string
   /** `hoy` es anterior a `exigibleDesde`: vista anticipada, como la Constancia. */
@@ -441,4 +449,128 @@ export async function estadoPepDelCliente(
             : 'relojes_vencidos',
     ...base,
   }
+}
+
+/**
+ * Lo mismo que `estadoPepDelCliente`, para muchos clientes de una vez.
+ *
+ * Existe por la lista de clientes: pedir el estado de PEP cliente por cliente
+ * son tres consultas por fila, y una lista de doscientos clientes serían
+ * seiscientos viajes a la base. Aquí son tres, sin importar cuántos clientes.
+ *
+ * La derivación es **la misma**: las mismas reglas del catálogo, el mismo
+ * `catalogacionPep` con las mismas fechas de actos, el mismo árbol de motivos.
+ * Lo único que no devuelve son los vínculos uno por uno —la lista no los
+ * pinta—, y por eso el tipo es un resumen y no un `EstadoPep`. Que las dos
+ * funciones coincidan lo verifica una prueba contra la base, no la buena fe.
+ */
+export interface EstadoPepResumen {
+  readonly declaracion: { readonly id: string; readonly fechaDeclaracion: string } | null
+  readonly catalogado: boolean
+  readonly motivo: MotivoPep
+  readonly exigibleDesde: string
+  readonly anticipada: boolean
+}
+
+export async function estadoPepDeClientes(
+  db: EjecutorSql,
+  p: { sesion: ContextoSesion; clienteIds: readonly string[]; hoy: string },
+): Promise<Map<string, EstadoPepResumen>> {
+  await exigirSesionActiva(db, p.sesion)
+  const reglas = await reglasDeVigencia(db, p.hoy)
+  const base = { exigibleDesde: reglas.exigibleDesde, anticipada: reglas.anticipada }
+  const resumen = new Map<string, EstadoPepResumen>()
+  if (p.clienteIds.length === 0) return resumen
+
+  // Sin declaración es el estado por omisión, y se siembra ANTES de consultar:
+  // así un cliente sin fila sale como «sin declaración» y no como ausente del
+  // mapa, que la pantalla tendría que interpretar por su cuenta.
+  for (const id of p.clienteIds) {
+    resumen.set(id, { declaracion: null, catalogado: false, motivo: 'sin_declaracion', ...base })
+  }
+
+  const d = await db.query(
+    `select distinct on (cliente_id)
+            id::text, cliente_id::text as cliente_id, resultado::text as resultado,
+            fecha_declaracion::text as fecha_declaracion
+       from declaraciones_pep
+      where cliente_id = any($1::uuid[])
+      order by cliente_id, fecha_declaracion desc, created_at desc`,
+    [p.clienteIds],
+  )
+  const declaraciones = d.rows as {
+    id: string
+    cliente_id: string
+    resultado: ResultadoDeclaracion
+    fecha_declaracion: string
+  }[]
+  if (declaraciones.length === 0) return resumen
+
+  const v = await db.query(
+    `select declaracion_id::text as declaracion_id, tipo::text as tipo,
+            ambito::text as ambito, en_funciones, fecha_cese::text as fecha_cese
+       from vinculos_pep
+      where declaracion_id = any($1::uuid[])`,
+    [declaraciones.map((x) => x.id)],
+  )
+  const porDeclaracion = new Map<string, (typeof v.rows)[number][]>()
+  for (const fila of v.rows as {
+    declaracion_id: string
+    tipo: TipoVinculo
+    ambito: 'nacional' | 'extranjero'
+    en_funciones: boolean
+    fecha_cese: string | null
+  }[]) {
+    const lista = porDeclaracion.get(fila.declaracion_id) ?? []
+    lista.push(fila)
+    porDeclaracion.set(fila.declaracion_id, lista)
+  }
+
+  // Los actos anclan el ¶5, igual que en la versión de un cliente.
+  const a = await db.query(
+    `select cliente_id::text as cliente_id, fecha_operacion::text as fecha
+       from operaciones where cliente_id = any($1::uuid[])`,
+    [p.clienteIds],
+  )
+  const actosPorCliente = new Map<string, string[]>()
+  for (const fila of a.rows as { cliente_id: string; fecha: string }[]) {
+    const lista = actosPorCliente.get(fila.cliente_id) ?? []
+    lista.push(fila.fecha)
+    actosPorCliente.set(fila.cliente_id, lista)
+  }
+
+  for (const decl of declaraciones) {
+    const vinculos = (porDeclaracion.get(decl.id) ?? []) as {
+      tipo: TipoVinculo
+      ambito: 'nacional' | 'extranjero'
+      en_funciones: boolean
+      fecha_cese: string | null
+    }[]
+    const catalogados = vinculos.map((x) => ({
+      tipo: x.tipo,
+      catalogada: catalogacionPep({
+        funcion: { ambito: x.ambito, enFunciones: x.en_funciones, fechaCese: x.fecha_cese },
+        fecha: p.hoy,
+        fechasDeActos: actosPorCliente.get(decl.cliente_id) ?? [],
+        reglas: { trasCese: reglas.trasCese, trasActo: reglas.trasActo },
+      }).catalogada,
+    }))
+    const titularVigente = catalogados.some((x) => x.tipo === 'titular' && x.catalogada)
+    const algunoVigente = catalogados.some((x) => x.catalogada)
+
+    resumen.set(decl.cliente_id, {
+      declaracion: { id: decl.id, fechaDeclaracion: decl.fecha_declaracion },
+      catalogado: algunoVigente,
+      motivo:
+        decl.resultado === 'niega'
+          ? 'declaro_que_no'
+          : titularVigente
+            ? 'por_funcion'
+            : algunoVigente
+              ? 'asimilada'
+              : 'relojes_vencidos',
+      ...base,
+    })
+  }
+  return resumen
 }

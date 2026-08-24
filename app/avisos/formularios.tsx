@@ -39,8 +39,13 @@ export function BotonGenerar({
       <input type="hidden" name="periodo" value={periodo} />
       <input type="hidden" name="actividadId" value={actividadId} />
       <Mensaje estado={estado} />
-      <button type="submit" disabled={!puede || pendiente}>
-        {pendiente ? 'Generando y validando…' : 'Generar aviso del periodo'}
+      {/* SECUNDARIO, y no primario: en la lista de periodos este botón se
+          repite en cada renglón, y cinco botones naranjas apilados gastan el
+          único color de acción que tiene el portal. El primario se reserva
+          para la acción de la pantalla —«Dar de alta», «Registrar»—, no para
+          la que se repite. La acción sigue siendo la misma. */}
+      <button type="submit" className="secundario" disabled={!puede || pendiente}>
+        {pendiente ? 'Generando…' : 'Generar aviso'}
       </button>
       {!puede && (
         <span className="tenue pequeno">Generar el aviso es una acción de administrador.</span>

@@ -32,7 +32,7 @@ import {
   rielPorConstruir,
   rielRevisionAnual,
   seccionAbiertaPorDefecto,
-} from './riel'
+} from '../../../componentes/riel'
 
 export const dynamic = 'force-dynamic'
 

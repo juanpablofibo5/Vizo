@@ -6,8 +6,11 @@ import {
   rielPerfil,
   rielPorConstruir,
   rielRevisionAnual,
+  rielExpediente,
+  peorEstado,
+  peorTono,
   seccionAbiertaPorDefecto,
-} from '../../app/clientes/[id]/expediente/riel'
+} from '../../app/componentes/riel'
 import type { EstadoAprobacion } from '../../src/persistencia/aprobacion'
 import type { EstadoPep } from '../../src/persistencia/pep'
 import type { EstadoPerfil } from '../../src/persistencia/perfil'
@@ -229,5 +232,61 @@ describe('la sección abierta por defecto es la más grave', () => {
 describe('por construir', () => {
   test('cita la fecha del catálogo, no una escrita a mano', () => {
     expect(rielPorConstruir('2027-03-01').reloj).toBe('exigible desde el 2027-03-01')
+  })
+})
+
+describe('el expediente como píldora (completo NO es aprobado)', () => {
+  test('13 de 13 sin aprobar no se pinta de verde', () => {
+    const r = rielExpediente({ estatus: 'completo', cubiertos: 13, totalObligatorios: 13 })
+    expect(r).toMatchObject({ estado: 'Falta aprobar', tono: 'aviso' })
+  })
+
+  test('aprobado sí', () => {
+    expect(
+      rielExpediente({ estatus: 'aprobado', cubiertos: 13, totalObligatorios: 13 }).tono,
+    ).toBe('ok')
+  })
+
+  test('incompleto es rojo y dice la cuenta', () => {
+    const r = rielExpediente({ estatus: 'incompleto', cubiertos: 4, totalObligatorios: 13 })
+    expect(r).toMatchObject({ estado: 'Incompleto', tono: 'critico', reloj: '4 de 13' })
+  })
+
+  test('sin evaluar no es «completo»: es no saber qué falta', () => {
+    const r = rielExpediente({ estatus: 'abierto', cubiertos: null, totalObligatorios: null })
+    expect(r).toMatchObject({ estado: 'Sin evaluar', tono: 'neutro' })
+  })
+
+  test('sin expediente abierto (ADR-24) lo dice, no lo esconde', () => {
+    expect(rielExpediente({ estatus: null, cubiertos: null, totalObligatorios: null }).estado).toBe(
+      'Sin abrir',
+    )
+  })
+})
+
+describe('el resumen de la lista se queda con lo más grave', () => {
+  const e = (tono: 'ok' | 'aviso' | 'critico' | 'neutro', estado: string) => ({
+    estado,
+    tono,
+    reloj: '',
+  })
+
+  test('un rojo gana a todo lo demás', () => {
+    expect(
+      peorEstado([e('ok', 'Vigente'), e('neutro', 'Sin evaluar'), e('critico', 'Vencida')]).estado,
+    ).toBe('Vencida')
+  })
+
+  test('un ámbar gana a un verde y a un neutro', () => {
+    expect(peorEstado([e('ok', 'Vigente'), e('aviso', 'Alto'), e('neutro', '—')]).estado).toBe('Alto')
+  })
+
+  test('neutro NUNCA tapa un ámbar — es el caso que haría mentir a la lista', () => {
+    expect(peorTono(['neutro', 'aviso'])).toBe('aviso')
+    expect(peorTono(['neutro', 'critico'])).toBe('critico')
+  })
+
+  test('pero un verde sí gana al neutro: en regla no se ve igual que sin evaluar', () => {
+    expect(peorTono(['neutro', 'ok'])).toBe('ok')
   })
 })

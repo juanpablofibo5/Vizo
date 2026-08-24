@@ -290,6 +290,9 @@ export function vencimientoDelPerfil(
 }
 
 /** ¿Al cliente ya le toca el ejercicio periódico del Art. 23 Ter 1 ¶3? */
-export function reevaluacionDebida(perfil: PerfilVigente, hoy: FechaISO): boolean {
+export function reevaluacionDebida(
+  perfil: { readonly vence: FechaISO },
+  hoy: FechaISO,
+): boolean {
   return hoy >= perfil.vence
 }

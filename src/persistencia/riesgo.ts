@@ -151,6 +151,16 @@ const aModelo = async (db: EjecutorSql, f: FilaModelo): Promise<ModeloGuardado> 
 })
 
 /** Todo lo que la pantalla de configuración necesita saber. */
+/** El plazo del catálogo leído de la base. Una consulta, dos lecturas. */
+export async function plazoDeReevaluacionVigente(db: EjecutorSql): Promise<number> {
+  const { rows } = await db.query(
+    `select (valor #>> '{}')::int as meses from parametros_motor
+      where clave = 'reevaluacion_grado_meses' and actividad_id is null
+      order by vigente_desde desc limit 1`,
+  )
+  return plazoDeReevaluacion(rows)
+}
+
 /** El plazo del catálogo, o el alto. Nunca un seis supuesto. */
 function plazoDeReevaluacion(rows: unknown[]): number {
   const m = (rows[0] as { meses: number } | undefined)?.meses
@@ -608,18 +618,12 @@ export async function riesgoDelCliente(
   )
   const evaluaciones = (rows as FilaEvaluacion[]).map(aEvaluacion)
 
-  const meses = await db.query(
-    `select (valor #>> '{}')::int as meses from parametros_motor
-      where clave = 'reevaluacion_grado_meses' and actividad_id is null
-      order by vigente_desde desc limit 1`,
-  )
-
   return {
     puedeClasificar: estado.vigente !== null,
     faltaParaClasificar: estado.faltaParaClasificar,
     factores: estado.vigente?.factores ?? [],
     vigente: evaluaciones[0] ?? null,
     historico: evaluaciones.slice(1),
-    reevaluacionMeses: plazoDeReevaluacion(meses.rows),
+    reevaluacionMeses: await plazoDeReevaluacionVigente(db),
   }
 }

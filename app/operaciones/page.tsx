@@ -13,6 +13,7 @@ interface Fila {
   monto_base: string
   monto_total: string
   forma_pago: string
+  cliente_id: string
   cliente: string
   sucursal: string
   resultado_aviso: string | null
@@ -32,7 +33,7 @@ export default async function Operaciones() {
       const r = await db.query(
         `select o.id, o.fecha_operacion::text, o.monto_base::text, o.monto_total::text,
                 o.forma_pago, o.registrado_en::text,
-                c.nombre_o_razon_social as cliente,
+                c.id::text as cliente_id, c.nombre_o_razon_social as cliente,
                 s.nombre as sucursal,
                 e.resultado_aviso::text, e.alerta_proximidad
            from operaciones_vigentes o
@@ -86,6 +87,7 @@ export default async function Operaciones() {
           </Link>
         </div>
 
+        <div className="tabla-envoltura">
         <table>
           <thead>
             <tr>
@@ -108,8 +110,12 @@ export default async function Operaciones() {
                 const veredicto: Veredicto | undefined = veredictos.get(f.id)
                 return (
                 <tr key={f.id}>
-                  <td>{f.fecha_operacion}</td>
-                  <td>{f.cliente}</td>
+                  <td className="mono pequeno">{f.fecha_operacion}</td>
+                  <td>
+                    <Link href={`/clientes/${f.cliente_id}/expediente`} className="nombre-cliente">
+                      {f.cliente}
+                    </Link>
+                  </td>
                   <td>{f.sucursal}</td>
                   <td style={{ textAlign: 'right' }}>
                     {pesos(f.monto_base)}
@@ -122,12 +128,12 @@ export default async function Operaciones() {
                       // No debería pasar: operación y evaluación se escriben en
                       // la misma transacción. Si aparece, es un dato que hay que
                       // mirar, no un hueco que disimular.
-                      <span className="chip chip-alerta">sin evaluar</span>
+                      <span className="estado critico">Sin evaluar</span>
                     ) : (
                       <>
                         <EtiquetaVeredicto v={veredicto} />
                         {veredicto.alertaProximidad && (
-                          <span className="chip">cerca del umbral</span>
+                          <span className="estado aviso">Cerca del umbral</span>
                         )}
                         <VeredictoExplicable v={veredicto} />
                       </>
@@ -139,6 +145,7 @@ export default async function Operaciones() {
             )}
           </tbody>
         </table>
+        </div>
       </Marco>
     )
   })

@@ -779,6 +779,26 @@ tr:last-child td { border-bottom: 0; }
 td.vacia { color: var(--texto-tenue); padding: 2.5rem; text-align: center; }
 td.num, .num { font-variant-numeric: tabular-nums; }
 
+/* El nombre del cliente ES el enlace a su expediente: la fila entera no, para
+   que se pueda seleccionar el RFC sin navegar sin querer. */
+.nombre-cliente {
+  font-weight: 560; text-decoration: none; color: var(--enlace);
+}
+.nombre-cliente:hover { text-decoration: underline; }
+
+/* La segunda línea de una celda: el tipo de persona bajo el nombre, el total
+   bajo el monto, la aclaración bajo la etiqueta de un campo.
+
+   Se repone aquí porque el rediseño reescribió `globals.css` y esta regla se
+   quedó fuera: la clase seguía puesta en cuatro pantallas y pintaba texto del
+   tamaño del cuerpo, así que la pista competía con el dato en vez de
+   acompañarlo. No se vio antes porque nada falla — solo se lee peor. */
+.pista {
+  display: block; font-size: .8rem; color: var(--texto-tenue);
+  font-weight: 400; margin-top: .1rem;
+}
+label .pista { display: inline; margin: 0; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
@@ -791,3 +811,11 @@ td.num, .num { font-variant-numeric: tabular-nums; }
 .mono { font-family: var(--mono); }
 .tenue { color: var(--texto-tenue); }
 .pequeno { font-size: .85rem; }
+
+/* El «Por qué» que despliega el desglose del motor: en operaciones y alertas. */
+.por-que {
+  cursor: pointer; font-size: .85rem; color: var(--enlace);
+  text-decoration: underline; text-underline-offset: 3px;
+  width: fit-content;
+}
+.por-que:hover { color: var(--acento); }

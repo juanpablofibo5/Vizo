@@ -76,7 +76,7 @@ async function tipoPersonaDelObligado(
  * porque el cliente lo declaró, el otro porque los dos relojes del Art. 23
  * Quáter ya corrieron.
  */
-function situacionPep(motivo: string): SituacionPep {
+export function situacionPep(motivo: string): SituacionPep {
   if (motivo === 'sin_declaracion') return { conocida: false }
   return { conocida: true, catalogado: motivo === 'por_funcion' || motivo === 'asimilada' }
 }
@@ -148,7 +148,12 @@ async function aprobacionesDe(
       order by a.secuencia desc`,
     [p.sesion.tenantId, p.clienteId],
   )
-  return (rows as (FilaAprobacion & { operaciones: string[] })[]).map((f) => ({
+  return (rows as (FilaAprobacion & { operaciones: string[] })[]).map(aGuardada)
+}
+
+/** La fila cruda a la aprobación. Una sola vez: la usan las dos lecturas. */
+function aGuardada(f: FilaAprobacion & { operaciones: string[] }): AprobacionGuardada {
+  return {
     id: f.id,
     via: f.via,
     momento: f.momento,
@@ -160,7 +165,7 @@ async function aprobacionesDe(
     vigenteHasta: f.vigente_hasta,
     registradaPor: f.registrada_por,
     operacionesConsentidas: f.operaciones,
-  }))
+  }
 }
 
 function aAsentada(a: AprobacionGuardada): AprobacionAsentada {
@@ -459,4 +464,92 @@ export async function contrastarAprobacionAlOperar(
   )
 
   return { exigencia: estado.exigencia, alertaId: (rows[0] as { id: string }).id }
+}
+
+/**
+ * La exigencia y los actos sin consentir, para muchos clientes de una vez.
+ *
+ * Igual que su hermana de un cliente, pero sin volver a preguntar por PEP y
+ * por el Grado: las dos situaciones llegan ya derivadas, porque quien llama
+ * —la lista de clientes— las obtuvo por lote para todos. La tabla de tres
+ * valores la resuelve `exigenciaDeAprobacion`, la MISMA función pura del
+ * dominio: aquí no hay una segunda lectura del Art. 23 Ter 5.
+ */
+export interface EstadoAprobacionResumen {
+  readonly exigencia: ExigenciaDeAprobacion
+  readonly actosSinConsentir: readonly ActoDelCliente[]
+  readonly aprobaciones: readonly { readonly fechaAprobacion: string }[]
+  readonly anticipado: boolean
+}
+
+export async function estadoDeAprobacionDeClientes(
+  db: EjecutorSql,
+  p: {
+    sesion: ContextoSesion
+    clientes: ReadonlyArray<{
+      readonly clienteId: string
+      readonly pep: SituacionPep
+      readonly riesgo: SituacionRiesgo
+    }>
+    hoy: string
+  },
+): Promise<Map<string, EstadoAprobacionResumen>> {
+  await exigirSesionActiva(db, p.sesion)
+  const exigibleDesde = await exigibilidadDelTransitorioCuarto(db)
+  const anticipado = p.hoy < exigibleDesde
+  const resumen = new Map<string, EstadoAprobacionResumen>()
+  if (p.clientes.length === 0) return resumen
+
+  const ids = p.clientes.map((c) => c.clienteId)
+  const ops = await db.query(
+    `select cliente_id::text as cliente_id, id::text, fecha_operacion::text as fecha
+       from operaciones_vigentes
+      where tenant_id = $1 and cliente_id = any($2::uuid[]) and fecha_operacion >= $3::date
+      order by fecha_operacion desc`,
+    [p.sesion.tenantId, ids, exigibleDesde],
+  )
+  const actosPorCliente = new Map<string, ActoDelCliente[]>()
+  for (const f of ops.rows as { cliente_id: string; id: string; fecha: string }[]) {
+    const lista = actosPorCliente.get(f.cliente_id) ?? []
+    lista.push({ id: f.id, fecha: f.fecha })
+    actosPorCliente.set(f.cliente_id, lista)
+  }
+
+  const aps = await db.query(
+    `select a.cliente_id::text as cliente_id, ${COLUMNAS},
+            coalesce(
+              (select array_agg(oc.operacion_id::text)
+                 from operaciones_consentidas oc where oc.aprobacion_id = a.id),
+              '{}'::text[]) as operaciones
+       from aprobaciones_directivo a
+       join usuarios u on u.id = a.registrada_por
+      where a.tenant_id = $1 and a.cliente_id = any($2::uuid[])
+      order by a.secuencia desc`,
+    [p.sesion.tenantId, ids],
+  )
+  const aprobacionesPorCliente = new Map<string, AprobacionGuardada[]>()
+  for (const f of aps.rows as (FilaAprobacion & {
+    cliente_id: string
+    operaciones: string[]
+  })[]) {
+    const lista = aprobacionesPorCliente.get(f.cliente_id) ?? []
+    lista.push(aGuardada(f))
+    aprobacionesPorCliente.set(f.cliente_id, lista)
+  }
+
+  for (const c of p.clientes) {
+    const exigencia = exigenciaDeAprobacion({ pep: c.pep, riesgo: c.riesgo })
+    const actos = actosPorCliente.get(c.clienteId) ?? []
+    const aprobaciones = aprobacionesPorCliente.get(c.clienteId) ?? []
+    resumen.set(c.clienteId, {
+      exigencia,
+      aprobaciones,
+      anticipado,
+      actosSinConsentir:
+        exigencia.estado === 'exigible'
+          ? actosSinConsentir({ actos, aprobaciones: aprobaciones.map(aAsentada) })
+          : [],
+    })
+  }
+  return resumen
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ReactNode } from 'react'
-import type { EstadoDeRiel } from './riel'
+import type { EstadoDeRiel } from '../../../componentes/riel'
 
 /**
  * El patrón de siete secciones del conocimiento del cliente.

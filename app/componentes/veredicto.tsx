@@ -50,9 +50,10 @@ export function VeredictoExplicable({ v }: { v: Veredicto }) {
 
   return (
     <details style={{ marginTop: '.4rem' }}>
-      <summary style={{ cursor: 'pointer', fontSize: '.85rem', color: 'var(--acento)' }}>
-        Por qué
-      </summary>
+      {/* `--enlace` y no `--acento`: el naranja de marca es para lo que se
+          pulsa —botones, píldora activa—, y este es texto que se lee como
+          enlace. La misma separación que sostiene el semáforo. */}
+      <summary className="por-que">Por qué</summary>
 
       <div
         style={{

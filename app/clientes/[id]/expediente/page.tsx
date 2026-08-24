@@ -544,6 +544,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
         )}
 
         <h2>Documentos</h2>
+        <div className="tabla-envoltura">
         <table>
           <thead>
             <tr>
@@ -575,6 +576,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
             )}
           </tbody>
         </table>
+        </div>
 
         <p className="sub" style={{ marginTop: '1.5rem' }}>
           Qué integra el expediente lo decide el catálogo regulatorio, no el código. Los documentos

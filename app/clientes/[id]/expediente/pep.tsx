@@ -336,7 +336,7 @@ export function SeccionPep({
                 )}
               </div>
 
-              <label style={{ margin: 0, display: 'flex', gap: '.4rem', alignItems: 'center' }}>
+              <label className="casilla suelta">
                 <input
                   type="checkbox"
                   checked={f.enFunciones}
@@ -365,12 +365,12 @@ export function SeccionPep({
           ))}
 
           {(resultado === 'pep_por_funcion' || resultado === 'pep_asimilada') && (
-            <button type="button" className="secundario" onClick={agregar} style={{ justifySelf: 'start' }}>
+            <button type="button" className="secundario" onClick={agregar}>
               Agregar un vínculo de la red
             </button>
           )}
 
-          <button type="submit" disabled={capturando || resultado === ''} style={{ justifySelf: 'start' }}>
+          <button type="submit" disabled={capturando || resultado === ''}>
             {capturando ? 'Registrando…' : 'Registrar la declaración'}
           </button>
           <p className="pequeno tenue" style={{ margin: 0 }}>

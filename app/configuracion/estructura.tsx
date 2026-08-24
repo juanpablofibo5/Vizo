@@ -132,7 +132,7 @@ function FormularioFigura({ tipoPersona, hoy }: { tipoPersona: string; hoy: stri
         </label>
       )}
 
-      <button type="submit" disabled={pendiente} style={{ justifySelf: 'start' }}>
+      <button type="submit" disabled={pendiente}>
         {pendiente ? 'Guardando…' : 'Registrar la figura'}
       </button>
     </form>
@@ -318,7 +318,7 @@ function FormularioIntegrante({
         </label>
       )}
 
-      <button type="submit" disabled={pendiente || naturaleza === ''} style={{ justifySelf: 'start' }}>
+      <button type="submit" disabled={pendiente || naturaleza === ''}>
         {pendiente ? 'Guardando…' : 'Capturar integrante'}
       </button>
     </form>
@@ -402,7 +402,7 @@ export function SeccionEstructura({
           </div>
 
           {estado.integrantes.length > 0 && (
-            <div style={{ overflowX: 'auto' }}>
+            <div className="tabla-envoltura">
               <table>
                 <thead>
                   <tr>

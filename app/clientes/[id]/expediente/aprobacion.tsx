@@ -222,14 +222,17 @@ export function SeccionAprobacionDirectivo({
               <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '.3rem' }}>
                 {aprobacion.actos.map((a) => (
                   <li key={a.id}>
-                    <label style={{ margin: 0, display: 'flex', gap: '.5rem' }}>
+                    <label className="casilla parrafo">
                       {/* Ninguna casilla viene marcada: consentir es un acto
                           deliberado sobre actos concretos. */}
                       <input type="checkbox" name="operaciones" value={a.id} />
                       <span>
                         Operación del {a.fecha}{' '}
+                        {/* Píldora de estado y no `.chip` neutro: que un acto
+                            siga sin consentir ES el hallazgo de esta lista, y
+                            en gris se lee como una etiqueta más. */}
                         {aprobacion.actosSinConsentir.some((s) => s.id === a.id) && (
-                          <span className="chip">sin consentir</span>
+                          <span className="estado critico">sin consentir</span>
                         )}
                       </span>
                     </label>
@@ -250,7 +253,7 @@ export function SeccionAprobacionDirectivo({
             </label>
           </div>
 
-          <button type="submit" disabled={guardando} style={{ justifySelf: 'start' }}>
+          <button type="submit" disabled={guardando}>
             {guardando ? 'Asentando…' : 'Asentar'}
           </button>
           <p className="pequeno tenue" style={{ margin: 0 }}>

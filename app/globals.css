@@ -726,6 +726,21 @@ button.secundario:hover:not(:disabled), .boton.secundario:hover {
 }
 button:disabled { opacity: .5; cursor: not-allowed; }
 
+/* UN BOTÓN NO SE ESTIRA.
+   Casi todos los formularios del portal son `display: grid`, y un botón que
+   es hijo de una rejilla se estira a todo el ancho de la columna salvo que
+   alguien lo impida. Nadie lo impedía: «Guardar» salía como una barra naranja
+   de 416 px en Configuración, y «Esta persona dejó el cargo» —una acción que
+   conviene que NO se pulse por accidente— medía 883. El handoff dimensiona
+   los botones por su contenido (`padding: .55rem 1.05rem`), no por su
+   contenedor.
+
+   `justify-self` no hace nada fuera de una rejilla, así que la regla es
+   inofensiva donde el botón ya se comportaba. El de la pantalla de acceso
+   sigue a todo lo ancho porque lo pide `width: 100%` y su tarjeta es flex:
+   ahí el ancho completo es deliberado — es la única acción de la pantalla. */
+button, .boton { justify-self: start; }
+
 /* ── Foco ───────────────────────────────────────────────────────────── */
 /* Naranja, del rediseño. Se sostiene porque el naranja ya no significa
    ningún estado: dice «esto es interactivo» y nada más. */
@@ -821,28 +836,35 @@ label .pista { display: inline; margin: 0; }
 .por-que:hover { color: var(--acento); }
 
 /* ── Alertas: tarjetas con su «Por qué» ─────────────────────────────── */
+/* `.ficha-alerta` y no `.alerta`: la palabra suelta ya significaba otras dos
+   cosas en este portal —el token `--alerta` del ámbar y la píldora
+   `.chip-alerta`— y al estrenarse como tarjeta se comió un
+   `<span className="chip alerta">` de la pantalla de configuración, que se
+   infló con el padding y el borde de una tarjeta dentro de una celda. Ninguna
+   herramienta lo iba a decir: la clase existía, solo que significaba otra
+   cosa. */
 .alertas { display: grid; gap: .7rem; }
-.alerta {
+.ficha-alerta {
   background: var(--superficie); border: 1px solid var(--linea);
   border-radius: var(--radio); padding: 1.05rem 1.15rem;
   border-left: 3px solid var(--texto-tenue);
 }
-.alerta[data-tono='ok']      { border-left-color: var(--ok); }
-.alerta[data-tono='aviso']   { border-left-color: var(--alerta); }
-.alerta[data-tono='critico'] { border-left-color: var(--critico); }
-.alerta-cabeza {
+.ficha-alerta[data-tono='ok']      { border-left-color: var(--ok); }
+.ficha-alerta[data-tono='aviso']   { border-left-color: var(--alerta); }
+.ficha-alerta[data-tono='critico'] { border-left-color: var(--critico); }
+.ficha-alerta-cabeza {
   display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start;
 }
-.alerta-cabeza .chip { margin-left: 0; }
-.alerta-motivo { margin: .5rem 0 .6rem; font-size: .9rem; color: var(--texto-suave); max-width: 44rem; }
-.alerta-pie { margin: 0; font-size: .83rem; color: var(--texto-tenue); }
-.alerta .por-que {
+.ficha-alerta-cabeza .chip { margin-left: 0; }
+.ficha-alerta-motivo { margin: .5rem 0 .6rem; font-size: .9rem; color: var(--texto-suave); max-width: 44rem; }
+.ficha-alerta-pie { margin: 0; font-size: .83rem; color: var(--texto-tenue); }
+.ficha-alerta .por-que {
   margin-top: .7rem; font: inherit; font-size: .82rem;
   background: none; border: 0; padding: 0;
 }
-.alerta .por-que:hover:not(:disabled) { background: none; }
-.alerta .por-que:active:not(:disabled) { transform: none; }
-.alerta-calculo { margin-top: .7rem; display: grid; gap: .7rem; }
+.ficha-alerta .por-que:hover:not(:disabled) { background: none; }
+.ficha-alerta .por-que:active:not(:disabled) { transform: none; }
+.ficha-alerta-calculo { margin-top: .7rem; display: grid; gap: .7rem; }
 
 .calculo-caja {
   border: 1px solid var(--linea); border-radius: var(--radio-control);
@@ -867,4 +889,22 @@ label .pista { display: inline; margin: 0; }
 
 /* El hover-lift no aplica cuando la tarjeta está desplegada: mover una caja
    que se está leyendo es ruido, no respuesta. */
-.alerta:has(.alerta-calculo):hover { transform: none; }
+.ficha-alerta:has(.ficha-alerta-calculo):hover { transform: none; }
+
+/* Una casilla con su texto al lado. La clase estaba puesta en el alta de
+   operaciones desde antes del rediseño y no tenía regla: el checkbox salía
+   arriba y el texto debajo, con el ancho de un input.
+
+   Las seis casillas del portal resolvían esto cada una por su cuenta, con
+   `display:flex` en un `style` en línea y tres separaciones distintas. Ahora
+   hay una clase con dos variantes, que son los dos casos que existen de
+   verdad: la que vive en una lista —donde el hueco lo pone el contenedor— y
+   la de rótulo largo, que se alinea con la PRIMERA línea y no con el centro
+   del bloque. */
+.casilla {
+  display: flex; align-items: center; gap: .55rem; margin-bottom: .8rem;
+}
+.casilla.suelta  { margin-bottom: 0; }
+.casilla.parrafo { align-items: baseline; margin-bottom: 0; }
+.casilla input[type='checkbox'] { flex: none; margin: 0; width: 1rem; }
+.casilla > span { display: inline; margin: 0; font-size: .95rem; color: var(--texto); }

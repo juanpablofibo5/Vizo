@@ -37,13 +37,13 @@ export function TarjetaDeAlerta({
   const hayQueExplicar = calculo.length > 0 || desglose !== null
 
   return (
-    <article className="alerta elevable" data-tono={tono}>
-      <div className="alerta-cabeza">
+    <article className="ficha-alerta elevable" data-tono={tono}>
+      <div className="ficha-alerta-cabeza">
         <strong>{titulo}</strong>
         <span className="chip">{nombreDeTipo(tipo)}</span>
       </div>
 
-      {motivo !== '' && <p className="alerta-motivo">{motivo}</p>}
+      {motivo !== '' && <p className="ficha-alerta-motivo">{motivo}</p>}
       {pie}
 
       {hayQueExplicar && (
@@ -60,7 +60,7 @@ export function TarjetaDeAlerta({
           </button>
 
           {abierta && (
-            <div className="alerta-calculo">
+            <div className="ficha-alerta-calculo">
               {calculo.length > 0 && (
                 <div className="calculo-caja">
                   <p className="calculo-titulo">Con qué se calculó</p>

@@ -97,7 +97,7 @@ export default async function Alertas() {
                   detalle={a.detalle}
                   pie={
                     a.cliente === null || a.cliente_id === null ? null : (
-                      <p className="alerta-pie">
+                      <p className="ficha-alerta-pie">
                         <Link
                           href={`/clientes/${a.cliente_id}/expediente`}
                           className="nombre-cliente"

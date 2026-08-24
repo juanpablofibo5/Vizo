@@ -68,13 +68,13 @@ function FormularioGrado({ hoy, siguienteOrden }: { hoy: string; siguienteOrden:
           </span>
           <input type="number" name="puntajeMinimo" required min={0} step="0.001" />
         </label>
-        <label style={{ margin: 0, display: 'flex', gap: '.4rem', alignItems: 'center' }}>
+        <label className="casilla suelta">
           <input type="checkbox" name="esAlto" value="true" />
           <span>Es el grado alto</span>
         </label>
       </div>
       <input type="hidden" name="vigenteDesde" value={hoy} />
-      <button type="submit" disabled={pendiente} style={{ justifySelf: 'start' }}>
+      <button type="submit" disabled={pendiente}>
         {pendiente ? 'Guardando…' : 'Agregar grado'}
       </button>
     </form>
@@ -138,7 +138,7 @@ function FormularioFactor({
         <input type="number" name="peso" required min={0.001} max={100} step="0.001" />
       </label>
 
-      <button type="submit" disabled={pendiente} style={{ justifySelf: 'start' }}>
+      <button type="submit" disabled={pendiente}>
         {pendiente ? 'Guardando…' : 'Agregar factor'}
       </button>
     </form>
@@ -218,7 +218,7 @@ export function SeccionRiesgo({
             quieras.
           </p>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div className="tabla-envoltura">
             <table>
               <thead>
                 <tr>
@@ -240,7 +240,10 @@ export function SeccionRiesgo({
                         g.puntajeMinimo
                       )}
                     </td>
-                    <td>{g.esAlto ? <span className="chip alerta">sí</span> : '—'}</td>
+                    {/* La píldora del semáforo, no un `chip alerta` que nunca
+                        existió como regla: marca cuál de los grados dispara las
+                        medidas reforzadas del Cap. III Ter. */}
+                    <td>{g.esAlto ? <span className="estado aviso">sí</span> : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -286,7 +289,7 @@ export function SeccionRiesgo({
                 Sin factores. Esta tabla nace vacía a propósito y solo tú la llenas.
               </p>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
+              <div className="tabla-envoltura">
                 <table>
                   <thead>
                     <tr>

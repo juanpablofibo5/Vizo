@@ -138,9 +138,7 @@ export function SeccionRiesgoCliente({
           <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '.4rem' }}>
             {riesgo.factores.map((f) => (
               <li key={f.id}>
-                <label
-                  style={{ margin: 0, display: 'flex', gap: '.5rem', alignItems: 'baseline' }}
-                >
+                <label className="casilla parrafo">
                   {/* Ninguna casilla viene marcada: VIZO no supone qué aplica. */}
                   <input type="checkbox" name="factores" value={f.id} />
                   <span>
@@ -155,7 +153,7 @@ export function SeccionRiesgoCliente({
             ))}
           </ul>
 
-          <button type="submit" disabled={evaluando} style={{ justifySelf: 'start' }}>
+          <button type="submit" disabled={evaluando}>
             {evaluando ? 'Evaluando…' : 'Calcular el grado'}
           </button>
           <p className="pequeno tenue" style={{ margin: 0 }}>

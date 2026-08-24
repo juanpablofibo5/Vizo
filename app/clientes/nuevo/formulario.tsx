@@ -95,14 +95,9 @@ export function FormularioAlta() {
           <input name="nombreORazonSocial" defaultValue={previo('nombreORazonSocial')} required />
         </label>
 
-        <label style={{ marginBottom: '.5rem' }}>
-          <input
-            type="checkbox"
-            checked={sinRfc}
-            onChange={(e) => setSinRfc(e.target.checked)}
-            style={{ width: 'auto', marginRight: '.4rem' }}
-          />
-          Extranjero sin RFC
+        <label className="casilla">
+          <input type="checkbox" checked={sinRfc} onChange={(e) => setSinRfc(e.target.checked)} />
+          <span>Extranjero sin RFC</span>
         </label>
 
         {sinRfc ? (
@@ -165,15 +160,14 @@ export function FormularioAlta() {
             <strong>25%</strong>, pero el control también puede ejercerse sin acciones.
           </p>
 
-          <label style={{ marginBottom: '.75rem' }}>
+          <label className="casilla">
             <input
               type="checkbox"
               name="sinBeneficiario"
               defaultChecked={sinBeneficiario}
               onChange={(e) => setSinBeneficiario(e.target.checked)}
-              style={{ width: 'auto', marginRight: '.4rem' }}
             />
-            Declaro que no existe beneficiario controlador
+            <span>Declaro que no existe beneficiario controlador</span>
           </label>
 
           {!sinBeneficiario && (

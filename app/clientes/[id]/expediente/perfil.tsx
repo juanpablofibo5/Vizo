@@ -223,7 +223,7 @@ export function SeccionPerfilTransaccional({
             </label>
           )}
 
-          <button type="submit" disabled={guardando} style={{ justifySelf: 'start' }}>
+          <button type="submit" disabled={guardando}>
             {guardando ? 'Guardando…' : 'Asentar'}
           </button>
           <p className="pequeno tenue" style={{ margin: 0 }}>

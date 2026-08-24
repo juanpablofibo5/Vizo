@@ -48,6 +48,14 @@ import {
   asentarCuestionario,
 } from '../../../../src/persistencia/cuestionario'
 import type { EvidenciaDeFirma } from '../../../../src/dominio/cuestionario'
+import {
+  DatoDeMedidasInvalido,
+  asentarMedidasReforzadas,
+} from '../../../../src/persistencia/medidas-reforzadas'
+import type {
+  EvidenciaDeConsulta,
+  PersonaVinculada,
+} from '../../../../src/dominio/medidas-reforzadas'
 
 export interface EstadoSubida {
   problemas: string[]
@@ -707,6 +715,111 @@ export async function accionAplicarCuestionario(
         ok: false,
         mensaje:
           'Solo un administrador asienta el cuestionario. La regla la aplica la base de datos.',
+        problemas: [],
+      }
+    }
+    return { ok: false, mensaje: bruto, problemas: [] }
+  } finally {
+    await db.end()
+  }
+}
+
+/**
+ * Asienta las medidas reforzadas del Art. 23 Ter 4.
+ *
+ * La fracción NO viaja en el formulario: la deriva la persistencia de la clase
+ * de persona del cliente. Y `aplicaPepExtranjera` tampoco: sale del Cap. III
+ * Quáter que ya existe. Las dos son hechos que el sistema conoce, y ofrecerlas
+ * como campo sería invitar a torcerlas.
+ */
+export async function accionAdoptarMedidas(
+  _previo: EstadoCaptura,
+  datos: FormData,
+): Promise<EstadoCaptura> {
+  const clienteId = String(datos.get('clienteId') ?? '')
+  const sesion = await sesionRequerida()
+
+  const cuantas = Number(datos.get('cuantasPersonas') ?? '0')
+  const personas: PersonaVinculada[] = []
+  for (let i = 0; i < cuantas; i += 1) {
+    const nombre = String(datos.get(`nombre${String(i)}`) ?? '').trim()
+    // Un renglón vacío es un renglón que el usuario abrió y no llenó: se
+    // ignora en silencio en vez de reventar con «nombre vacío».
+    if (nombre === '') continue
+    personas.push({
+      vinculo: String(datos.get(`vinculo${String(i)}`) ?? 'conyuge') as PersonaVinculada['vinculo'],
+      nombre,
+      datosObtenidos: datos.get(`datos${String(i)}`) === 'si',
+      documentacionObtenida: datos.get(`documentacion${String(i)}`) === 'si',
+    })
+  }
+
+  let evidencia: EvidenciaDeConsulta | undefined
+  const archivo = datos.get('consultaSeArchivo')
+  if (archivo instanceof File && archivo.size > 0) {
+    const bytes = Buffer.from(await archivo.arrayBuffer())
+    evidencia = {
+      hashSha256: createHash('sha256').update(bytes).digest('hex'),
+      archivo: archivo.name,
+      tamanoBytes: bytes.byteLength,
+      mime: archivo.type === '' ? 'application/octet-stream' : archivo.type,
+    }
+  }
+
+  const texto = (k: string): string | undefined => {
+    const v = datos.get(k)
+    return typeof v === 'string' && v.trim() !== '' ? v : undefined
+  }
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await asentarMedidasReforzadas(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+      hoy: hoyEnMexico(),
+      datos: {
+        fechaAdopcion: String(datos.get('fechaAdopcion') ?? ''),
+        ...(texto('medidasOrigenDestino') === undefined
+          ? {}
+          : { medidasOrigenDestino: texto('medidasOrigenDestino') }),
+        // Solo se manda cuando el formulario de la fr. I estuvo en pantalla:
+        // `undefined` significa «no se preguntó», y la persistencia lo
+        // distingue de «se decidió que no».
+        ...(datos.has('cuantasPersonas')
+          ? { manualPreveVinculadas: datos.get('preveVinculadas') === 'si' }
+          : {}),
+        personasVinculadas: personas,
+        ...(texto('informacionAccionistas') === undefined
+          ? {}
+          : { informacionAccionistas: texto('informacionAccionistas') }),
+        ...(texto('consultaSeFecha') === undefined
+          ? {}
+          : { consultaSeFecha: texto('consultaSeFecha') }),
+        ...(texto('consultaSeResultado') === undefined
+          ? {}
+          : { consultaSeResultado: texto('consultaSeResultado') }),
+        ...(evidencia === undefined ? {} : { consultaSeEvidencia: evidencia }),
+        ...(texto('documentacionPepExtranjera') === undefined
+          ? {}
+          : { documentacionPepExtranjera: texto('documentacionPepExtranjera') }),
+      },
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return {
+      ok: true,
+      mensaje: 'Medidas asentadas, atadas a la clasificación de riesgo que las exigió.',
+      problemas: [],
+    }
+  } catch (e) {
+    if (e instanceof DatoDeMedidasInvalido) {
+      return { ok: false, mensaje: 'No se asentaron las medidas.', problemas: e.problemas }
+    }
+    const bruto = e instanceof Error ? e.message : String(e)
+    if (/permission denied|admin/i.test(bruto)) {
+      return {
+        ok: false,
+        mensaje: 'Solo un administrador asienta las medidas. La regla la aplica la base de datos.',
         problemas: [],
       }
     }

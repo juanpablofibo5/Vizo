@@ -25,6 +25,11 @@ import {
 } from '../../../../src/persistencia/aprobacion'
 import { ConocimientoDelCliente, type SeccionDeConocimiento } from './conocimiento'
 import { SeccionCuestionario } from './cuestionario'
+import { SeccionMedidasReforzadas } from './reforzadas'
+import {
+  estadoDeMedidasReforzadas,
+  type EstadoDeMedidas,
+} from '../../../../src/persistencia/medidas-reforzadas'
 import {
   estadoDelCuestionario,
   type EstadoDelCuestionario,
@@ -35,7 +40,7 @@ import {
   rielPep,
   rielPerfil,
   rielCuestionario,
-  rielPorConstruir,
+  rielMedidasReforzadas,
   rielRevisionAnual,
   seccionAbiertaPorDefecto,
   SECCIONES_DEL_CONOCIMIENTO,
@@ -279,6 +284,12 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       hoy: hoyEnMexico(),
     })
 
+    const reforzadas: EstadoDeMedidas = await estadoDeMedidasReforzadas(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+      hoy: hoyEnMexico(),
+    })
+
     const aprobacion: EstadoAprobacion = await estadoDeAprobacion(db, {
       sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
       clienteId,
@@ -356,7 +367,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
     const estadoAprobacionRiel = rielAprobacion(aprobacion)
     const estadoPepRiel = rielPep(estadoPep)
     const estadoCuestionario = rielCuestionario(cuestionario)
-    const estadoPorConstruir = rielPorConstruir(aprobacion.exigibleDesde)
+    const estadoReforzadas = rielMedidasReforzadas(reforzadas)
 
     const secciones: SeccionDeConocimiento[] = [
       {
@@ -436,21 +447,13 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       },
       {
         ...SECCIONES_DEL_CONOCIMIENTO[6],
-        ...estadoPorConstruir,
+        ...estadoReforzadas,
         contenido: (
-          <div style={{ display: 'grid', gap: '.7rem' }}>
-            <p className="pequeno tenue" style={{ margin: 0, maxWidth: '42rem' }}>
-              Las medidas reforzadas de identificación para grado alto todavía no están
-              construidas. Cuando entren, lo hacen aquí — sin mover ninguna de las seis
-              secciones de arriba.
-            </p>
-            <dl className="pares">
-              <dt>Exigible cuando</dt>
-              <dd>el Grado de riesgo es alto</dd>
-              <dt>Desde</dt>
-              <dd className="mono">{aprobacion.exigibleDesde}</dd>
-            </dl>
-          </div>
+          <SeccionMedidasReforzadas
+            clienteId={clienteId}
+            estado={reforzadas}
+            puede={sesion.rol === 'admin'}
+          />
         ),
       },
     ]

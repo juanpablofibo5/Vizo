@@ -204,11 +204,6 @@ export function rielPep(e: PepParaRiel | null): EstadoDeRiel {
   }
 }
 
-/** Las secciones del Art. 23 Ter 3 y 4, declaradas antes de existir. */
-export function rielPorConstruir(exigibleDesde: string): EstadoDeRiel {
-  return { estado: 'Por construir', tono: 'neutro', reloj: `exigible desde el ${exigibleDesde}` }
-}
-
 /**
  * Cuál sección amanece abierta: la más grave. Si ninguna pide atención, todas
  * cerradas — el riel ya cuenta la historia completa.
@@ -330,6 +325,66 @@ export function rielCuestionario(c: CuestionarioParaRiel): EstadoDeRiel {
         estado: 'Aplicado',
         tono: 'ok',
         reloj: `el ${c.cobertura.cuestionario.fechaAplicacion}`,
+      }
+  }
+}
+
+export interface MedidasParaRiel {
+  readonly exigencia:
+    | { readonly estado: 'exigible'; readonly fraccion: 'fisica' | 'moral' }
+    | { readonly estado: 'no_exigible'; readonly porque: string }
+    | { readonly estado: 'indeterminable'; readonly falta: string }
+    | { readonly estado: 'sin_fraccion'; readonly tipoPersona: string }
+  readonly cobertura:
+    | { readonly estado: 'sin_medidas' }
+    | { readonly estado: 'cubierto'; readonly medidas: { readonly fechaAdopcion: string } }
+    | {
+        readonly estado: 'sobre_otra_clasificacion'
+        readonly medidas: { readonly fechaAdopcion: string }
+      }
+  readonly anticipado: boolean
+  readonly exigibleDesde: string
+}
+
+/**
+ * Las medidas reforzadas del Art. 23 Ter 4, en una palabra.
+ *
+ * `sin_fraccion` es el estado más delicado y por eso tiene su propia palabra:
+ * el cliente ES de grado alto —así que algo hay que hacer— pero el artículo no
+ * nombra su clase de persona. Ni verde ni rojo: ámbar, porque es justo lo que
+ * alguien tiene que mirar y decidir.
+ */
+export function rielMedidasReforzadas(m: MedidasParaRiel): EstadoDeRiel {
+  if (m.exigencia.estado === 'no_exigible')
+    return { estado: 'No requeridas', tono: 'neutro', reloj: 'el grado no es alto' }
+  if (m.exigencia.estado === 'indeterminable')
+    return { estado: 'No se sabe', tono: 'aviso', reloj: 'sin Grado de riesgo' }
+  if (m.exigencia.estado === 'sin_fraccion')
+    return {
+      estado: 'Sin fracción',
+      tono: 'aviso',
+      reloj: `el artículo no nombra a ${m.exigencia.tipoPersona}`,
+    }
+
+  const fr = m.exigencia.fraccion === 'fisica' ? 'fr. I' : 'fr. II'
+  switch (m.cobertura.estado) {
+    case 'sin_medidas':
+      return {
+        estado: 'Faltan',
+        tono: m.anticipado ? 'aviso' : 'critico',
+        reloj: m.anticipado ? `exigible desde el ${m.exigibleDesde}` : `${fr} · el grado es alto`,
+      }
+    case 'sobre_otra_clasificacion':
+      return {
+        estado: 'De otra clasificación',
+        tono: 'aviso',
+        reloj: `adoptadas el ${m.cobertura.medidas.fechaAdopcion}`,
+      }
+    case 'cubierto':
+      return {
+        estado: 'Adoptadas',
+        tono: 'ok',
+        reloj: `${fr} · el ${m.cobertura.medidas.fechaAdopcion}`,
       }
   }
 }

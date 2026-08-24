@@ -4,7 +4,6 @@ import {
   rielGradoDeRiesgo,
   rielPep,
   rielPerfil,
-  rielPorConstruir,
   rielRevisionAnual,
   rielExpediente,
   peorEstado,
@@ -229,11 +228,6 @@ describe('la sección abierta por defecto es la más grave', () => {
   })
 })
 
-describe('por construir', () => {
-  test('cita la fecha del catálogo, no una escrita a mano', () => {
-    expect(rielPorConstruir('2027-03-01').reloj).toBe('exigible desde el 2027-03-01')
-  })
-})
 
 describe('el expediente como píldora (completo NO es aprobado)', () => {
   test('13 de 13 sin aprobar no se pinta de verde', () => {

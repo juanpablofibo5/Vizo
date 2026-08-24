@@ -406,6 +406,28 @@ Cambia la frontera: si pidiera la avanzada, VIZO no podría tocarla (`ALCANCE.md
 
 **Lo que abre:** del Cap. III Ter queda solo el Art. 23 Ter 4. La sección 06 del expediente dejó de decir «Por construir»; queda la 07.
 
+## ADR-26 · Las medidas reforzadas del Art. 23 Ter 4: la fracción se deriva, y el artículo no alcanza a todos — 2026-08-23
+
+**Contexto:** el Art. 23 Ter 4 cierra el Cap. III Ter. Tiene tres fracciones que **no son tres opciones**: la I (personas físicas) y la II (personas morales) son excluyentes, y la III (PEP extranjeras) se apila sobre la que toque.
+
+**Decisión.** Registro append-only atado por FK compuesta a la evaluación de riesgo que lo exigió, con dos tablas —las medidas y las personas del inciso b)—. Cuatro lecturas lo decidieron:
+
+**1. La fracción no se elige: la decide la clase de persona.** Se deriva de `clientes_finales.tipo_persona` y no se ofrece como campo, igual que la `via` del Art. 23 Ter 5. Un capturista que pudiera marcar «fracción II» sobre una persona física produciría una fila coherente por fuera e indefendible por dentro. La base lo verifica además en un trigger: la aplicación ya no lo ofrece, y eso es la primera línea, no la única.
+
+**2. El artículo nombra dos clases de persona y el sistema tiene cuatro.** `tipo_persona` admite además `fideicomiso` y `figura_juridica`, y el Art. 23 Ter 4 **no las nombra**. No se les asigna fracción por parecido: el enum tiene dos valores y para esos clientes **no se puede asentar nada**. La pantalla lo dice —el cliente ES de grado alto, así que algo hay que hacer, pero el texto no lo alcanza— y va a **POR CONFIRMAR-11**. Dejarles asentar «medidas de la fracción II» fabricaría evidencia de cumplir una regla que quizá no existe, que es peor que el hueco.
+
+**3. «Debiendo consultar» no admite lectura opcional.** La fr. II obliga a consultar los registros electrónicos de la Secretaría de Economía para confirmar los datos del cliente, así que sin esa consulta la fracción no está cumplida y su fecha es `not null` para toda fila de fr. II. Pero **la consulta la hace el obligado, no VIZO**: automatizarla convertiría a VIZO en quien afirma que los datos coinciden, que es la misma frontera que impide descartar una coincidencia de screening (regla dura 5). VIZO registra que se hizo, cuándo, qué arrojó y la huella del acuse.
+
+**4. La fr. III se apila y sube el listón sobre las mismas personas.** «Obtener, **además** de los datos a que se refiere el presente artículo, la **documentación**» del Cap. III respecto de las personas de la fr. I inciso b). Por eso las personas vinculadas son **una** tabla con dos niveles —datos y documentación— y no dos tablas: es el mismo conjunto de gente visto con dos exigencias. Y que el cliente sea **PEP extranjera se deriva** de que tenga un vínculo PEP catalogado con ámbito `extranjero`: no se teclea, y cambia solo cuando corren los dos relojes del Art. 23 Quáter.
+
+**Lo que el inciso b) NO exige, y costó leer bien:** dice «obtener, **en su caso**, los datos […] **en los términos que al efecto prevean en su Manual de Políticas Internas**». Es doblemente condicional, así que VIZO **no** exige que haya personas registradas — exige que alguien haya **decidido** si las hay. La ausencia sin decisión es un olvido disfrazado de cumplimiento; la ausencia con decisión es una postura registrada.
+
+**Lo que la base hace inexpresable** (once aserciones): una fr. II sin la consulta a la Secretaría de Economía; una fracción que no corresponde a la clase de persona; un fideicomiso bajo cualquier fracción; una fila que afirme campos de las dos fracciones; una PEP extranjera sin la documentación adicional; una persona del inciso b) sin documentación cuando la fr. III aplica; medidas sobre una clasificación que no fue alta; y editar o borrar lo asentado.
+
+**Un contraste con el ADR-25 que vale registrar:** allá el trigger de coherencia nació diferido sin motivo y hubo que quitarlo. Aquí el de la fr. III **sí** tiene que ser `deferrable initially deferred`, porque las personas vinculadas se insertan **después** de la medida en la misma transacción y comprobarlas en el INSERT diría siempre que faltan. El patrón no se copia: se decide caso por caso.
+
+**Lo que abre:** el Cap. III Ter queda completo, y las siete secciones del expediente existen de verdad — ninguna dice ya «Por construir». `rielPorConstruir` se eliminó por lo mismo.
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 1. **Sellado del manifiesto** (ADR-10): ¿una constancia NOM-151 sobre el manifiesto con los hashes de todos los documentos satisface la exigencia de fecha cierta, o la autoridad espera constancia por documento?
@@ -453,3 +475,4 @@ Cambia la frontera: si pidiera la avanzada, VIZO no podría tocarla (`ALCANCE.md
 Las preguntas 1–3 ya están redactadas en detalle en `02_FASE_0_PROVEEDORES.md §C`; aquí se listan porque el MVP toma postura provisional en todas y debe decirse en la demo.
 9. **El estándar de la Firma Electrónica** (ADR-25): el Art. 23 Ter 3 ¶3 pide la del **Código de Comercio** (Art. 3 fr. VIII Ter), no la e.firma. ¿Qué mecanismo concreto de suscripción remota resiste una verificación? VIZO registra la huella del archivo firmado sin pronunciarse sobre su validez.
 10. **¿Una reclasificación obliga a repetir el cuestionario?** (ADR-25): el artículo no da plazo de vigencia. Mientras no haya respuesta, VIZO enseña el hecho —«se aplicó sobre otra clasificación»— sin llamarlo vencido.
+11. **¿Qué medidas reforzadas le tocan a un fideicomiso o a otra figura jurídica de Grado de Riesgo alto?** (ADR-26): el Art. 23 Ter 4 nombra personas físicas (fr. I) y morales (fr. II) y no las alcanza. VIZO enseña el hueco y no asienta nada bajo una fracción que no les corresponde.

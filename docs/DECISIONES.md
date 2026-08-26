@@ -460,10 +460,20 @@ Dos celdas de esa cobertura concentran el riesgo de acreditar de más, y las dos
 
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
+> **Los números son identificadores estables, no un orden.** Se citan desde el código y desde
+> otros documentos —`POR CONFIRMAR-4` aparece en tres migraciones y en `motor.ts`, `-11` en
+> `src/dominio/medidas-reforzadas.ts`— así que **no se renumeran** aunque la lista no quede en
+> secuencia. El 24-ago-2026 se corrigieron dos colisiones: había dos «6» y dos «5». Los que
+> conservaron su número son los que otros archivos ya citaban; los otros dos pasaron a **12** y
+> **13**.
+>
+> Para mandar: [`docs/CONSULTA-PLD.md`](CONSULTA-PLD.md) reagrupa estas mismas preguntas por
+> **lo que cuesta equivocarse** y está escrito para leerse sin conocer el repositorio.
+
 1. **Sellado del manifiesto** (ADR-10): ¿una constancia NOM-151 sobre el manifiesto con los hashes de todos los documentos satisface la exigencia de fecha cierta, o la autoridad espera constancia por documento?
 2. **Identidad de comprador extranjero sin RFC** (caso A-05): ¿qué criterio de identidad resiste una verificación? Mientras tanto el sistema acumula conservadoramente por documento de identidad y escala a revisión humana.
 3. **Expediente y umbrales de V Bis:** ¿qué campos son obligatorios más allá de lo que exige el XSD?, y validación formal de la tabla de umbrales/vigencias cargada al catálogo (8,025 UMA, vigencia 1 de febrero, bases de IVA).
-6. **«Montos máximos mensuales» como MES DE CALENDARIO** (ADR-22): el Art. 23 Ter 1 ¶2 dice «mensuales» sin más. Se leyó como mes de calendario porque es lo que un cliente entiende al estimar y lo que puede verificar si se le pregunta. La alternativa —ventana deslizante de 30 días— detectaría además el reparto a caballo entre dos meses (90% el día 31 y 90% el día 1 nunca cruzarían un mes de calendario), pero no sale del texto, y la ventana deslizante de este proyecto tiene otro fundamento (Art. 19 de la Ley) que `RIESGO-EBR.md` §3.1 pidió no fusionar. **A diferencia de los relojes, esto no es un dato de catálogo: es la forma de la regla**, y cambiarlo es cambiar `contrastarConElPerfil` en `src/dominio/perfil-transaccional.ts`.
+12. **«Montos máximos mensuales» como MES DE CALENDARIO** (ADR-22): el Art. 23 Ter 1 ¶2 dice «mensuales» sin más. Se leyó como mes de calendario porque es lo que un cliente entiende al estimar y lo que puede verificar si se le pregunta. La alternativa —ventana deslizante de 30 días— detectaría además el reparto a caballo entre dos meses (90% el día 31 y 90% el día 1 nunca cruzarían un mes de calendario), pero no sale del texto, y la ventana deslizante de este proyecto tiene otro fundamento (Art. 19 de la Ley) que `RIESGO-EBR.md` §3.1 pidió no fusionar. **A diferencia de los relojes, esto no es un dato de catálogo: es la forma de la regla**, y cambiarlo es cambiar `contrastarConElPerfil` en `src/dominio/perfil-transaccional.ts`.
 
 7. **Contra qué monto se compara el Perfil transaccional** (ADR-22): el Art. 6 del Reglamento resuelve la base para el umbral del Art. 17 (sin contribuciones) y para la restricción del Art. 32 (con ellas), pero el Perfil transaccional **no es ninguno de los dos** y ningún artículo lo alcanza. Se toma el **monto total**, contribuciones incluidas, porque es lo que el cliente desembolsa y por tanto lo que estima, y porque ante la duda detecta de más. Confirmar. Relacionado: si un cliente de **acto único** (¶4) queda o no sujeto al ejercicio semestral del ¶3 — el ¶4 no lo exime expresamente, así que hoy sí queda, y eso produce una reevaluación que se resuelve en un clic sobre una relación ya extinguida.
 
@@ -500,7 +510,7 @@ Dos celdas de esa cobertura concentran el riesgo de acreditar de más, y las dos
 
 8. **⚠️ Qué pasa DESPUÉS del primer aviso por acumulación.** Si los pagos 1-3 de una preventa ya dispararon un aviso por acumulación, el pago 4 deja la suma por encima del umbral. Dos lecturas posibles: (a) cada operación nueva que mantiene la suma sobre el umbral se reporta; (b) la ventana se reinicia tras el aviso y solo vuelve a disparar cuando las operaciones no reportadas cruzan el umbral por su cuenta. **El marco no lo resuelve explícitamente.** El MVP implementa (a) por conservador: un aviso de más se corrige, uno omitido se sanciona con 10,000 a 65,000 UMA. Documentado con test en `tests/umbrales/precondiciones.test.ts` para que un cambio de criterio sea deliberado. Encontrado en la auditoría de la semana 4.
 
-5. **Registro real de los asesores inmobiliarios:** qué porcentaje está dado de alta en el SPPLD por cuenta propia (Fr. V/XI) vs. operando bajo el RFC de la inmobiliaria. Define si la tercera rama del flujo multi-parte existe de verdad (ADR-15).
+13. **Registro real de los asesores inmobiliarios:** qué porcentaje está dado de alta en el SPPLD por cuenta propia (Fr. V/XI) vs. operando bajo el RFC de la inmobiliaria. Define si la tercera rama del flujo multi-parte existe de verdad (ADR-15).
 
 Las preguntas 1–3 ya están redactadas en detalle en `02_FASE_0_PROVEEDORES.md §C`; aquí se listan porque el MVP toma postura provisional en todas y debe decirse en la demo.
 9. **El estándar de la Firma Electrónica** (ADR-25): el Art. 23 Ter 3 ¶3 pide la del **Código de Comercio** (Art. 3 fr. VIII Ter), no la e.firma. ¿Qué mecanismo concreto de suscripción remota resiste una verificación? VIZO registra la huella del archivo firmado sin pronunciarse sobre su validez.

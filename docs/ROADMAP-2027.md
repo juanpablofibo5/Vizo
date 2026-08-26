@@ -51,7 +51,14 @@ Art. 23 Quáter define quién es PEP y **asimila** —literal— «el cónyuge, 
 ### Cap. II Quáter · Enfoque basado en Riesgos — **1 mar 2027**
 Art. 10 Septies 1 pide **tres** cosas de la metodología, y dentro de la primera, **cuatro elementos mínimos** de exposición: *actos u operaciones · tipo de personas Clientes o Usuarias · países y áreas geográficas · transacciones y canales*. Más un método de medición que asigne valores, y la identificación de los Mitigantes ya implementados.
 
-**En VIZO:** nada construido. Es el insumo del Manual (Transitorio Tercero), así que uno arrastra al otro.
+**En VIZO (24-ago-2026): el Art. 10 Septies 1 queda cubierto.** *La versión anterior de esta línea decía «nada construido» y era falsa: la fr. I estaba desde el ADR-21 —los cuatro elementos sembrados del catálogo y los indicadores del obligado— y la fr. II a medias.* Lo que se cerró hoy:
+
+- **Fr. II, segunda oración** — el valor de cada ELEMENTO (`pesos_elemento`), que faltaba. Entra como un **método de medición nuevo** que el obligado declara (`suma_ponderada_por_elemento`), no como un cambio de `suma_ponderada`: mover la aritmética del método viejo habría reclasificado clientes sin que nadie lo decidiera. Una prueba fija que el puntaje del método viejo no cambió.
+- **Fr. III** — los **Mitigantes** (`mitigantes` + `mitigantes_elementos`). VIZO no los propone —son las políticas del Manual del obligado— pero exige que cada uno diga sobre qué elemento actúa y con qué efecto: sin eso no se puede «establecer el efecto» que pide el texto.
+- **¶ final** — los indicadores de los delitos de los **Arts. 139 Quáter y 400 Bis** del CPF (`factores_modelo.delitos`), exigidos *para cada uno* de los elementos. Son cuatro elementos × dos delitos: ocho celdas, no cuatro.
+- **La cobertura del artículo, en pantalla.** Configuración dice cuál de las cuatro exigencias acredita el modelo y cuál no, con la falta escrita en las palabras del artículo. No es un porcentaje de avance: el Transitorio Segundo no admite avances parciales el 1 de marzo de 2027. ADR-27.
+
+**Lo que sigue faltando de este capítulo:** el Art. 10 Septies pide que la metodología esté **descrita en el Manual** (Cap. X) y que se reevalúe **antes de nuevos productos, canales o tipos de cliente** (¶3). Las dos cosas arrastran al Manual, y el Manual es donde `ALCANCE.md` dice que la compuerta vuelve a mandar.
 
 ### Cap. III Bis · Grado de riesgo — **1 mar 2027**
 Art. 23 Bis: modelo de evaluación coherente con la metodología del Cap. II Quáter, **al menos tres clasificaciones** (bajo, medio, alto) y los intermedios que se quieran. Art. 23 Bis 1: reevaluación **al menos cada seis meses**, más frecuente cuanto mayor el riesgo. Art. 23 Bis 4: **riesgo alto por defecto** para no residentes de jurisdicciones señaladas y para PEP extranjeras.

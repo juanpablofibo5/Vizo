@@ -428,6 +428,36 @@ Cambia la frontera: si pidiera la avanzada, VIZO no podría tocarla (`ALCANCE.md
 
 **Lo que abre:** el Cap. III Ter queda completo, y las siete secciones del expediente existen de verdad — ninguna dice ya «Por construir». `rielPorConstruir` se eliminó por lo mismo.
 
+## ADR-27 · El segundo nivel de la fr. II entra como método nuevo, no como cambio del viejo — 2026-08-24
+
+**Contexto:** al revisar qué faltaba del Cap. II Quáter apareció que `ROADMAP-2027.md` decía «nada construido» y era **falso**: la fr. I del Art. 10 Septies 1 estaba desde el ADR-21. Lo que sí faltaba era más preciso: la segunda oración de la fr. II, la fr. III completa y el párrafo final.
+
+**La decisión que gobierna todo lo demás:** la fr. II pide dos niveles de valor —uno por indicador y, «a su vez», uno por elemento— y el motor solo tenía el primero. Añadir el segundo a `suma_ponderada` habría **movido el puntaje de todos los clientes ya clasificados** sin que nadie lo decidiera: el modo de falla de la regla dura 6 en su forma más cara, porque el número nuevo seguiría siendo plausible.
+
+> **El segundo nivel entra como un MÉTODO DE MEDICIÓN NUEVO —`suma_ponderada_por_elemento`— que el obligado declara.** El motor ya sabía detenerse ante un método que no conoce; ahora conoce dos. Un modelo que siga en `suma_ponderada` no se rompe: simplemente no acredita la segunda oración de la fr. II, y eso se enseña como hueco.
+
+Una prueba fija explícitamente que el puntaje del método viejo no cambió (40 + 15 sigue siendo 55).
+
+**Tres decisiones menores que valen escribirse:**
+
+1. **Sin el valor de un elemento, el motor se detiene; no supone 1.** Suponer sería VIZO decidiendo la importancia de un elemento de la metodología ajena. Y cero **sí** es una respuesta válida —el obligado diciendo que ese elemento no describe su exposición—, así que distinguir `0` de `undefined` es el punto.
+2. **El desglose enseña los dos pesos, no el producto.** Un «87.5» sin decir qué parte vino del indicador y qué del elemento no se puede reproducir dos años después, que es lo que el Art. 41 fr. IV exige poder hacer.
+3. **Un peso de elemento negativo no se acepta.** Un elemento que RESTA riesgo no es un peso: es un mitigante, y la fr. III le da su propia tabla.
+
+**La pieza de más valor no es ninguna tabla: es la cobertura.** `coberturaDeLaMetodologia` responde, con hechos consultables y sin interpretar nada, cuáles de las cuatro exigencias del artículo tienen respaldo en lo configurado. Es el criterio del ADR-20 aplicado a la metodología: se acredita lo que se puede demostrar con un dato del sistema, y lo demás sale como hueco con su fundamento. Lo que **no** hace es juzgar si la metodología es buena — eso es del especialista (ALCANCE §0.5).
+
+Dos celdas de esa cobertura concentran el riesgo de acreditar de más, y las dos tienen prueba y sabotaje:
+
+- **Guardar los pesos por elemento no basta si el método no los aplica.** Un peso que la aritmética ignora es un número decorativo, no «utilizar un método que asigne valores».
+- **El párrafo final exige POR ELEMENTO Y POR DELITO.** Un indicador de 400 Bis en geografía no cubre a 139 Quáter en geografía ni a 400 Bis en los otros tres elementos. Son **ocho** celdas.
+
+**Alternativas descartadas:**
+
+- **(a) Migrar los modelos vigentes al método nuevo con peso 1 por elemento.** Habría dejado el puntaje intacto y acreditado la fr. II sin que el obligado asignara ningún valor — evidencia de cumplir algo que nadie decidió.
+- **(b) Hacer configurable la lista de delitos.** El párrafo final nombra dos artículos del Código Penal Federal y no hay un tercero que el obligado pueda añadir. Es un enum de dos valores; lo configurable es qué indicador se relaciona con cuál.
+
+**Lo que abre:** del Cap. II Quáter quedan las dos exigencias del Art. 10 Septies que arrastran al Manual — que la metodología esté descrita en él, y la reevaluación previa a nuevos productos o canales (¶3). Y el Manual es donde `ALCANCE.md` dice que la compuerta de viabilidad vuelve a mandar.
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 1. **Sellado del manifiesto** (ADR-10): ¿una constancia NOM-151 sobre el manifiesto con los hashes de todos los documentos satisface la exigencia de fecha cierta, o la autoridad espera constancia por documento?

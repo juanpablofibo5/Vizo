@@ -2,6 +2,12 @@ import type { Client } from 'pg'
 import type { EjecutorSql } from '../catalogo/cargador'
 import { enTransaccionDeSesion, exigirSesionActiva, type ContextoSesion } from './transaccion'
 import {
+  coberturaDeLaMetodologia,
+  type DelitoCpf,
+  type MetodologiaConfigurada,
+  type Requisito,
+} from '../dominio/metodologia'
+import {
   evaluarRiesgo,
   type ConfiguracionRiesgo,
   type FactorConfigurado,
@@ -38,6 +44,16 @@ export interface ElementoRiesgo {
 
 export interface FactorGuardado extends FactorConfigurado {
   elementoNombre: string
+  /** Art. 10 Septies 1, ¶ final. Vacío = no se declaró como indicador de delito. */
+  delitos: DelitoCpf[]
+}
+
+export interface MitiganteGuardado {
+  id: string
+  descripcion: string
+  efecto: string
+  /** Claves de los elementos sobre los que actúa (fr. III). */
+  elementos: string[]
 }
 
 export interface ModeloGuardado {
@@ -48,6 +64,14 @@ export interface ModeloGuardado {
   vigenteDesde: string | null
   aprobadoEn: string | null
   factores: FactorGuardado[]
+  /** El segundo nivel de la fr. II, por clave de elemento. */
+  pesosPorElemento: Record<string, number>
+  mitigantes: MitiganteGuardado[]
+  /**
+   * Qué exigencias del Art. 10 Septies 1 acredita este modelo. Se deriva de lo
+   * de arriba con la función pura del dominio: la pantalla no vuelve a decidir.
+   */
+  cobertura: Requisito[]
 }
 
 export interface EstadoRiesgo {
@@ -119,12 +143,13 @@ interface FilaFactor {
   elemento_clave: string
   elemento_nombre: string
   peso: string
+  delitos: string[]
 }
 
 async function factoresDe(db: EjecutorSql, modeloId: string): Promise<FactorGuardado[]> {
   const { rows } = await db.query(
     `select f.id::text, f.factor, e.clave as elemento_clave, e.nombre as elemento_nombre,
-            f.peso::text
+            f.peso::text, f.delitos::text[] as delitos
        from factores_modelo f
        join elementos_riesgo e on e.id = f.elemento_id
       where f.modelo_id = $1
@@ -137,18 +162,83 @@ async function factoresDe(db: EjecutorSql, modeloId: string): Promise<FactorGuar
     elemento: f.elemento_clave,
     elementoNombre: f.elemento_nombre,
     peso: Number(f.peso),
+    delitos: (f.delitos ?? []) as DelitoCpf[],
   }))
 }
 
-const aModelo = async (db: EjecutorSql, f: FilaModelo): Promise<ModeloGuardado> => ({
-  id: f.id,
-  version: f.version,
-  estado: f.estado,
-  metodoMedicion: f.metodo_medicion,
-  vigenteDesde: f.vigente_desde,
-  aprobadoEn: f.aprobado_en,
-  factores: await factoresDe(db, f.id),
-})
+/** Los valores por elemento del Art. 10 Septies 1 fr. II, segunda oración. */
+async function pesosPorElementoDe(
+  db: EjecutorSql,
+  modeloId: string,
+): Promise<Record<string, number>> {
+  const { rows } = await db.query(
+    `select e.clave, p.peso::text
+       from pesos_elemento p
+       join elementos_riesgo e on e.id = p.elemento_id
+      where p.modelo_id = $1`,
+    [modeloId],
+  )
+  const pesos: Record<string, number> = {}
+  for (const r of rows as { clave: string; peso: string }[]) pesos[r.clave] = Number(r.peso)
+  return pesos
+}
+
+/** Los Mitigantes del Art. 10 Septies 1 fr. III, con los elementos que tocan. */
+async function mitigantesDe(db: EjecutorSql, modeloId: string): Promise<MitiganteGuardado[]> {
+  const { rows } = await db.query(
+    `select m.id::text, m.descripcion, m.efecto,
+            coalesce(
+              (select array_agg(e.clave order by e.clave)
+                 from mitigantes_elementos me
+                 join elementos_riesgo e on e.id = me.elemento_id
+                where me.mitigante_id = m.id),
+              '{}'::text[]) as elementos
+       from mitigantes m
+      where m.modelo_id = $1
+      order by m.created_at`,
+    [modeloId],
+  )
+  return (rows as { id: string; descripcion: string; efecto: string; elementos: string[] }[]).map(
+    (m) => ({ id: m.id, descripcion: m.descripcion, efecto: m.efecto, elementos: m.elementos }),
+  )
+}
+
+const aModelo = async (db: EjecutorSql, f: FilaModelo): Promise<ModeloGuardado> => {
+  const factores = await factoresDe(db, f.id)
+  const pesosPorElemento = await pesosPorElementoDe(db, f.id)
+  const mitigantes = await mitigantesDe(db, f.id)
+
+  // La cobertura se DERIVA aquí con la función pura del dominio y viaja ya
+  // resuelta a la pantalla. Que la pantalla no la calcule es lo mismo de
+  // siempre: dos lugares decidiendo lo mismo acaban diciendo cosas distintas.
+  const configurada: MetodologiaConfigurada = {
+    metodoMedicion: f.metodo_medicion ?? '',
+    indicadores: factores.map((x) => ({
+      elemento: x.elemento,
+      peso: x.peso,
+      delitos: x.delitos,
+    })),
+    pesosPorElemento,
+    mitigantes: mitigantes.map((m) => ({
+      descripcion: m.descripcion,
+      efecto: m.efecto,
+      elementos: m.elementos,
+    })),
+  }
+
+  return {
+    id: f.id,
+    version: f.version,
+    estado: f.estado,
+    metodoMedicion: f.metodo_medicion,
+    vigenteDesde: f.vigente_desde,
+    aprobadoEn: f.aprobado_en,
+    factores,
+    pesosPorElemento,
+    mitigantes,
+    cobertura: coberturaDeLaMetodologia(configurada),
+  }
+}
 
 /** Todo lo que la pantalla de configuración necesita saber. */
 /** El plazo del catálogo leído de la base. Una consulta, dos lecturas. */

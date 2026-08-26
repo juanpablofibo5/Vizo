@@ -35,15 +35,33 @@
  * consideraron presentes, cuánto sumó cada uno y qué corte se cruzó.
  */
 
-/** Los métodos de medición que este motor sabe ejecutar. */
-export type MetodoMedicion = 'suma_ponderada'
+/**
+ * Los métodos de medición que este motor sabe ejecutar.
+ *
+ * `suma_ponderada` suma el peso de los indicadores presentes y nada más.
+ * `suma_ponderada_por_elemento` aplica LOS DOS niveles que pide el Art. 10
+ * Septies 1 fr. II: el valor de cada indicador y, «a su vez», el de cada
+ * elemento. Son métodos distintos y no una mejora del primero, a propósito —
+ * cambiar la aritmética de `suma_ponderada` movería el puntaje de clientes ya
+ * clasificados sin que nadie lo decidiera.
+ */
+export type MetodoMedicion = 'suma_ponderada' | 'suma_ponderada_por_elemento'
 
 export interface FactorConfigurado {
   readonly id: string
   readonly factor: string
+  /** La clave del elemento al que pertenece (Art. 10 Septies 1 fr. I). */
   readonly elemento: string
   readonly peso: number
 }
+
+/**
+ * El valor de cada ELEMENTO (Art. 10 Septies 1 fr. II, segunda oración).
+ *
+ * Solo lo usa `suma_ponderada_por_elemento`. Se indexa por la clave del
+ * elemento, que es lo que el factor ya trae.
+ */
+export type PesosPorElemento = Readonly<Record<string, number>>
 
 export interface GradoConfigurado {
   readonly id: string
@@ -59,6 +77,8 @@ export interface ConfiguracionRiesgo {
   readonly metodoMedicion: string
   readonly factores: readonly FactorConfigurado[]
   readonly escala: readonly GradoConfigurado[]
+  /** Obligatorio para `suma_ponderada_por_elemento`; ignorado por el otro. */
+  readonly pesosPorElemento?: PesosPorElemento | undefined
 }
 
 /** Qué factores del modelo aplican a este cliente. Los decide quien evalúa. */
@@ -72,6 +92,12 @@ export interface PasoDelPuntaje {
   readonly factor: string
   readonly elemento: string
   readonly peso: number
+  /**
+   * El peso del elemento que multiplicó a este indicador. `null` cuando el
+   * método no usa el segundo nivel — y entonces el desglose lo dice, en vez de
+   * mostrar un 1 que parecería una decisión de alguien.
+   */
+  readonly pesoDelElemento: number | null
 }
 
 export type ResultadoRiesgo =
@@ -90,6 +116,18 @@ export type ResultadoRiesgo =
       readonly aplicados: readonly PasoDelPuntaje[]
       readonly corteAplicado: number
     }
+
+export class PesoDeElementoAusente extends Error {
+  constructor(elemento: string) {
+    super(
+      `El modelo declara el método "suma_ponderada_por_elemento" pero no tiene valor asignado ` +
+        `para el elemento "${elemento}". El Art. 10 Septies 1 fr. II lo exige para CADA uno de ` +
+        'los elementos definidos. Se detiene en vez de suponer 1: un peso supuesto sería VIZO ' +
+        'decidiendo la importancia de un elemento de la metodología del obligado.',
+    )
+    this.name = 'PesoDeElementoAusente'
+  }
+}
 
 export class MetodoDeMedicionDesconocido extends Error {
   constructor(metodo: string) {
@@ -130,8 +168,9 @@ export function evaluarRiesgo(
   // El método se valida ANTES de mirar nada más: un motor que solo revisa el
   // método cuando lo necesita descubre el modelo mal configurado en el cliente
   // equivocado.
-  if (configuracion.metodoMedicion !== 'suma_ponderada') {
-    throw new MetodoDeMedicionDesconocido(configuracion.metodoMedicion)
+  const metodo = configuracion.metodoMedicion
+  if (metodo !== 'suma_ponderada' && metodo !== 'suma_ponderada_por_elemento') {
+    throw new MetodoDeMedicionDesconocido(metodo)
   }
 
   // El hueco del ADR-21, antes que cualquier cálculo.
@@ -156,7 +195,22 @@ export function evaluarRiesgo(
           'factor de otro modelo produciría un puntaje que ninguna metodología respalda.',
       )
     }
-    aplicados.push({ factorId: f.id, factor: f.factor, elemento: f.elemento, peso: f.peso })
+    // El segundo nivel de la fr. II. Se busca ANTES de sumar nada: si falta el
+    // valor de un elemento, el puntaje que saldría sería plausible y
+    // equivocado, que es justo lo que la regla dura 6 no admite.
+    let pesoDelElemento: number | null = null
+    if (metodo === 'suma_ponderada_por_elemento') {
+      const w = configuracion.pesosPorElemento?.[f.elemento]
+      if (w === undefined) throw new PesoDeElementoAusente(f.elemento)
+      pesoDelElemento = w
+    }
+    aplicados.push({
+      factorId: f.id,
+      factor: f.factor,
+      elemento: f.elemento,
+      peso: f.peso,
+      pesoDelElemento,
+    })
   }
 
   if (new Set(insumos.factoresPresentes).size !== insumos.factoresPresentes.length) {
@@ -166,7 +220,10 @@ export function evaluarRiesgo(
     )
   }
 
-  const puntaje = aplicados.reduce((suma, p) => suma + p.peso, 0)
+  const puntaje = aplicados.reduce(
+    (suma, p) => suma + p.peso * (p.pesoDelElemento ?? 1),
+    0,
+  )
 
   // La escala se recorre de mayor a menor: aplica el grado más severo cuyo
   // corte alcanza el puntaje.

@@ -3,6 +3,7 @@ import {
   EscalaDeRiesgoInvalida,
   InsumoDeRiesgoIncoherente,
   MetodoDeMedicionDesconocido,
+  PesoDeElementoAusente,
   evaluarRiesgo,
   type ConfiguracionRiesgo,
 } from '../../src/dominio/riesgo'
@@ -129,8 +130,10 @@ describe('El motor de Grado de Riesgo', () => {
     const r = evaluar(['f1', 'f3'])
     if (r.estado !== 'evaluado') throw new Error('inesperado')
     expect(r.aplicados).toEqual([
-      { factorId: 'f1', factor: 'Domicilio en jurisdicción señalada', elemento: 'geografia', peso: 40 },
-      { factorId: 'f3', factor: 'Pago en efectivo', elemento: 'transacciones_canales', peso: 15 },
+      // `pesoDelElemento: null` y no 1: este método no usa el segundo nivel de
+      // la fr. II, y un 1 en el desglose parecería una decisión de alguien.
+      { factorId: 'f1', factor: 'Domicilio en jurisdicción señalada', elemento: 'geografia', peso: 40, pesoDelElemento: null },
+      { factorId: 'f3', factor: 'Pago en efectivo', elemento: 'transacciones_canales', peso: 15, pesoDelElemento: null },
     ])
   })
 
@@ -160,5 +163,78 @@ describe('El motor de Grado de Riesgo', () => {
         escala: [{ id: 'g9', clave: 'medio', orden: 1, esAlto: false, puntajeMinimo: 10 }],
       }),
     ).toThrow(EscalaDeRiesgoInvalida)
+  })
+})
+
+/**
+ * Los dos niveles del Art. 10 Septies 1 fr. II.
+ *
+ * La fracción pide un valor por indicador Y, «a su vez», uno por elemento.
+ * `suma_ponderada` solo tiene el primero, así que no acredita la segunda
+ * oración; `suma_ponderada_por_elemento` tiene los dos.
+ *
+ * Lo que estas pruebas protegen antes que nada: que añadir el segundo nivel
+ * NO haya movido el puntaje de los modelos que ya estaban configurados. Un
+ * cambio silencioso ahí reclasificaría clientes sin que nadie lo decidiera.
+ */
+describe('El segundo nivel de la fr. II: el valor de cada elemento', () => {
+  const PESOS = { geografia: 2, transacciones_canales: 0.5, tipo_cliente: 1 }
+
+  it('EL MÉTODO VIEJO NO CAMBIÓ DE PUNTAJE: 40 + 15 sigue siendo 55', () => {
+    const r = evaluar(['f1', 'f3'])
+    if (r.estado !== 'evaluado') throw new Error('inesperado')
+    expect(r.puntaje).toBe(55)
+  })
+
+  it('y el método nuevo pondera por elemento: 40×2 + 15×0.5 = 87.5', () => {
+    const r = evaluar(['f1', 'f3'], {
+      ...CONFIG,
+      metodoMedicion: 'suma_ponderada_por_elemento',
+      pesosPorElemento: PESOS,
+    })
+    if (r.estado !== 'evaluado') throw new Error('inesperado')
+    expect(r.puntaje).toBe(87.5)
+  })
+
+  it('el desglose enseña LOS DOS pesos, no solo el producto', () => {
+    // Sin esto, «87.5» es un número que nadie puede reproducir dos años
+    // después: no se sabría qué parte vino del indicador y qué del elemento.
+    const r = evaluar(['f1'], {
+      ...CONFIG,
+      metodoMedicion: 'suma_ponderada_por_elemento',
+      pesosPorElemento: PESOS,
+    })
+    if (r.estado !== 'evaluado') throw new Error('inesperado')
+    expect(r.aplicados[0]).toMatchObject({ peso: 40, pesoDelElemento: 2 })
+  })
+
+  it('SIN el valor de un elemento se DETIENE: no supone 1', () => {
+    // Suponer 1 sería VIZO decidiendo la importancia de un elemento de la
+    // metodología del obligado — y el puntaje saldría plausible y equivocado.
+    expect(() =>
+      evaluar(['f1'], {
+        ...CONFIG,
+        metodoMedicion: 'suma_ponderada_por_elemento',
+        pesosPorElemento: { transacciones_canales: 0.5 },
+      }),
+    ).toThrow(PesoDeElementoAusente)
+  })
+
+  it('y sin ningún peso de elemento también, en vez de degradarse al método viejo', () => {
+    expect(() =>
+      evaluar(['f1'], { ...CONFIG, metodoMedicion: 'suma_ponderada_por_elemento' }),
+    ).toThrow(PesoDeElementoAusente)
+  })
+
+  it('un peso de elemento en cero anula ese elemento, y eso es una decisión válida', () => {
+    // Cero no es «falta»: es el obligado diciendo que ese elemento no describe
+    // su exposición. Distinguirlo de `undefined` es el punto del error de arriba.
+    const r = evaluar(['f1', 'f3'], {
+      ...CONFIG,
+      metodoMedicion: 'suma_ponderada_por_elemento',
+      pesosPorElemento: { ...PESOS, geografia: 0 },
+    })
+    if (r.estado !== 'evaluado') throw new Error('inesperado')
+    expect(r.puntaje).toBe(7.5)
   })
 })

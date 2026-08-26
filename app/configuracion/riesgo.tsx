@@ -210,6 +210,51 @@ export function SeccionRiesgo({
         </div>
       )}
 
+      {/*
+        LA COBERTURA DEL ART. 10 SEPTIES 1.
+        Cuatro exigencias, y la pantalla dice cuáles acredita el modelo y
+        cuáles no — con la falta escrita en las palabras del artículo. No es un
+        porcentaje de avance: el Transitorio Segundo no admite avances
+        parciales el 1 de marzo de 2027. Lo deriva la persistencia con la
+        función pura del dominio; aquí solo se pinta.
+      */}
+      {enCurso !== null && (
+        <div>
+          <h3 style={{ margin: '0 0 .5rem' }}>Qué exige el Art. 10 Septies 1</h3>
+          <p className="pequeno tenue" style={{ margin: '0 0 .7rem', maxWidth: '44rem' }}>
+            VIZO no juzga si tu metodología es buena — eso es del especialista. Lo que dice aquí
+            es cuáles de las cuatro exigencias del artículo tienen respaldo en lo que está
+            configurado, y cuáles no.
+          </p>
+          <div style={{ display: 'grid', gap: '.6rem' }}>
+            {enCurso.cobertura.map((r) => (
+              <div
+                key={r.clave}
+                className="ficha-alerta"
+                data-tono={r.acreditado ? 'ok' : 'aviso'}
+              >
+                <div className="ficha-alerta-cabeza">
+                  <strong>{r.fundamento}</strong>
+                  <span className={`estado ${r.acreditado ? 'ok' : 'aviso'}`}>
+                    {r.acreditado ? 'Acreditado' : 'Falta'}
+                  </span>
+                </div>
+                <p className="ficha-alerta-motivo">{r.exige}</p>
+                {r.falta.length > 0 && (
+                  <ul className="pequeno" style={{ margin: 0, paddingLeft: '1.1rem' }}>
+                    {r.falta.map((f) => (
+                      <li key={f} className="tenue">
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <h3 style={{ margin: '0 0 .5rem' }}>La escala</h3>
         {estado.escala.length === 0 ? (

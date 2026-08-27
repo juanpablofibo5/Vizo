@@ -12,6 +12,8 @@ materia prima de ese trabajo de gabinete.
 | `rcg-2013-original-sat.txt` | Extracción propia (`pdftotext -layout`) | `a06c14c9…da44cc12` |
 | `rcg-compilado-reforma-2014-shcp.pdf` | SHCP/UIF — pld.hacienda.gob.mx ([liga](https://www.pld.hacienda.gob.mx/work/models/PLD/documentos/compilado_rcg_reforma2014.pdf)). Compilado oficial 2013+2014 | `fd2e7998…4ec836a194` |
 | `rcg-compilado-reforma-2014-shcp.txt` | Extracción propia (`pdftotext -layout`) | `8c0014e9…75bf82f4` |
+| `rcg-reforma-2020-shcp.pdf` | SHCP/UIF — pld.hacienda.gob.mx ([liga](https://www.pld.hacienda.gob.mx/work/models/PLD/documentos/reforma_rcg_dof30nov20.pdf)). Facsímil del **Acuerdo 126/2020**, DOF 30-nov-2020 ([nota 5606232](https://www.dof.gob.mx/nota_detalle.php?codigo=5606232&fecha=30/11/2020)) | `e8b1c46e…6705282f` |
+| `rcg-reforma-2020-shcp.txt` | Extracción propia (`pdftotext -layout`) | `cc1bf2b5…3a0305a2` |
 
 Los hashes completos se verifican con `shasum -a 256`.
 
@@ -34,9 +36,15 @@ catálogo o citado ante un tercero se contrasta contra el DOF, como todo lo dem�
 
 ## Lo que falta
 
-- **El texto de la reforma DOF 30-nov-2020.** No se consiguió por fetch: el
-  índice del DOF en línea no expone esa nota a extracción automatizada.
-  Conseguirlo a mano en dof.gob.mx (Búsqueda Avanzada, 30/11/2020, SHCP) o vía
-  el minisitio del SAT. Sin ese texto no se puede afirmar qué numerales de los
-  Anexos estaban vigentes entre el 30-nov-2020 y el 30-nov-2026 — y de eso
-  depende la fila del periodo actual de la constancia (ver la migración).
+- ~~El texto de la reforma DOF 30-nov-2020.~~ **Conseguido el 28-ago-2026**
+  (facsímil oficial de la SHCP; la nota del DOF es la 5606232). Es el
+  **Acuerdo 126/2020** y su alcance es angosto: reforma los Arts. 4 y 5 y la
+  denominación del Cap. II, y adiciona el Cap. II Bis (proveedores de activos
+  virtuales) y el Art. 34 Bis (certificación UIF). **No toca los Anexos ni el
+  Art. 12** (línea 94 del `.txt`). Con eso la cadena del Anexo 3 b) iv) queda
+  completa —2013 → 2014 → intacta en 2020 → reescrita en 2026— y la fila del
+  periodo actual de la constancia entró en la migración `20260828100000`,
+  pendiente de la doble revisión del runbook 02 antes de aplicarse a
+  producción.
+- La consolidación completa de los Anexos 3, 4, 4 Bis, 5, 6, 6 Bis y 8
+  (2013+2014+2026) sigue siendo trabajo de gabinete abierto — issue #31.

@@ -1,0 +1,172 @@
+1/12/2020                                                       DOF - Diario Oficial de la Federación
+
+
+
+      DOF: 30/11/2020
+
+
+      ACUERDO por el que se modifican las Reglas de carácter general a que se refiere la Ley Federal para la Prevención e Identificación de
+      Operaciones con Recursos de Procedencia Ilícita.
+
+      Al margen un sello con el Escudo Nacional, que dice: Estados Unidos Mexicanos.- HACIENDA.- Secretaría de Hacienda y
+      Crédito Público.
+                                                              ACUERDO 126/2020
+         ACUERDO POR EL QUE SE MODIFICAN LAS REGLAS DE CARÁCTER GENERAL A QUE SE REFIERE LA LEY FEDERAL PARA LA
+      PREVENCIÓN E IDENTIFICACIÓN DE OPERACIONES CON RECURSOS DE PROCEDENCIA ILÍCITA.
+          ARTURO HERRERA GUTIÉRREZ, Secretario de Hacienda y Crédito Público, con fundamento en los artículos 31, fracción
+      XXXII de la Ley Orgánica de la Administración Pública Federal y 6, fracción VII de la Ley Federal para la Prevención e
+      Identificación de Operaciones con Recursos de Procedencia Ilícita, en ejercicio de las atribuciones que me confiere el artículo 6,
+      fracción XXXIV del Reglamento Interior de la Secretaría de Hacienda y Crédito Público, y
+                                                               CONSIDERANDO
+          Que el Grupo de Acción Financiera Internacional (GAFI) como organismo intergubernamental cuyo objetivo consiste en
+      establecer normas y promover la aplicación efectiva de las medidas legales, reglamentarias y operativas para combatir el lavado
+      de activos -conocido como lavado de dinero en México (LD)- y el financiamiento del terrorismo (FT), modificó en octubre de 2018
+      su Recomendación 15 titulada Nuevas Tecnologías en el que se señala que, para gestionar y mitigar los riesgos que surjan de los
+      activos virtuales, los países deben garantizar que los proveedores de servicios de activos virtuales estén regulados para
+      propósitos de prevención de LD y FT, que deben contar con una licencia o registro y estar sujetos a sistemas de monitoreo para
+      asegurar el cumplimiento de las medidas de prevención de LD y FT que se establezcan.
+          Que debido a lo anterior, el GAFI también emitió la Nota Interpretativa de la Recomendación 15 en la que señala que a los
+      proveedores de servicios de activos virtuales que estén autorizados o registrados se les exija como mínimo la licencia o registro
+      en los países donde se constituyen si son personas morales y tratándose de personas físicas, en el país donde se encuentra su
+      lugar de negocios. Lo anterior sin descartar que también se puede requerir que los proveedores de dichos servicios tengan
+      licencia o registro en el país donde ofrecen sus productos o servicios o en el país donde realizan sus operaciones.
+          Que la Nota Interpretativa de la Recomendación 15 también señala que las autoridades competentes deben tomar las
+      medidas legales o reglamentarias necesarias para impedir que los delincuentes o sus asociados posean, o sean beneficiarios
+      finales, o tengan una participación mayoritaria o controladora, o que ocupen una función de gestión en un prestador de servicios
+      de activos virtuales, asimismo los países deben tomar medidas para identificar a las personas físicas o jurídicas que lleven a cabo
+      actividades de proveedores de dichos servicios sin la licencia o el registro necesarios, y aplicar las sanciones apropiadas.
+          Que el 9 de marzo de 2018 el Ejecutivo Federal publicó en el Diario Oficial de la Federación el DECRETO por el que se expide
+      la Ley para Regular las Instituciones de Tecnología Financiera y se reforman y adicionan diversas disposiciones de la Ley de
+      Instituciones de Crédito, de la Ley del Mercado de Valores, de la Ley General de Organizaciones y Actividades Auxiliares del
+      Crédito, de la Ley para la Transparencia y Ordenamiento de los Servicios Financieros, de la Ley para Regular las Sociedades de
+      Información Crediticia, de la Ley de Protección y Defensa al Usuario de Servicios Financieros, de la Ley para Regular las
+      Agrupaciones Financieras, de la Ley de la Comisión Nacional Bancaria y de Valores y, de la Ley Federal para la Prevención e
+      Identificación de Operaciones con Recursos de Procedencia, mediante el cual se adiciona la fracción XVI al artículo 17 de la Ley
+      Federal para la Prevención e Identificación de Operaciones con Recursos de Procedencia Ilícita para establecer como Actividad
+      Vulnerable el ofrecimiento habitual y profesional de intercambio de activos virtuales por parte de sujetos distintos a las Entidades
+      Financieras, que se lleven a cabo a través de plataformas electrónicas, digitales o similares, que administren u operen, facilitando
+      o realizando operaciones de compra o venta de dichos activos propiedad de sus clientes o bien, provean medios para custodiar,
+      almacenar, o transferir activos virtuales distintos a los reconocidos por el Banco de México en términos de la Ley para Regular las
+      Instituciones de Tecnología Financiera;
+          Que de conformidad con el artículo 2 de la Ley Federal para la Prevención e Identificación de Operaciones con Recursos de
+      Procedencia Ilícita, el objetivo de dicha ley es proteger el sistema financiero y la economía nacional estableciendo medidas y
+      procedimientos para prevenir y detectar actos u operaciones que involucren recursos de procedencia ilícita, es por ello que la
+      Secretaría de Hacienda y Crédito Público (la Secretaría) está facultada para requerir y recabar ya sea directamente o a través de
+      las instancias correspondientes, según sea el caso, la información, documentación, datos e imágenes relacionadas con el alta y
+      registro de las personas que realicen Actividades Vulnerables, entre ellas, a las que operen con activos virtuales;
+
+
+          Que derivado de lo anterior quienes realicen Actividades Vulnerables deben, entre otras obligaciones, proporcionar de manera
+      electrónica la información que le sea solicitada para realizar el trámite de alta y registro como Actividad Vulnerable mediante el
+      sistema del Portal de Prevención de Lavado de Dinero, conforme a lo establecido en el artículo 12 del Reglamento de la Ley
+      Federal para la Prevención e Identificación de Operaciones con Recursos de Procedencia Ilícita y al Anexo A de la Resolución por
+      la que se expide el formato oficial para el alta y registro de quienes realicen Actividades Vulnerables;
+         Que tratándose de las personas que llevan a cabo la Actividad Vulnerable en términos de la fracción XVI del artículo 17 de la
+      Ley Federal para la Prevención e Identificación de Operaciones con Recursos de Procedencia Ilícita como proveedores de
+      servicios de activos virtuales, es importante que la Secretaría como autoridad en materia de prevención de LD y FT no sólo
+      cuente con la información que se debe proporcionar electrónicamente para su alta y registro como Actividad Vulnerable ante el
+
+https://www.dof.gob.mx/nota_detalle.php?codigo=5606232&fecha=30/11/2020&print=true                                                            1/3
+1/12/2020                                                       DOF - Diario Oficial de la Federación
+      Servicio de Administración Tributaria, sino que también es necesario que cuente con información y documentación adicional que
+      permita a la Secretaría identificar que los proveedores de dichos servicios no están relacionados con sujetos que realicen
+      operaciones con recursos de procedencia ilícita, ya sea porque tengan participación accionaria o societaria, laboren para él o se
+      beneficien de los servicios del proveedor.
+           Que para lograr el objetivo de la Ley Federal para la Prevención e identificación de Operaciones con Recursos de Procedencia
+      Ilícita es necesario buscar la profesionalización de las personas involucradas en el cumplimiento de la misma, incluyendo no sólo
+      a las personas físicas que llevan a cabo las Actividades Vulnerables establecidas en esa Ley, sino también a las personas físicas
+      que han aceptado su designación como representante encargado del cumplimiento de las obligaciones a cargo de una persona
+      moral derivadas de la Ley.
+          Que la Secretaría, ha dado cumplimiento a lo establecido en el artículo 78 de la Ley General de Mejora Regulatoria, así como
+      al artículo Quinto del "Acuerdo que fija los lineamientos que deberán ser observados por las dependencias y organismos
+      descentralizados de la Administración Pública Federal, en cuanto a la emisión de los actos administrativos de carácter general a
+      los que les resulta aplicable el artículo 69-H de la Ley Federal de Procedimiento Administrativo", con las acciones de simplificación
+      consistentes en la reducción de plazo de respuesta del trámite SHCP-05-010, mismas que de desglosan en el AIR
+      correspondiente.
+         Que en términos del artículo 4 de la Ley Federal de Procedimiento Administrativo, los actos administrativos de carácter
+      general, tales como acuerdos, que tengan por objeto establecer obligaciones específicas, y que expidan las dependencias de la
+      administración pública federal, deberán publicarse en el Diario Oficial de la Federación para que produzcan efectos jurídicos, y
+         Que de conformidad con el Oficio número 500-75-00-00-00-2020-9934 de fecha 16 de julio del 2020, el Servicio de
+      Administración Tributaria emitió su opinión y propuso mejoras en el proceso de alta y registro para quienes realicen la actividad de
+      prestación de servicios de activos virtuales como Actividad Vulnerable y sugiere plazos acorde con lo establecido en la Ley
+      Federal de Procedimiento Administrativo, he tenido a bien expedir el siguiente:
+                                                                   ACUERDO
+          ARTÍCULO PRIMERO.- Se REFORMAN los artículos 4 y 5 y la denominación del Capítulo II; se ADICIONA el Capítulo II Bis
+      con los artículos 10 Bis, 10 Ter, 10 Quáter y 10 Quinquies; el artículo 34 Bis todos de las Reglas de carácter general a que se
+      refiere la Ley Federal para la Prevención e Identificación de Operaciones con Recursos de Procedencia Ilícita, publicadas en el
+      Diario Oficial de la Federación el 23 de agosto de 2013 y reformadas el 24 de julio de 2014, para quedar como sigue:
+                                                                  CAPÍTULO II
+                                            ALTA Y REGISTRO COMO ACTIVIDAD VULNERABLE
+          Artículo 4.- Para efectos de los artículos 12 y 13 del Reglamento, quienes realicen actos u operaciones en términos del
+      artículo 17 de la Ley, deberán ingresar al Portal en Internet, a efecto de enviar, bajo protesta de decir verdad, la información
+      siguiente para su alta y registro como Actividad Vulnerable:
+            I. ...
+            II. ...
+            ...
+            ...
+          Artículo 5.- El SAT, una vez que reciba la información a que se refiere el artículo anterior y, en su caso, la documentación
+      señalada en el Capítulo II Bis de estas reglas, expedirá el acuse electrónico de alta y registro respectivo con sello digital y
+      otorgará el acceso a los medios electrónicos dentro del Portal en Internet, a través de los cuales quienes realicen Actividades
+      Vulnerables enviarán los Avisos correspondientes y recibirán las notificaciones, informes o comunicaciones por parte del referido
+      órgano, de la UIF o de la
+      Secretaría, según corresponda.
+            Párrafo segundo. Derogado
+            ...
+                                                                CAPÍTULO II BIS
+                                   ALTA Y REGISTRO DE QUIENES OPEREN CON ACTIVOS VIRTUALES
+          Artículo 10 Bis. Quienes realicen la Actividad Vulnerable en términos de la fracción XVI del artículo 17 de la Ley, previo al
+      envío de la información a que se refiere el artículo 4 de las presentes reglas, deberán entregar de manera física al SAT la
+      siguiente documentación:
+            I. Tratándose de personas morales:
+         a) Copia certificada del acta constitutiva de quien realiza la Actividad Vulnerable y, en su caso, las modificaciones de sus
+      estatutos sociales, todos ellos con datos de inscripción en el Registro Público de Comercio o constancia de fedatario público de
+      que se encuentra en trámite.
+         b) Original del comprobante de domicilio de quien realiza la Actividad Vulnerable y, en su caso, de cada uno de los
+      establecimientos físicos donde se llevará a cabo la Actividad Vulnerable.
+         c) Listado con información de las personas físicas y morales que directa o indirectamente mantengan o pretendan mantener
+      una participación en el capital social de quien realiza la Actividad Vulnerable, en el que se deberá incluir: nombre completo o
+      razón social, nacionalidad, domicilio, y el CURP y RFC cuando tengan la obligación de contar con ellos, así como el monto en
+      acciones y su equivalente en pesos del capital social que cada una de ellas suscriba.
+
+https://www.dof.gob.mx/nota_detalle.php?codigo=5606232&fecha=30/11/2020&print=true                                                            2/3
+1/12/2020                                                       DOF - Diario Oficial de la Federación
+            d) Nombre comercial y páginas electrónicas a través de las cuales lleven a cabo la Actividad Vulnerable.
+          e) Datos de identificación del representante legal o apoderado: nombre completo sin abreviaturas; CURP y RFC cuando
+      tengan la obligación de contar con ellos; número telefónico, compuesto por 10 dígitos y, en su caso, extensión, así como correo
+      electrónico; adjuntando copia simple de los documentos que comprueban dicha información y que cumplan con los requisitos
+      señalados en el subinciso i) y ii) del inciso b) del Anexo 3 de estas Reglas, así como copia certificada del instrumento público en el
+      que conste su representación legal.
+         II. Tratándose de personas físicas, deberán presentar la documentación establecida en los incisos b) y d) de la fracción I de
+      este artículo, así como copia de su identificación oficial, su CURP, y su inscripción en el RFC que cumplan con los requisitos
+      establecidos en los subincisos i, ii y iii del inciso b) del Anexo 3 de estas Reglas.
+          Artículo 10 Ter. Cuando la documentación a que se refiere el artículo anterior sea ilegible, incompleta o no cumple con los
+      requisitos establecidos, el SAT prevendrá por una sola ocasión al interesado para que en un plazo máximo de 5 días hábiles
+      siguientes a su notificación subsane las inconsistencias identificadas, apercibido de que, en caso de no hacerlo, se desechará el
+      trámite.
+          Artículo 10 Quáter. Una vez recibida la documentación a que se refiere el artículo 10 Bis de las presentes reglas, el SAT
+      informará por escrito al sujeto obligado si recibió en su totalidad la misma, a fin de que proceda a realizar su alta y registro
+      conforme a lo señalado en el artículo 4 de las presentes reglas.
+          Artículo 10 Quinquies. En caso de modificaciones o cambios en la información y documentación entregada por los sujetos
+      obligados conforme al artículo 10 Bis de estas reglas, deberán enviarla al SAT de forma física debidamente actualizada dentro de
+      los seis días hábiles siguientes a que se presente la situación o hecho que motive la actualización de la información.
+         Artículo 34 Bis.- Las personas físicas que realizan Actividades Vulnerables, así como las responsables encargadas de
+      cumplimiento que hayan aceptado su designación conforme al artículo 20 de la Ley, podrán obtener la certificación que otorgará la
+      UIF en materia de cumplimiento de la Ley, su Reglamento y estas reglas, para la prevención y detección de actos u operaciones
+      que involucren recursos de procedencia ilícita o destinados al financiamiento al terrorismo, conforme a la convocatoria que emita y
+      publique en el Diario Oficial de la Federación. Dicha certificación tendrá una vigencia de 5 años.
+                                                                TRANSITORIOS
+            PRIMERO.- La presente Resolución entrará en vigor el 30 de noviembre del 2020.
+          SEGUNDO.- Quienes realicen operaciones con activos virtuales en términos de la fracción XVI del artículo 17 de la Ley y se
+      encuentren registrados como Actividad Vulnerable antes de la entrada en vigor de esta Resolución, deberán proporcionar la
+      información adicional en términos del artículo 10 Bis de las Reglas en un plazo máximo de 10 días hábiles siguientes a la entrada
+      en vigor de esta Resolución.
+
+
+         Ciudad de México, a 25 de noviembre de 2020.- El Secretario de Hacienda y Crédito Público, Arturo Herrera Gutiérrez.-
+      Rúbrica.
+
+
+
+
+https://www.dof.gob.mx/nota_detalle.php?codigo=5606232&fecha=30/11/2020&print=true                                                             3/3
+

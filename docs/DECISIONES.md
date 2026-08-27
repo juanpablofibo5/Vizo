@@ -387,7 +387,9 @@ Las cinco secciones son **conocimiento del cliente**, y el conocimiento del clie
 
 **Decisión.** Se construye como registro con evidencia, append-only, atado por FK compuesta a la evaluación de riesgo que lo exigió. Tres lecturas del texto lo decidieron, y ninguna es obvia:
 
-**1. «Firma Electrónica» no es la e.firma del SAT.** El propio Acuerdo define las dos por separado en su Art. 3: la **fr. VIII Ter** es «Firma Electrónica» —datos electrónicos que identifican al suscriptor y prueban que aprueba el contenido, «conforme al **Código de Comercio**»— y la **fr. VIII Quáter** es «Firma Electrónica **Avanzada**», que sí es «el certificado digital que refiere el Código Fiscal». El ¶3 pide la primera.
+**1. «Firma Electrónica» no es la e.firma del SAT.** El propio Acuerdo define las dos por separado en su Art. 3: la **fr. VIII Ter** es «Firma Electrónica» —datos electrónicos que identifican al suscriptor y prueban que aprueba el contenido, «conforme al **Código de Comercio**»— y la **fr. IX** es «Firma Electrónica **Avanzada**», que sí es «el certificado digital que refiere el Código Fiscal». El ¶3 pide la primera.
+
+*Corregido el 27-ago-2026: esta línea citaba una «fr. VIII Quáter» que **no existe** — el Acuerdo ADICIONA al Art. 3 las fracciones VIII Bis, VIII Ter, IX Bis y XI Bis a XI Sexties, y REFORMA la IX, que es la Firma Electrónica Avanzada (líneas 7 y 37–38 de `acuerdo-115-2026.txt`). El razonamiento no cambia; la cita sí. Lo detectó la revisión externa RES-11-A. El mismo error vive en dos comentarios de la migración `20260823180000` —incluido un `COMMENT ON` que quedó en la base— y las migraciones aplicadas no se editan: queda pendiente una migración correctiva que reemita ese comentario.*
 
 Cambia la frontera: si pidiera la avanzada, VIZO no podría tocarla (`ALCANCE.md` §0.3). Al ser la del Código de Comercio, el cliente puede suscribir sin certificado del SAT. Aun así **VIZO no produce ni valida la firma**: calcula y registra la huella SHA-256 del archivo firmado, igual que hace con el acuse del SPPLD. Si un mecanismo concreto alcanza el estándar del Código de Comercio es pregunta jurídica → **POR CONFIRMAR-9**.
 

@@ -8,7 +8,9 @@ Contrastado contra el texto del DOF, código 5795797, edición vespertina del 7 
 > dejaron de ser preguntas legales para volverse decisiones de producto— y dos citas se
 > corrigieron (la Firma Electrónica Avanzada es la **fr. IX** del Art. 3, no una «VIII Quáter»
 > que no existe; y la ventana de seis meses vive en el **Art. 19 de las Reglas**, no de la Ley).
-> El detalle de los cierres: revisión externa RES-11-A
+> El 27-ago se sustituyó además una pregunta por instrucción de la revisión: la validación
+> estricta del XSD bajó a nota de cortesía, y entró **el conflicto del histórico inmutable con
+> el derecho de supresión** (B.3). El detalle de los cierres: revisión externa RES-11-A
 > (`docs/referencia/orvex-specs-2026-08-27/`) e issue #31. Los identificadores entre corchetes
 > remiten a `DECISIONES.md` §POR CONFIRMAR.
 
@@ -24,6 +26,12 @@ la base del umbral, que se confirmó contra el Art. 6 del Reglamento y costó un
 Cada pregunta tiene hoy una **postura provisional funcionando en el sistema**. Ninguna bloquea el
 desarrollo; todas bloquean lo que podemos afirmar. Van agrupadas por lo que cuesta equivocarse.
 **Si el tiempo alcanza solo para tres, que sean las del bloque A.**
+
+**Regla de la casa (estándar desde el 27-ago-2026):** todo lo que se manda al especialista cita
+**el silencio exacto de la fuente, no solo su ausencia** — se nombra el artículo leído y se
+transcribe lo que dice alrededor de lo que no dice. Una pregunta que solo afirma «la norma no lo
+resuelve» obliga al especialista a releer todo; una que cita el silencio le deja discutir contra
+el texto.
 
 ---
 
@@ -114,16 +122,32 @@ una llave estable seis meses.
 **Lo que buscamos:** un criterio que un verificador acepte — pasaporte, FM/FMM, o combinación con
 nacionalidad y fecha de nacimiento.
 
-### B.3 — ¿El portal del SPPLD valida estrictamente contra el XSD? [#6-B]
+### B.3 — El histórico que por diseño no se puede borrar, frente a una solicitud de supresión [#11]
 
-El ejemplo de XML que el SAT publica para la Fr. V Bis no valida contra su propio esquema
-(`caractersiticas_desarrollo` donde el XSD declara `caracteristicas_desarrollo`). Si el portal es
-estricto, el ejemplo induce a error a quien lo copie.
+VIZO conserva la evidencia en almacenamiento **append-only**: bitácora encadenada, evaluaciones,
+perfiles, cuestionarios. Eso resuelve los diez años que exige la LFPIORPI —Art. 18 fr. IV de la
+Ley, y Arts. 41 fr. IV y 10 Septies 3 de las Reglas— pero no resuelve, y probablemente agrava, el
+conflicto con la LFPDPPP: **un dato que por diseño no se puede borrar es una respuesta incómoda
+ante una solicitud ARCO.**
 
-**Postura, que no depende de la respuesta:** VIZO genera y valida según el XSD, nunca según el
-ejemplo. **Contexto de vigencia:** el Transitorio Quinto condiciona los Avisos de los Arts. 26
-Bis y 27 ¶2 a una Resolución de formatos que no se ha publicado — cualquier señal sobre su
-calendario se agradece.
+**El silencio exacto:** la LFPDPPP sí trae la válvula — el Art. 25 fr. II exime de cancelar
+cuando los datos «deban ser tratados por disposición legal», y el Art. 24 ordena **bloqueo**
+previo a toda supresión (contrastados en `docs/LFPDPPP.md`). Lo que ningún texto dice es cómo
+opera esa excepción **frente a un almacenamiento inmutable**: ni la LFPIORPI ni las Reglas
+mencionan la supresión, y la LFPDPPP no distingue entre «no borro porque la ley me obliga a
+conservar» y «no puedo borrar porque mi evidencia perdería integridad».
+
+**Hoy:** el flujo está diseñado en papel (`docs/LFPDPPP.md` §2–3): solicitud ARCO con su reloj
+de 20+15 días → cruce contra las excepciones del Art. 25 → lo exceptuado se **bloquea** citando
+la obligación LFPIORPI, lo demás se suprime; cada resultado va a la bitácora con su artículo.
+**Lo que buscamos:** si responder la supresión con bloqueo fundado en el Art. 25 fr. II sobre el
+expediente y las evaluaciones **resiste en la práctica** ante la autoridad garante y en visitas
+de verificación — y si la conservación inmutable de la *evidencia de cumplimiento* (no solo del
+expediente) está cubierta por la misma excepción. **Si la respuesta es adversa:** toca la
+arquitectura de conservación — el cambio más profundo de esta lista.
+
+*La mitad LFPDPPP de esta pregunta va también al abogado (`docs/LFPDPPP.md` §3); al especialista
+PLD se le pregunta la práctica de la autoridad, no la teoría del texto.*
 
 ---
 
@@ -158,7 +182,14 @@ aplica a los dos documentos.
 
 ---
 
-## Tres notas para no gastar tiempo
+## Cuatro notas para no gastar tiempo
+
+**De cortesía, si sobra un minuto: el ejemplo oficial del XSD está roto.** El XML de ejemplo que
+el SAT publica para la Fr. V Bis no valida contra su propio esquema (`caractersiticas_desarrollo`
+donde el XSD declara `caracteristicas_desarrollo`). VIZO genera y valida contra el XSD, nunca
+contra el ejemplo, así que la respuesta no cambia el sistema — cambia lo que le advertimos a un
+cliente que arma su XML a mano. Y cualquier señal sobre el calendario de la Resolución de
+formatos del Transitorio Quinto se agradece.
 
 **Ya resuelta: la base del umbral.** Cerrada el 16-ago contra el Art. 6 del Reglamento (reformado
 27-03-2026): el umbral del Art. 17 sin contribuciones ni accesorios; el Aviso reporta el total

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { Client } from 'pg'
 import { registrarOperacion } from '../src/persistencia/operaciones'
 import { registrarDocumento } from '../src/persistencia/documentos'
@@ -5,6 +6,21 @@ import { pesos } from '../src/dominio/dinero'
 import { abrirExpediente, recalcularCompletitud } from '../src/persistencia/expediente'
 import { hoyEnMexico } from '../src/dominio/fechas'
 import { enTransaccionDeSesion, type ContextoSesion } from '../src/persistencia/transaccion'
+import {
+  activarModelo,
+  agregarFactor,
+  crearModelo,
+  definirGrado,
+} from '../src/persistencia/riesgo'
+import {
+  agregarMitigante,
+  declararMetodoEntidad,
+  definirNivelEfectividad,
+  evaluarEntidadYRegistrar,
+} from '../src/persistencia/entidad'
+import { emitirMer } from '../src/persistencia/mer'
+import { consultarScreening } from '../src/persistencia/screening'
+import { LISTAS_EXIGIDAS } from '../src/dominio/screening'
 import {
   capturarIntegrante,
   estadoDeLaEstructura,
@@ -206,6 +222,279 @@ async function estructuraDelFideicomiso(db: Client): Promise<void> {
   )
 }
 
+/** El obligado del escenario AUTOMOTRIZ (PIL-01: dos sucursales, Fr. VIII). */
+const TENANT_AGENCIA = '00000000-0000-4000-8000-000000000005'
+const ADMIN_AGENCIA = '00000000-0000-4000-8000-0000000000a5'
+const CAPTURISTA_AGENCIA = '00000000-0000-4000-8000-0000000000b5'
+
+/**
+ * El escenario del PILOTO: la agencia automotriz, de punta a punta.
+ *
+ * Es el guion de la demo para Dicas, sembrado por el camino REAL —las mismas
+ * funciones que usará la semana 0— para que la bitácora tenga los eventos que
+ * tendría en la vida real:
+ *
+ *   1. La Fr. VIII con dos sucursales (la forma exacta del piloto).
+ *   2. La metodología COMPLETA del obligado: escala, factores con indicadores
+ *      de los dos delitos, valores por elemento, mitigantes con su nivel de
+ *      efectividad — todo declarado por el obligado demo, nada por VIZO.
+ *   3. La evaluación de ENTIDAD → grado medio → «tu área interna basta para el
+ *      dictamen» (Arts. 44/45) — el argumento con pesos.
+ *   4. El MER emitido, congelado con su huella.
+ *   5. Las ventas: la de piso que no exige nada, la individual que avisa, y la
+ *      camioneta pagada en complementos donde el SEGUNDO pago cruza la ventana
+ *      — «el cálculo que hacían de forma artesanal en Excel», en vivo.
+ *   6. El screening: un folio limpio y una coincidencia que queda PENDIENTE
+ *      con su alerta abierta, para resolverla EN VIVO en la demo.
+ */
+async function agenciaAutomotriz(db: Client): Promise<void> {
+  const ya = await db.query(`select count(*)::int as n from operaciones where tenant_id = $1`, [
+    TENANT_AGENCIA,
+  ])
+  if ((ya.rows[0] as { n: number }).n > 0) {
+    console.log('La agencia demo ya tiene operaciones. No se toca nada.')
+    return
+  }
+
+  // ── El obligado, sus usuarios y sus dos sucursales ─────────────────────
+  // Sin contraseña a propósito: para entrar al portal se le asigna una desde
+  // el panel de Supabase (mismo criterio que el obligado fideicomiso — una
+  // contraseña en el repositorio sería peor que este paso manual).
+  await db.query(
+    `insert into tenants (id, rfc, razon_social, tipo_persona)
+     values ($1, 'GAS150610KL8', 'Grupo Automotriz del Sureste SA de CV', 'moral')
+     on conflict (id) do nothing`,
+    [TENANT_AGENCIA],
+  )
+  for (const [id, rol, nombre, correo] of [
+    [ADMIN_AGENCIA, 'admin', 'Alma Cetina', 'agencia-admin@vizo.mx'],
+    [CAPTURISTA_AGENCIA, 'capturista', 'Rodrigo Uc', 'agencia-ventas@vizo.mx'],
+  ] as const) {
+    await db.query(
+      `insert into auth.users (id, instance_id, aud, role, email)
+       values ($1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', $2)
+       on conflict (id) do nothing`,
+      [id, correo],
+    )
+    await db.query(
+      `insert into usuarios (id, tenant_id, rol, nombre, email)
+       values ($1,$2,$3,$4,$5) on conflict (id) do nothing`,
+      [id, TENANT_AGENCIA, rol, nombre, correo],
+    )
+  }
+
+  const act = await db.query(`select id::text from actividades_vulnerables where fraccion = 'VIII'`)
+  const actividadViii = (act.rows[0] as { id: string } | undefined)?.id
+  if (actividadViii === undefined) {
+    throw new Error('La Fr. VIII no está en el catálogo (migración 20260830100000).')
+  }
+  await db.query(
+    `insert into actividades_tenant (tenant_id, actividad_id) values ($1,$2) on conflict do nothing`,
+    [TENANT_AGENCIA, actividadViii],
+  )
+  const sucursales: string[] = []
+  for (const [nombre, clave] of [
+    ['Agencia Norte', 'AGN'],
+    ['Agencia Sur', 'AGS'],
+  ] as const) {
+    const s = await db.query(
+      `insert into sucursales (tenant_id, nombre, clave) values ($1,$2,$3) returning id::text`,
+      [TENANT_AGENCIA, nombre, clave],
+    )
+    sucursales.push((s.rows[0] as { id: string }).id)
+  }
+  const norte = sucursales[0]
+  const sur = sucursales[1]
+  if (norte === undefined || sur === undefined) throw new Error('Faltaron las sucursales.')
+
+  const admin: ContextoSesion = { usuarioId: ADMIN_AGENCIA, tenantId: TENANT_AGENCIA, rol: 'admin' }
+  const ventas: ContextoSesion = {
+    usuarioId: CAPTURISTA_AGENCIA,
+    tenantId: TENANT_AGENCIA,
+    rol: 'capturista',
+  }
+
+  // ── La metodología del obligado demo, completa ─────────────────────────
+  // Todos los valores los «declara» el obligado demo: son datos de escena,
+  // no defaults de VIZO — la configuración real de Dicas la declarará Dicas.
+  await definirGrado(db, { sesion: admin, clave: 'bajo', nombre: 'Bajo', orden: 1, esAlto: false, puntajeMinimo: 0, vigenteDesde: '2026-08-01' })
+  await definirGrado(db, { sesion: admin, clave: 'medio', nombre: 'Medio', orden: 2, esAlto: false, puntajeMinimo: 35, vigenteDesde: '2026-08-01' })
+  await definirGrado(db, { sesion: admin, clave: 'alto', nombre: 'Alto', orden: 3, esAlto: true, puntajeMinimo: 70, vigenteDesde: '2026-08-01' })
+
+  const { modeloId } = await crearModelo(db, { sesion: admin, metodoMedicion: 'suma_ponderada' })
+  await declararMetodoEntidad(db, { sesion: admin, modeloId, metodo: 'residual_por_elemento' })
+
+  const el = await db.query(`select id::text, clave from elementos_riesgo order by clave`)
+  const elementos = new Map((el.rows as { id: string; clave: string }[]).map((e) => [e.clave, e.id]))
+  const elemento = (clave: string): string => {
+    const id = elementos.get(clave)
+    if (id === undefined) throw new Error(`Falta el elemento ${clave} del catálogo.`)
+    return id
+  }
+
+  // Un factor por elemento, con los indicadores de los dos delitos declarados
+  // donde el obligado demo los ve — las señales automotrices de ARQ-01 §05.
+  for (const [clave, factor, peso, delitos] of [
+    ['actos_operaciones', 'Estructuración: pagos fraccionados por debajo del umbral', 30, ['art_139_quater', 'art_400_bis']],
+    ['tipo_cliente', 'Comprador que no será el usuario del vehículo', 25, ['art_400_bis']],
+    ['geografia', 'Comprador de plaza distinta a la de la agencia', 20, ['art_139_quater', 'art_400_bis']],
+    ['transacciones_canales', 'Pago por múltiples terceros o efectivo insistente', 25, ['art_139_quater', 'art_400_bis']],
+  ] as const) {
+    await agregarFactor(db, {
+      sesion: admin,
+      modeloId,
+      elementoId: elemento(clave),
+      factor,
+      peso,
+      delitos: [...delitos],
+    })
+  }
+  await enTransaccionDeSesion(db, admin, async () => {
+    for (const clave of ['actos_operaciones', 'tipo_cliente', 'geografia', 'transacciones_canales']) {
+      await db.query(
+        `insert into pesos_elemento (tenant_id, modelo_id, elemento_id, peso) values ($1,$2,$3,25)`,
+        [TENANT_AGENCIA, modeloId, elemento(clave)],
+      )
+    }
+  })
+
+  const niveles: Record<string, string> = {}
+  for (const [orden, clave, nombre, evidencia, valor] of [
+    [1, 'documentado', 'Documentado', 'Política escrita en el Manual, con apartado citado.', 5],
+    [2, 'aplicado', 'Aplicado', 'Bitácora de aplicación del control en las dos sucursales.', 12],
+    [3, 'verificado', 'Verificado', 'Revisión interna con constancia, del último semestre.', 20],
+  ] as const) {
+    const { nivelId } = await definirNivelEfectividad(db, {
+      sesion: admin, modeloId, orden, clave, nombre, evidenciaExigible: evidencia, valor,
+    })
+    niveles[clave] = nivelId
+  }
+  await agregarMitigante(db, {
+    sesion: admin, modeloId,
+    descripcion: 'Verificación del expediente por gerencia antes de facturar.',
+    efecto: 'Reduce la exposición por identidad y por comprador interpuesto.',
+    elementoIds: [elemento('tipo_cliente')],
+    nivelId: niveles['verificado'] ?? '', evidenciaRef: 'Manual §7.2',
+  })
+  await agregarMitigante(db, {
+    sesion: admin, modeloId,
+    descripcion: 'Regla comercial: sin constancia de situación fiscal no se factura.',
+    efecto: 'Reduce la exposición de canales y formas de pago irregulares.',
+    elementoIds: [elemento('transacciones_canales')],
+    nivelId: niveles['verificado'] ?? '', evidenciaRef: 'Manual §4.1',
+  })
+  await activarModelo(db, { sesion: admin, modeloId, vigenteDesde: '2026-08-01' })
+
+  // ── La evaluación de ENTIDAD y el MER ──────────────────────────────────
+  // Inherente 100 (4×25) − mitigación 40 (2 mitigantes «verificado») = 60 →
+  // grado MEDIO → «el dictamen puede emitirlo tu área interna» (Art. 44). El
+  // argumento con pesos, en una línea de pantalla.
+  const entidad = await evaluarEntidadYRegistrar(db, {
+    sesion: admin, hoy: hoyEnMexico(), base: 'anio_completo',
+    periodoInicio: '2025-07-01', periodoFin: '2026-06-30',
+    totalClientes: 1240, totalOperaciones: 3480, montoOperadoCentavos: 84_200_000_000,
+  })
+  const mer = await emitirMer(db, { sesion: admin, hoy: hoyEnMexico() })
+
+  // ── Las ventas del guion ───────────────────────────────────────────────
+  const vender = (sucursalId: string, clienteId: string, fecha: string, monto: number, formaPago: string) =>
+    registrarOperacion(db, {
+      sesion: ventas,
+      datos: {
+        sucursalId, clienteId, fechaOperacion: fecha,
+        montoBase: pesos(monto), iva: pesos(0), isai: pesos(0), otrosAccesorios: pesos(0),
+        formaPago, instrumentoMonetario: '1', monedaCodigo: '1',
+        nombreInstitucion: 'BANCO NACIONAL DE MEXICO',
+        descripcionBien: 'Vehículo nuevo, venta de piso',
+      },
+    })
+  const cliente = async (nombre: string, rfc: string, fisica = true): Promise<string> => {
+    const c = await db.query(
+      `insert into clientes_finales (tenant_id, tipo_persona, rfc, nombre_o_razon_social, nacionalidad)
+       values ($1,$2,$3,$4,'MX') returning id::text`,
+      [TENANT_AGENCIA, fisica ? 'fisica' : 'moral', rfc, nombre],
+    )
+    return (c.rows[0] as { id: string }).id
+  }
+
+  const piso = await cliente('Marisol Chan Ek', 'CAEM840512QW1')
+  const contado = await cliente('Constructora Itzam SA de CV', 'CIT120820HH7', false)
+  const flotilla = await cliente('Roberto Canul Pech', 'CAPR760214JJ3')
+
+  const v1 = await vender(norte, piso, '2026-06-10', 260_000, '03')
+  const v2 = await vender(norte, contado, '2026-06-18', 820_000, '03')
+  const v3a = await vender(sur, flotilla, '2026-05-08', 550_000, '03')
+  const v3b = await vender(sur, flotilla, '2026-06-08', 550_000, '03')
+
+  // ── El screening del guion ─────────────────────────────────────────────
+  // Si el catálogo global no tiene listas (base recién reseteada), se cargan
+  // versiones DE MUESTRA claramente marcadas. En cuanto el runbook 06 cargue
+  // las reales, la vigente será la real y estas quedan como historia.
+  for (const clave of LISTAS_EXIGIDAS) {
+    const hay = await db.query(`select 1 from listas_screening where clave = $1 limit 1`, [clave])
+    if (hay.rows.length > 0) continue
+    const contenido = `lista de muestra ${clave} — demo`
+    const l = await db.query(
+      `insert into listas_screening (clave, nombre, fuente_url, descargada_en, hash_sha256, registros)
+       values ($1, $2, 'demo://cargar-la-real-con-el-runbook-06', now(), $3, 2) returning id::text`,
+      [clave, `${clave.toUpperCase()} (MUESTRA DEMO)`, createHash('sha256').update(contenido).digest('hex')],
+    )
+    const listaId = (l.rows[0] as { id: string }).id
+    await db.query(
+      `insert into entradas_lista (lista_id, tipo, nombre, rfc, datos) values
+         ($1,'individual','Jose Angel Lopez Gomez', null, '{"nota":"entrada de muestra"}'::jsonb),
+         ($1,'entity','Comercializadora Fachada del Golfo SA',
+          case when $2 = 'sat_69b' then 'CFG050505GG5' end,
+          case when $2 = 'sat_69b' then '{"situacion":"Definitivo"}' else '{}' end::jsonb)`,
+      [listaId, clave],
+    )
+  }
+
+  const limpio = await consultarScreening(db, {
+    sesion: ventas, sujetoTipo: 'cliente', sujetoId: flotilla,
+    nombre: 'Roberto Canul Pech', rfc: 'CAPR760214JJ3',
+  })
+
+  // El homónimo toma su nombre DE LA LISTA VIGENTE — sea la de muestra, una de
+  // prueba o la real cargada por el runbook 06. Así la coincidencia dispara en
+  // cualquier entorno, que es el punto de esta parte del guion.
+  const enLista = await db.query(
+    `select e.nombre from entradas_lista e
+       join (select distinct on (clave) id from listas_screening
+              order by clave, descargada_en desc) l on l.id = e.lista_id
+      where e.tipo = 'individual' order by e.created_at limit 1`,
+  )
+  const nombreListado =
+    (enLista.rows[0] as { nombre: string } | undefined)?.nombre ?? 'Jose Angel Lopez Gomez'
+  const homonimo = await cliente(nombreListado, 'LOGJ800101TT9')
+  const coincide = await consultarScreening(db, {
+    sesion: ventas, sujetoTipo: 'cliente', sujetoId: homonimo,
+    nombre: nombreListado,
+  })
+  // La coincidencia queda PENDIENTE a propósito: resolverla —con su
+  // razonamiento escrito— es la mejor parte de la demo de screening.
+
+  console.log('Agencia demo lista para', TENANT_AGENCIA)
+  if (entidad.resultado.estado === 'evaluado') {
+    console.log(
+      `  entidad: inherente ${String(entidad.resultado.inherente)} − mitigación ` +
+        `${String(entidad.resultado.mitigacion)} = residual ${String(entidad.resultado.residual)} ` +
+        `→ ${entidad.resultado.gradoClave} → ${entidad.resultado.auditoria}`,
+    )
+  }
+  console.log(`  MER v${String(mer.version)} emitido · SHA-256 ${mer.hash.slice(0, 16)}…`)
+  for (const [etiqueta, r] of [
+    ['piso     $260,000', v1],
+    ['contado  $820,000', v2],
+    ['flotilla $550,000 (mayo)', v3a],
+    ['flotilla $550,000 (junio)', v3b],
+  ] as const) {
+    console.log(`  ${etiqueta} → ${r.evaluacion.resultadoAviso}`)
+  }
+  console.log(`  screening limpio: ${limpio.resultado} · coincidencia pendiente: ${coincide.resultado}`)
+  console.log('  La coincidencia queda SIN resolver: se resuelve en vivo, con razonamiento.')
+}
+
 const URL = process.env['VIZO_DB_URL_ADMIN'] ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
 
 async function main(): Promise<void> {
@@ -218,6 +507,7 @@ async function main(): Promise<void> {
     // obligado moral, el fideicomiso nunca se sembraría en una base que ya
     // tuviera operaciones — dos obligados distintos atados por un `if` ajeno.
     await estructuraDelFideicomiso(db)
+    await agenciaAutomotriz(db)
 
     const ya = await db.query(`select count(*)::int as n from operaciones where tenant_id = $1`, [
       TENANT,

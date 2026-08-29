@@ -437,6 +437,12 @@ export async function agregarFactor(
     factor: string
     peso: number
     indicadores?: Record<string, unknown>
+    /**
+     * Art. 10 Septies 1, ¶ final: si este factor se declara como indicador de
+     * los delitos de los Arts. 139 Quáter y/o 400 Bis del CPF. Lo declara el
+     * obligado, como todo lo demás; omitirlo = no declarado, nunca un default.
+     */
+    delitos?: readonly DelitoCpf[]
   },
 ): Promise<{ factorId: string }> {
   const problemas: string[] = []
@@ -448,8 +454,8 @@ export async function agregarFactor(
 
   return enTransaccionDeSesion(db, p.sesion, async () => {
     const { rows } = await db.query(
-      `insert into factores_modelo (tenant_id, modelo_id, elemento_id, factor, peso, indicadores)
-       values ($1,$2,$3,$4,$5,$6::jsonb) returning id::text`,
+      `insert into factores_modelo (tenant_id, modelo_id, elemento_id, factor, peso, indicadores, delitos)
+       values ($1,$2,$3,$4,$5,$6::jsonb,$7::delito_cpf[]) returning id::text`,
       [
         p.sesion.tenantId,
         p.modeloId,
@@ -457,6 +463,7 @@ export async function agregarFactor(
         p.factor.trim(),
         p.peso,
         JSON.stringify(p.indicadores ?? {}),
+        p.delitos ?? [],
       ],
     )
     const factorId = (rows[0] as { id: string }).id

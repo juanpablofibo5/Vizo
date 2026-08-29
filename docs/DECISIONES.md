@@ -498,6 +498,22 @@ Dos celdas de esa cobertura concentran el riesgo de acreditar de más, y las dos
 
 **Fijado con:** aserciones en la migración `20260829200000` y `tests/persistencia/mer.test.ts` (composición pura con huecos contados, emisión congelada con huella verificada, dedupe del mismo día, append-only).
 
+## ADR-30 · El screening: detecta de más, resuelve el humano, y la consulta es un acto con snapshot — 2026-08-29
+
+**Contexto.** Decisión Q3 del cuestionario de cierre (issue #34): las cuatro listas públicas al sprint — OFAC SDN, la consolidada de la ONU, el 69-B del CFF y la LPB — con PEP como dependencia comercial aparte. El esqueleto esperaba desde la migración 001 con la resolución humana en CHECK; activarlo era las listas, el matching y los guardias.
+
+**Decisión.** Cinco piezas:
+
+1. **Las listas son catálogo GLOBAL y versionado**: cada descarga es una fila con fecha, hash del archivo fuente y conteo (runbook 06, cargadas por backoffice con el rol de catálogo — la app solo lee). La consulta **snapshotea** qué versión de cada lista usó.
+2. **Sin las cuatro vigentes, la consulta se detiene** nombrando las que faltan (regla dura 6): «sin coincidencias» sobre lo que no se miró sería el silencio más caro del producto.
+3. **El matching detecta de más y resuelve el humano**: una sola normalización (`app.normalizar_para_screening` — **distinta** de la de identidad de la semana 4, que tiene sus propios dependientes — con su espejo TypeScript y una prueba de paridad que los compara), trigramas con índice sobre un **umbral OPERATIVO** del catálogo cuya fuente dice con todas sus letras que no proviene de ninguna norma, y RFC exacto donde la lista lo trae (69-B, con la situación a la vista del humano).
+4. **La consulta nace pendiente y la resolución es un acto irreversible con razonamiento** (≥ una oración), de un admin, que atiende la alerta en el mismo movimiento. Nacer resuelta, descartar sin razonamiento, re-resolver o editar la evidencia son inexpresables por trigger. Toda consulta escribe — el folio limpio también es evidencia.
+5. **Parsers puros con las mañas escritas donde muerden**: OFAC (`-0-` como vacío; los alias de `alt.csv` NO se cargan aún y el runbook lo dice), 69-B (encabezado flotante, latin1), genérico para la vía provisional de ONU/LPB con el hash del convertido declarado. Un parser que truena ante formato cambiado es el comportamiento correcto.
+
+**Lo que se rechazó:** compuertas automáticas por coincidencia (una tipología es señal, no certeza — y descartar o confirmar es del humano, regla dura 5); un umbral cableado en código (decisión versionada en catálogo); y cargar ONU/LPB a medias (peor que no cargarlas).
+
+**Fijado con:** aserciones en la migración `20260829230000` y las pruebas de `tests/catalogo/listas-screening.test.ts` + `tests/persistencia/screening.test.ts` (paridad de normalización, las cuatro exigidas, snapshot, RFC exacto, folio limpio, resolución única).
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde

@@ -460,6 +460,29 @@ Dos celdas de esa cobertura concentran el riesgo de acreditar de más, y las dos
 
 **Lo que abre:** del Cap. II Quáter quedan las dos exigencias del Art. 10 Septies que arrastran al Manual — que la metodología esté descrita en él, y la reevaluación previa a nuevos productos o canales (¶3). Y el Manual es donde `ALCANCE.md` dice que la compuerta de viabilidad vuelve a mandar.
 
+## ADR-28 · La evaluación de ENTIDAD: el riesgo del propio obligado, en su propia escala — 2026-08-29
+
+**Contexto.** La Ley separa dos objetos de evaluación y VIZO solo tenía uno: el Art. 18 fr. VII exige «identificar, analizar, entender y mitigar **sus** Riesgos, así como los de las personas Clientes o Usuarias», y la fr. XI cuelga de esa evaluación el tipo de auditoría anual. Los Arts. 44 y 45 del Acuerdo cierran el círculo: dictamen **interno permitido** cuando el riesgo del obligado sea bajo o medio «de conformidad con la metodología prevista en el Capítulo II Quáter», **auditor externo independiente certificado por la UIF** cuando sea alto. Es el hallazgo real de la revisión externa ARQ-01 §02 (28-ago), verificado contra el texto primario el mismo día, y la única parte del producto con un número en pesos pegado. Las posturas de JP del cuestionario de cierre (28-ago) fijaron la escala de efectividad y la prioridad; la sesión con Luis **valida contra lo construido** — con las tablas todavía vacías, ajustar es una migración sin datos.
+
+**Decisión.** Cinco piezas de forma, cero de criterio:
+
+1. **`evaluaciones_entidad`, append-only y separada del per-cliente.** Los dos objetos que la Ley separa viven en tablas separadas. La fila guarda la base de información que la norma nombra (Art. 10 Septies 2 fr. II: total de clientes, operaciones y monto, de un periodo no menor a doce meses — con los tres casos del texto: año completo, parcial desde el inicio de la actividad [Transitorio Segundo ¶2], o **datos proyectados**), el camino completo en `detalle`, y un vencimiento derivado del catálogo (`reevaluacion_entidad_meses` = 12, Arts. 10 Septies 2 ¶3 / 10 Septies 3).
+2. **El grado de entidad vive en la escala del obligado.** Los Arts. 44/45 hablan de bajo/medio/alto «de conformidad con la metodología» — la suya. `grados_riesgo.es_alto` ya dispara las obligaciones reforzadas de cliente; aquí dispara también la auditoría externa. No se inventó una segunda escala ni un mapeo.
+3. **Los mitigantes reducen la entidad, nunca el grado de un cliente** (la Opción B de ARQ-01 §04, la que JP recomendó): el score individual queda intocado y las compuertas de cliente siguen indiluibles por construcción — la Opción C quedó descartada con el argumento de ARQ-01: abriría el hueco del tenant que se declara mitigación para bajar grados.
+4. **La escala de efectividad es ordinal y se gana con papeles** (postura de JP, 28-ago): `niveles_efectividad` por versión de modelo — número fijo de niveles, cada uno con su **evidencia documental exigible**, monótona con el orden, congelada con el modelo, **sin porcentaje continuo** («una efectividad de 73% es precisión falsa y es lo primero que pica un auditor»). Los valores y los cortes los declara el obligado; VIZO no siembra ninguno (ADR-21). El mitigante declara su nivel por FK compuesta al **mismo modelo**, y `evidencia_ref` dice dónde vive el papel.
+5. **El método de entidad se declara, como el de medición**: `modelos_riesgo.metodo_entidad`, con `residual_por_elemento` como único método que el motor sabe ejecutar — residual = Σ por elemento de (valor declarado − mitigación declarada, **sin bajar de cero**). El tope por elemento es estructura, no juicio: una exposición negativa no es una exposición, y sin el tope un elemento sobre-mitigado abarataría a los demás.
+
+**La regla dura 6, en su caso más caro hasta ahora:** un mitigante **sin nivel declarado detiene la evaluación** — contarlo como cero sería VIZO decidiendo que las políticas del obligado no mitigan nada; ignorarlo, que mitigan sin decir cuánto. Y el residual es un CHECK de la base (`residual_es_la_resta`): no existe la fila donde el residual no sea la resta.
+
+**Lo que se rechazó:**
+- **(a) Una segunda escala para la entidad.** Habría exigido un mapeo entidad→auditoría que alguien tendría que decidir; `es_alto` ya existe y ya es del obligado.
+- **(b) La aprobación humana adicional sobre la evaluación.** La fila es append-only y corre bajo un modelo que el obligado **ya aprobó** con nombre y hora; quien la corre queda asentado (`evaluado_por`, solo admin por política). Si la sesión decide exigir un segundo acto, es una tabla nueva de aprobaciones — nunca una mutación de la fila.
+- **(c) Calcular el inherente desde los totales del periodo.** La norma exige *considerar* esos datos, no una aritmética sobre ellos; inventarla sería metodología de VIZO. Se registran con la evaluación como base acreditable, y el inherente sale de los valores por elemento que el obligado declaró (fr. II, segunda oración — ADR-27).
+
+**Frontera comercial, escrita aquí porque JP la pidió escrita:** VIZO **nunca** dice que baja el grado ni que evita al auditor. VIZO produce **la evidencia auditable que sostiene el grado que arroje la metodología del obligado.**
+
+**Fijado con:** aserciones en la migración `20260829150000` (escala monótona y congelada, nivel del mismo modelo, residual como resta, append-only, solo contra vigente, privilegios declarados) y `tests/persistencia/entidad.test.ts` (motor puro + punta a punta, incluido el tope estructural y el hueco que no escribe).
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde

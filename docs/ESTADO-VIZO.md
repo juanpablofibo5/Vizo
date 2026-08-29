@@ -8,7 +8,7 @@ la fe de erratas está en `referencia/orvex-competencia-2026-08-28/`).
 
 **Mantenimiento:** una fila por dimensión comparativa, cada una con el ADR, la
 migración, la suite o el documento que la respalda. Se actualiza al cerrar cada
-pieza. **Fecha de corte: 28-ago-2026.**
+pieza. **Fecha de corte: 29-ago-2026.**
 
 | # | Dimensión | Estado | Evidencia |
 |---|---|---|---|
@@ -29,7 +29,7 @@ pieza. **Fecha de corte: 28-ago-2026.**
 | 15 | Cuestionarios de riesgo alto + Firma Electrónica (huella, sin validar) | ✅ Construidos | ADR-25 |
 | 16 | Medidas reforzadas del Art. 23 Ter 4 (Cap. III Ter completo) | ✅ Construidas; hueco del fideicomiso documentado en pantalla | ADR-26 |
 | 17 | Cap. II Quáter: modelo versionado (borrador→vigente, aprobación trazada, congelamiento), pesos por elemento, mitigantes con efecto y cobertura, indicadores 139 Quáter/400 Bis por elemento | ✅ Construido; la configuración nace vacía y la declara el obligado (frontera ADR-21) | ADR-21/27 · migraciones 21–24-ago |
-| 18 | **Evaluación de entidad** (riesgo del obligado → tipo de auditoría, Arts. 44/45) | ❌ No existe — el hallazgo real de ARQ-01; el esquema lo cierra la sesión con Luis y sube al sprint | issue #30 |
+| 18 | **Evaluación de entidad** (riesgo del obligado → tipo de auditoría, Arts. 44/45) | ◐ **Esquema, motor y persistencia construidos (29-ago, ADR-28):** escala de efectividad ordinal con evidencia exigible por nivel, residual por elemento con tope estructural, histórico append-only con la consecuencia de los Arts. 44/45 ya resuelta (`externa_obligatoria`/`interna_permitida`). Falta la pantalla; la sesión con Luis valida contra lo construido | ADR-28 · migración `20260829150000` · `tests/persistencia/entidad.test.ts` |
 | 19 | **MER como documento exportable** | ❌ Pendiente — la pieza real de A-06; la mitad estructural (fila 17) ya existe | issue #30 |
 | 20 | Manual de Políticas Internas | ◐ Frontera decidida (ADR-20): VIZO acredita 7 apartados con datos y muestra el hueco en los otros 7; Constancia de mecanismos construida | ADR-20 · `constancias` |
 | 21 | Screening de listas (OFAC · ONU · LPB · 69-B · PEP) | ◐ **Esquema completo, conector no escrito**; resolución humana como frontera; venta prohibida hasta que exista | `POST-MVP.md` · `DEMO.md` |

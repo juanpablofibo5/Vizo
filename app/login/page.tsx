@@ -106,7 +106,10 @@ export default function Login() {
               queda en la bitácora encadenada. Una promesa de seguridad que
               no se cumple es peor que no hacerla. */}
           <p className="acceso-legal">
-            Acceso solo para personal autorizado. Cada sesión queda registrada en la bitácora.
+            Acceso solo para personal autorizado. Cada sesión queda registrada en la bitácora.{' '}
+            <a className="acceso-enlace" href="/privacidad">
+              Aviso de privacidad
+            </a>
           </p>
         </form>
       </div>

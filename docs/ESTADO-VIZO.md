@@ -35,7 +35,7 @@ pieza. **Fecha de corte: 29-ago-2026.**
 | 21 | Screening de listas (OFAC · ONU · LPB · 69-B · PEP) | ◐ **Esquema completo, conector no escrito**; resolución humana como frontera; venta prohibida hasta que exista | `POST-MVP.md` · `DEMO.md` |
 | 22 | Cap. XIII restante: alerta de listas/PEP (Art. 41 fr. V) y reevaluación programada | ❌ Pendiente, con fecha exigible 1-jun-2027 en el roadmap | `ROADMAP-2027.md` |
 | 23 | Multi-obligado («capturar una vez, cumplir tres») | ◐ Puerta abierta en el esquema (`personas`, `consentimientos_comparticion`, ADR-15); el flujo es F2+ | issue #13 |
-| 24 | LFPDPPP Capa A (aviso de privacidad, inventario de tratamientos, cláusula de consentimiento) | ❌ Al sprint actual por decisión D4 | issue #33 · `LFPDPPP.md` |
+| 24 | LFPDPPP Capa A (aviso de privacidad, inventario de tratamientos, cláusula de consentimiento) | ◐ **Construida la parte publicable (29-ago):** `/privacidad` en vivo (versionada, con el doble papel responsable/encargado y ARCO con plazos del Art. 31), inventario de tratamientos con conservación fundada, y cláusula de consentimiento redactada para el caso conservador. **Pendiente:** revisión del abogado (§3 de LFPDPPP.md), crear el buzón privacidad@vizo.mx, y confirmar razón social/domicilio del responsable | issue #33 · `/privacidad` · `INVENTARIO-TRATAMIENTOS.md` · `CLAUSULA-CONSENTIMIENTO.md` |
 | 25 | LFPDPPP Capa B (módulo vendible) | ⛔ Diferida (~abr-2027); el pitch no la menciona | issue #23 |
 | 26 | Certificación ISO 27001 | ❌ No iniciada — ruta por definir (D10, carril JP, Q1-2027) | BMK-01 D10 |
 | 27 | Validación legal externa | ❌ **Pendiente** — Escalante Palma es candidato, no contratado. En toda matriz dice «pendiente» | issue #32 · ERR-01 E-1 |

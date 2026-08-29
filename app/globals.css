@@ -980,3 +980,43 @@ label .pista { display: inline; margin: 0; }
   border: 1px solid var(--linea); border-radius: 999px;
   padding: .2rem .6rem;
 }
+
+/* ── La página legal pública (/privacidad) ──────────────────────────────
+   Texto largo que se lee sin sesión: ancho de lectura, jerarquía sobria y
+   cero componentes del portal. La versión y la fecha van visibles porque un
+   aviso de privacidad sin fecha no permite saber cuál aceptaste. */
+.legal {
+  min-height: 100dvh;
+  background: var(--fondo);
+  color: var(--texto);
+  padding: 3rem 1.25rem 4rem;
+  font-family: var(--sans);
+}
+.legal-caja { max-width: 46rem; margin: 0 auto; }
+.legal-marca {
+  display: inline-flex; align-items: center; gap: .5rem;
+  font-family: var(--titulo); font-weight: 700; letter-spacing: .06em;
+  margin-bottom: 2rem;
+}
+.legal-caja h1 {
+  font-family: var(--titulo); font-size: 1.75rem; line-height: 1.15;
+  margin: 0 0 .35rem;
+}
+.legal-meta { color: var(--texto-tenue); font-size: .85rem; margin: 0 0 2rem; }
+.legal-caja h2 {
+  font-family: var(--titulo); font-size: 1.05rem; letter-spacing: .01em;
+  margin: 2.1rem 0 .5rem; padding-top: 1.4rem; border-top: 1px solid var(--linea);
+}
+.legal-caja p, .legal-caja li { font-size: .95rem; line-height: 1.65; color: var(--texto-suave); }
+.legal-caja strong { color: var(--texto); }
+.legal-caja ul { padding-left: 1.2rem; margin: .4rem 0 .9rem; }
+.legal-destacado {
+  background: var(--superficie); border: 1px solid var(--linea);
+  border-radius: var(--radio); padding: .9rem 1.1rem; margin: .9rem 0;
+}
+.legal-pie {
+  margin-top: 2.5rem; padding-top: 1.2rem; border-top: 1px solid var(--linea);
+  color: var(--texto-tenue); font-size: .82rem; line-height: 1.6;
+}
+.legal-caja a { color: var(--enlace); }
+.acceso-enlace { color: var(--enlace); text-decoration: underline; }

@@ -1,5 +1,11 @@
 # Contraste de BMK-01 y COMP-01 contra el repo y las fuentes — 28-ago-2026
 
+> **Aceptado el mismo día:** la revisión externa respondió con la fe de erratas
+> **ERR-01** (en esta carpeta) — las nueve correcciones aceptadas, BMK-01 y COMP-01
+> condicionados a circular con ella adjunta, y dos derivados ya ejecutados: la
+> **captura fechada** de Notalia y artu.ai (`captura-2026-08-28/`, con huellas) y el
+> **`docs/ESTADO-VIZO.md`** canónico de la regla operativa del §06.
+
 Los dos PDF de esta carpeta son inteligencia competitiva de la revisión externa
 (ORVEX), emitidos el 28-ago-2026 sobre fuentes secundarias. Este documento registra
 qué se verificó el mismo día contra el texto primario del repo y contra los sitios

@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Software PLD para Actividades Vulnerables en México | Artu AI</title>
+  <link rel="canonical" href="https://artu.ai/">
+  <meta name="description" content="Artu automatiza el cumplimiento de la LFPIORPI para actividades vulnerables: KYC, matrices de riesgo, umbrales en UMAs y avisos al SAT (SPPLD). Listo en 24 horas.">
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Software PLD para Actividades Vulnerables en México | Artu AI">
+  <meta property="og:description" content="Artu automatiza el cumplimiento de la LFPIORPI para actividades vulnerables: KYC, matrices de riesgo, umbrales en UMAs y avisos al SAT (SPPLD). Listo en 24 horas.">
+  <meta property="og:image" content="https://res.cloudinary.com/dfmpmintr/image/upload/v1773437297/Untitled_40_zwxx62.png">
+  <meta property="og:url" content="https://artu.ai/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Software PLD para Actividades Vulnerables en México | Artu AI">
+  <meta name="twitter:description" content="Artu automatiza el cumplimiento de la LFPIORPI para actividades vulnerables: KYC, matrices de riesgo, umbrales en UMAs y avisos al SAT (SPPLD). Listo en 24 horas.">
+  <meta name="twitter:image" content="https://res.cloudinary.com/dfmpmintr/image/upload/v1773437297/Untitled_40_zwxx62.png">
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YWFVWQT4BR"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YWFVWQT4BR');
+  </script>
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dfmpmintr/image/upload/v1750289225/ICONO_ARTU-02_lt2mob.png">
+  <link rel="preconnect" href="https://api.fontshare.com">
+
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700,900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://artu.ai/#organization",
+        "name": "Artu AI",
+        "url": "https://artu.ai/",
+        "logo": "https://res.cloudinary.com/dfmpmintr/image/upload/v1750289225/ICONO_ARTU-02_lt2mob.png",
+        "description": "Software de PLD e IA especializado en actividades vulnerables que automatiza el cumplimiento de la LFPIORPI en México.",
+        "foundingLocation": { "@type": "Place", "name": "México" },
+        "areaServed": "MX",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "sales",
+          "email": "juanpi@artu.ai"
+        },
+        "sameAs": []
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://artu.ai/#website",
+        "url": "https://artu.ai/",
+        "name": "Artu AI",
+        "publisher": { "@id": "https://artu.ai/#organization" },
+        "inLanguage": "es-MX"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "Artu",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "offers": {
+          "@type": "Offer",
+          "availability": "https://schema.org/InStock",
+          "priceCurrency": "MXN"
+        },
+        "description": "Plataforma de compliance PLD para actividades vulnerables. KYC, matrices de riesgo, umbrales en UMAs, avisos al SAT (SPPLD) y más.",
+        "publisher": { "@id": "https://artu.ai/#organization" }
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    /* ── HERO ANIMATION (ported from /software/) ── */
+    /* Override .hero-visual so the 3:2 animation stage fits cleanly */
+    .hero-visual {
+      width: 560px;
+      max-width: 100%;
+      aspect-ratio: auto;
+      background: transparent;
+      border-radius: 14px;
+      overflow: visible;
+      box-shadow: none;
+    }
+    .hero-visual .sw-hero-img-wrap {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(10,214,172,0.22);
+      box-shadow: 0 48px 130px rgba(7,27,91,0.36), 0 0 0 1px rgba(10,214,172,0.15);
+      background: #0b4147;
+    }
+
+    .sw-anim-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      background: linear-gradient(135deg, #0a373c 0%, #0b4147 60%, #0d5760 100%);
+      overflow: hidden;
+    }
+    .sw-anim-panel {
+      position: absolute;
+      inset: 0;
+      padding: 22px 26px 26px;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      animation: swPanelCycle 15s infinite;
+      will-change: opacity, transform;
+    }
+    @keyframes swPanelCycle {
+      0%   { opacity: 0; transform: translateY(6px); }
+      2%   { opacity: 1; transform: translateY(0); }
+      16%  { opacity: 1; transform: translateY(0); }
+      18%  { opacity: 0; transform: translateY(-6px); }
+      100% { opacity: 0; transform: translateY(-6px); }
+    }
+    .sw-anim-panel.sw-p1 { animation-delay: 0s; }
+    .sw-anim-panel.sw-p2 { animation-delay: -12.5s; }
+    .sw-anim-panel.sw-p3 { animation-delay: -10s; }
+    .sw-anim-panel.sw-p4 { animation-delay: -7.5s; }
+    .sw-anim-panel.sw-p5 { animation-delay: -5s; }
+    .sw-anim-panel.sw-p6 { animation-delay: -2.5s; }
+
+    .sw-chrome-bar { display: flex; align-items: center; gap: 6px; padding: 11px 14px; background: #0b4147; border-bottom: 1px solid rgba(10,214,172,0.18); }
+    .sw-chrome-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+    .sw-chrome-dot:nth-child(1) { background: #0ad6ac; }
+    .sw-chrome-dot:nth-child(2) { background: #07a885; }
+    .sw-chrome-dot:nth-child(3) { background: #0b6b72; }
+
+    .sw-anim-tab { margin-left: auto; font-size: 11px; color: rgba(255,255,255,0.55); font-weight: 500; letter-spacing: 0.3px; display: flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(255,255,255,0.06); border-radius: 6px; position: relative; min-width: 180px; justify-content: center; }
+    .sw-anim-tab-name { position: relative; display: inline-block; min-width: 170px; height: 14px; }
+    @keyframes swPanelCycleStatic { 0% { opacity: 0; } 2% { opacity: 1; } 16% { opacity: 1; } 18% { opacity: 0; } 100% { opacity: 0; } }
+    .sw-anim-tab-name span { position: absolute; left: 50%; top: 0; transform: translateX(-50%); white-space: nowrap; opacity: 0; color: #0ad6ac; font-weight: 700; animation: swPanelCycleStatic 15s infinite; }
+    .sw-anim-tab-name span:nth-child(1) { animation-delay: 0s; }
+    .sw-anim-tab-name span:nth-child(2) { animation-delay: -12.5s; }
+    .sw-anim-tab-name span:nth-child(3) { animation-delay: -10s; }
+    .sw-anim-tab-name span:nth-child(4) { animation-delay: -7.5s; }
+    .sw-anim-tab-name span:nth-child(5) { animation-delay: -5s; }
+    .sw-anim-tab-name span:nth-child(6) { animation-delay: -2.5s; }
+
+    /* Panel internals */
+    .sw-pn-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .sw-pn-title { color: #fff; font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
+    .sw-pn-sub { color: rgba(10,214,172,0.85); font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 4px; }
+    .sw-pn-pill { font-size: 10px; font-weight: 700; color: #0ad6ac; background: rgba(10,214,172,0.14); border: 1px solid rgba(10,214,172,0.35); padding: 4px 10px; border-radius: 100px; display: inline-flex; align-items: center; gap: 6px; }
+    .sw-pn-pill::before { content: ''; width: 6px; height: 6px; background: #0ad6ac; border-radius: 50%; animation: swPulseDot 1.6s ease-in-out infinite; }
+    @keyframes swPulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.7); } }
+
+    /* PANEL 1 — Matriz de riesgo */
+    .sw-p1 .sw-pn-rows { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+    .sw-pn-row { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 12px; }
+    .sw-pn-row-label { color: rgba(255,255,255,0.85); font-size: 12px; font-weight: 600; min-width: 96px; }
+    .sw-pn-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 100px; overflow: hidden; position: relative; }
+    .sw-pn-bar-fill { height: 100%; background: linear-gradient(90deg, #0ad6ac, #07a885); border-radius: 100px; transform-origin: left; animation: swBarGrow 2.4s ease-out infinite; }
+    @keyframes swBarGrow { 0% { transform: scaleX(0); } 45% { transform: scaleX(var(--bar, 0.5)); } 100% { transform: scaleX(var(--bar, 0.5)); } }
+    .sw-pn-row-val { color: #0ad6ac; font-size: 11px; font-weight: 700; min-width: 36px; text-align: right; }
+
+    /* PANEL 2 — KYC */
+    .sw-p2 .sw-pn-kyc-list { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .sw-pn-kyc-row { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 9px 12px; display: flex; align-items: center; gap: 12px; }
+    .sw-pn-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #0ad6ac, #07a885); color: #0b4147; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .sw-pn-kyc-name { color: #fff; font-size: 12px; font-weight: 600; }
+    .sw-pn-kyc-rfc { color: rgba(255,255,255,0.5); font-size: 10.5px; font-family: 'SF Mono', Menlo, monospace; }
+    .sw-pn-kyc-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+    .sw-pn-badge { font-size: 9.5px; font-weight: 700; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.3px; text-transform: uppercase; }
+    .sw-pn-badge.low  { background: rgba(10,214,172,0.18); color: #0ad6ac; }
+    .sw-pn-badge.med  { background: rgba(255,176,77,0.18); color: #ffb04d; }
+    .sw-pn-badge.high { background: rgba(255,99,99,0.18); color: #ff6363; }
+    .sw-pn-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+    .sw-pn-stat { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 10px; }
+    .sw-pn-stat-num { color: #0ad6ac; font-size: 18px; font-weight: 800; line-height: 1; }
+    .sw-pn-stat-lbl { color: rgba(255,255,255,0.55); font-size: 10px; margin-top: 4px; font-weight: 500; }
+
+    /* PANEL 3 — Listas restrictivas */
+    .sw-p3 .sw-pn-lists { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; flex: 1; }
+    .sw-pn-list-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+    .sw-pn-list-head { display: flex; align-items: center; justify-content: space-between; }
+    .sw-pn-list-name { color: #fff; font-size: 12px; font-weight: 700; }
+    .sw-pn-list-dot { width: 8px; height: 8px; border-radius: 50%; background: #0ad6ac; }
+    .sw-pn-list-count { color: rgba(255,255,255,0.55); font-size: 10.5px; font-weight: 500; }
+    .sw-pn-list-match { color: #ffb04d; font-size: 10.5px; font-weight: 700; }
+    .sw-pn-list-card.clean .sw-pn-list-dot { background: #0ad6ac; }
+    .sw-pn-list-card.alert .sw-pn-list-dot { background: #ffb04d; animation: swPulseDot 1.4s ease-in-out infinite; }
+
+    /* PANEL 4 — Monitoreo transaccional */
+    .sw-p4 .sw-pn-txns { display: flex; flex-direction: column; gap: 7px; flex: 1; }
+    .sw-pn-txn { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 12px; display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px; align-items: center; animation: swTxnSlide 2.5s ease-out infinite; opacity: 0; }
+    .sw-pn-txn:nth-child(1) { animation-delay: 0.2s; }
+    .sw-pn-txn:nth-child(2) { animation-delay: 0.45s; }
+    .sw-pn-txn:nth-child(3) { animation-delay: 0.7s; }
+    .sw-pn-txn:nth-child(4) { animation-delay: 0.95s; }
+    .sw-pn-txn:nth-child(5) { animation-delay: 1.2s; }
+    @keyframes swTxnSlide { 0% { opacity: 0; transform: translateX(-8px); } 18% { opacity: 1; transform: translateX(0); } 82% { opacity: 1; transform: translateX(0); } 100% { opacity: 1; transform: translateX(0); } }
+    .sw-pn-txn-time { color: rgba(255,255,255,0.5); font-size: 10.5px; font-family: 'SF Mono', Menlo, monospace; min-width: 50px; }
+    .sw-pn-txn-name { color: #fff; font-size: 11.5px; font-weight: 600; }
+    .sw-pn-txn-amt { color: #0ad6ac; font-size: 11.5px; font-weight: 700; font-family: 'SF Mono', Menlo, monospace; }
+
+    /* PANEL 5 — Avisos SAT */
+    .sw-p5 .sw-pn-avisos-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; flex: 1; }
+    .sw-pn-avisos-list { display: flex; flex-direction: column; gap: 8px; }
+    .sw-pn-aviso { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 9px 12px; display: flex; align-items: center; gap: 10px; }
+    .sw-pn-aviso-icon { width: 26px; height: 26px; border-radius: 6px; background: rgba(10,214,172,0.16); color: #0ad6ac; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .sw-pn-aviso-info { flex: 1; min-width: 0; }
+    .sw-pn-aviso-id { color: #fff; font-size: 11.5px; font-weight: 700; font-family: 'SF Mono', Menlo, monospace; }
+    .sw-pn-aviso-type { color: rgba(255,255,255,0.55); font-size: 10px; }
+    .sw-pn-aviso-status { color: #0ad6ac; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sw-pn-progress-box { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+    .sw-pn-progress-label { color: rgba(255,255,255,0.55); font-size: 10.5px; font-weight: 600; }
+    .sw-pn-progress-num { color: #0ad6ac; font-size: 32px; font-weight: 900; line-height: 1; }
+    .sw-pn-progress-sub { color: rgba(255,255,255,0.7); font-size: 10.5px; }
+    .sw-pn-progress-circ { width: 36px; height: 36px; border-radius: 50%; border: 2.5px solid rgba(10,214,172,0.2); border-top-color: #0ad6ac; animation: swSpin 1.6s linear infinite; }
+    @keyframes swSpin { to { transform: rotate(360deg); } }
+
+    /* PANEL 6 — Beneficiario Controlador */
+    .sw-p6 .sw-pn-bc { flex: 1; display: flex; flex-direction: column; gap: 8px; position: relative; }
+    .sw-pn-bc-root { background: linear-gradient(135deg, rgba(10,214,172,0.18), rgba(10,214,172,0.08)); border: 1.5px solid rgba(10,214,172,0.5); border-radius: 10px; padding: 10px 14px; align-self: center; display: flex; align-items: center; gap: 10px; min-width: 220px; }
+    .sw-pn-bc-name { color: #fff; font-size: 12px; font-weight: 700; }
+    .sw-pn-bc-role { color: rgba(255,255,255,0.6); font-size: 10px; }
+    .sw-pn-bc-branches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 4px; }
+    .sw-pn-bc-node { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 9px 10px; text-align: center; }
+    .sw-pn-bc-node-pct { color: #0ad6ac; font-size: 18px; font-weight: 900; line-height: 1; }
+    .sw-pn-bc-node-name { color: #fff; font-size: 10.5px; font-weight: 600; margin-top: 4px; }
+    .sw-pn-bc-node-role { color: rgba(255,255,255,0.5); font-size: 9.5px; margin-top: 2px; }
+    .sw-pn-bc-node.highlight { border-color: rgba(10,214,172,0.5); background: rgba(10,214,172,0.1); }
+    .sw-pn-bc-flag { align-self: center; margin-top: 6px; color: #0ad6ac; font-size: 10.5px; font-weight: 700; background: rgba(10,214,172,0.12); border: 1px solid rgba(10,214,172,0.3); padding: 4px 10px; border-radius: 100px; }
+
+    /* Progress dots */
+    .sw-anim-dots { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 2; }
+    .sw-anim-dots span { width: 22px; height: 3px; border-radius: 100px; background: rgba(255,255,255,0.18); position: relative; overflow: hidden; }
+    .sw-anim-dots span::after { content: ''; position: absolute; inset: 0; background: #0ad6ac; transform-origin: left; transform: scaleX(0); animation: swDotFill 15s infinite linear; }
+    .sw-anim-dots span:nth-child(1)::after { animation-delay: 0s; }
+    .sw-anim-dots span:nth-child(2)::after { animation-delay: -12.5s; }
+    .sw-anim-dots span:nth-child(3)::after { animation-delay: -10s; }
+    .sw-anim-dots span:nth-child(4)::after { animation-delay: -7.5s; }
+    .sw-anim-dots span:nth-child(5)::after { animation-delay: -5s; }
+    .sw-anim-dots span:nth-child(6)::after { animation-delay: -2.5s; }
+    @keyframes swDotFill { 0% { transform: scaleX(0); } 16.66% { transform: scaleX(1); } 18% { transform: scaleX(0); } 100% { transform: scaleX(0); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .sw-anim-panel, .sw-anim-tab-name span, .sw-anim-dots span::after, .sw-pn-bar-fill, .sw-pn-txn { animation: none !important; }
+      .sw-anim-panel.sw-p1 { opacity: 1; }
+    }
+
+    @media (max-width: 900px) {
+      .hero-visual { width: 100%; max-width: 560px; }
+      .sw-anim-panel { padding: 16px 18px 22px; }
+      .sw-pn-title { font-size: 13px; }
+      .sw-pn-sub { font-size: 9px; }
+      .sw-pn-stat-num { font-size: 15px; }
+      .sw-pn-row-label { min-width: 80px; font-size: 11px; }
+      .sw-anim-tab { display: none; }
+    }
+    @media (max-width: 600px) {
+      .sw-anim-panel { padding: 12px 14px 20px; }
+      .sw-pn-row { padding: 6px 10px; gap: 8px; }
+      .sw-pn-rows { gap: 6px; }
+      .sw-pn-lists { gap: 6px; }
+      .sw-pn-kyc-row { padding: 6px 10px; gap: 8px; }
+      .sw-pn-avatar { width: 22px; height: 22px; font-size: 9px; }
+      .sw-pn-bc-branches { gap: 4px; }
+      .sw-pn-bc-node { padding: 6px 6px; }
+      .sw-pn-bc-node-pct { font-size: 14px; }
+      .sw-pn-bc-node-name { font-size: 9px; }
+    }
+  </style>
+  <!-- ===== Medición de conversiones (ver js/lead-capture.js) ===== -->
+  <script>
+    window.ARTU_TRACKING = {
+      adsConversionLabel: '', // TODO(marketing): 'AW-XXXXXXXXXX/AbC-D_efG-h12'
+      linkedinConversionId: ''
+    };
+  </script>
+  <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
+  <script src="https://assets.calendly.com/assets/external/widget.js" async></script>
+  <script src="/js/lead-capture.js" defer></script>
+</head>
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="nav-wrapper">
+      <a href="/" class="logo-link">
+        <img
+          src="https://res.cloudinary.com/dfmpmintr/image/upload/v1756942025/LOGOTIPO_ARTU-02_ypow49.png"
+          alt="artu"
+          class="logo-img"
+        >
+      </a>
+
+      <nav class="nav" id="nav">
+        <ul class="nav-list">
+          <li class="nav-item"><a href="/software/" class="nav-link">Software</a></li>
+          <li class="nav-item"><a href="/nosotros" class="nav-link">Nosotros</a></li>
+          <li class="nav-item"><a href="/aliados" class="nav-link">Aliados</a></li>
+          <li class="nav-item has-dropdown">
+            <a href="#" class="nav-link">
+              Recursos
+              <svg class="chevron-icon" width="12" height="8" viewBox="0 0 12 8" fill="none">
+                <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+            <div class="dropdown">
+              <a href="/casos-de-exito" class="dropdown-item">
+                <span class="dropdown-icon">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.5 4.5H14l-3.7 2.7 1.4 4.3L8 11 4.3 13.5l1.4-4.3L2 6.5h4.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="dropdown-text">
+                  <strong>Casos de éxito</strong>
+                  <small>Clientes que confían en Artu</small>
+                </span>
+              </a>
+              <a href="/articulos" class="dropdown-item">
+                <span class="dropdown-icon">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12L6 4l3 5 2-3 3 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="dropdown-text">
+                  <strong>Artículos</strong>
+                  <small>Blog y noticias</small>
+                </span>
+              </a>
+              <a href="/pricing" class="dropdown-item">
+                <span class="dropdown-icon">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M5 4h4.5a2.5 2.5 0 010 5H5m0 0h5a2.5 2.5 0 010 5H5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="dropdown-text">
+                  <strong>Pricing</strong>
+                  <small>Cotización personalizada</small>
+                </span>
+              </a>
+              <a href="/calculadora-de-riesgo" class="dropdown-item">
+                <span class="dropdown-icon">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h12M2 8h8M2 13h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="11" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M15 13l1.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                </span>
+                <span class="dropdown-text">
+                  <strong>Calculadora de Riesgo</strong>
+                  <small>Estima tus multas potenciales</small>
+                </span>
+              </a>
+            </div>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="header-actions" id="header-actions">
+        <a href="https://dashboard.artu.ai/" class="btn btn-ghost">Iniciar Sesión</a>
+        <a href="https://calendly.com/ceojuanpi/website-product-demo" data-artu-demo target="_blank" rel="noopener" class="btn btn-primary">Solicita una demo</a>
+      </div>
+
+      <button class="hamburger" id="hamburger" aria-label="Abrir menú">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <h1 class="hero-title">El mejor software de PLD para actividades vulnerables en <span class="teal">México.</span></h1>
+        <p class="hero-body">Artu es el software de IA especializado en actividades vulnerables que automatiza todo tu cumplimiento con la LFPIORPI: KYC, matrices de riesgo, umbrales en UMAs y avisos al SAT (SPPLD).</p>
+        <a href="https://calendly.com/ceojuanpi/website-product-demo" data-artu-demo target="_blank" rel="noopener" class="btn btn-primary btn-lg">Solicita una demo</a>
+      </div>
+      <div class="hero-visual">
+        <div class="sw-hero-img-wrap" role="img" aria-label="Vista animada de la plataforma Artu: matriz de riesgo, expedientes KYC, listas restrictivas, monitoreo transaccional, avisos SAT y beneficiario controlador">
+          <div class="sw-chrome-bar">
+            <span class="sw-chrome-dot"></span>
+            <span class="sw-chrome-dot"></span>
+            <span class="sw-chrome-dot"></span>
+            <div class="sw-anim-tab">
+              <span style="color:rgba(255,255,255,0.55);">artu.ai · </span>
+              <span class="sw-anim-tab-name">
+                <span>Matriz de Riesgo</span>
+                <span>Expedientes KYC</span>
+                <span>Listas Restrictivas</span>
+                <span>Monitoreo Transaccional</span>
+                <span>Avisos SAT (SPPLD)</span>
+                <span>Beneficiario Controlador</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="sw-anim-stage">
+
+            <!-- PANEL 1: MATRIZ DE RIESGO -->
+            <div class="sw-anim-panel sw-p1">
+              <div class="sw-pn-head">
+                <div>
+                  <div class="sw-pn-sub">EBR · Inmobiliaria</div>
+                  <div class="sw-pn-title">Matriz de Riesgo · Configuración</div>
+                </div>
+                <span class="sw-pn-pill">Activo</span>
+              </div>
+              <div class="sw-pn-rows">
+                <div class="sw-pn-row"><span class="sw-pn-row-label">Cliente</span><div class="sw-pn-bar"><div class="sw-pn-bar-fill" style="--bar:0.30;"></div></div><span class="sw-pn-row-val">30%</span></div>
+                <div class="sw-pn-row"><span class="sw-pn-row-label">Producto / Servicio</span><div class="sw-pn-bar"><div class="sw-pn-bar-fill" style="--bar:0.20;"></div></div><span class="sw-pn-row-val">20%</span></div>
+                <div class="sw-pn-row"><span class="sw-pn-row-label">Geografía</span><div class="sw-pn-bar"><div class="sw-pn-bar-fill" style="--bar:0.40;"></div></div><span class="sw-pn-row-val">40%</span></div>
+                <div class="sw-pn-row"><span class="sw-pn-row-label">Transaccional</span><div class="sw-pn-bar"><div class="sw-pn-bar-fill" style="--bar:0.18;"></div></div><span class="sw-pn-row-val">18%</span></div>
+                <div class="sw-pn-row"><span class="sw-pn-row-label">Umbrales UMA</span><div class="sw-pn-bar"><div class="sw-pn-bar-fill" style="--bar:0.62;"></div></div><span class="sw-pn-row-val">62%</span></div>
+              </div>
+            </div>
+
+            <!-- PANEL 2: EXPEDIENTES KYC -->
+            <div class="sw-anim-panel sw-p2">
+              <div class="sw-pn-head">
+                <div><div class="sw-pn-sub">Compliance 360°</div><div class="sw-pn-title">Expedientes KYC / KYB</div></div>
+                <span class="sw-pn-pill">Sincronizado</span>
+              </div>
+              <div class="sw-pn-kyc-list">
+                <div class="sw-pn-kyc-row"><span class="sw-pn-avatar">MR</span><div class="sw-pn-kyc-info"><span class="sw-pn-kyc-name">María Rodríguez Cruz</span><span class="sw-pn-kyc-rfc">RFC: ROCM850412QX9</span></div><span class="sw-pn-badge low">Bajo</span></div>
+                <div class="sw-pn-kyc-row"><span class="sw-pn-avatar">CG</span><div class="sw-pn-kyc-info"><span class="sw-pn-kyc-name">Constructora Galindo S.A. de C.V.</span><span class="sw-pn-kyc-rfc">RFC: CGA180623KL2</span></div><span class="sw-pn-badge med">Medio</span></div>
+                <div class="sw-pn-kyc-row"><span class="sw-pn-avatar">JT</span><div class="sw-pn-kyc-info"><span class="sw-pn-kyc-name">Joaquín Torres Vega</span><span class="sw-pn-kyc-rfc">RFC: TOVJ720915M3A</span></div><span class="sw-pn-badge high">Alto · PEP</span></div>
+              </div>
+              <div class="sw-pn-stats">
+                <div class="sw-pn-stat"><div class="sw-pn-stat-num">247</div><div class="sw-pn-stat-lbl">Expedientes activos</div></div>
+                <div class="sw-pn-stat"><div class="sw-pn-stat-num">12</div><div class="sw-pn-stat-lbl">Alto riesgo</div></div>
+                <div class="sw-pn-stat"><div class="sw-pn-stat-num">100%</div><div class="sw-pn-stat-lbl">Documentos validados</div></div>
+              </div>
+            </div>
+
+            <!-- PANEL 3: LISTAS RESTRICTIVAS -->
+            <div class="sw-anim-panel sw-p3">
+              <div class="sw-pn-head">
+                <div><div class="sw-pn-sub">Screening continuo</div><div class="sw-pn-title">Listas Restrictivas</div></div>
+                <span class="sw-pn-pill">Tiempo real</span>
+              </div>
+              <div class="sw-pn-lists">
+                <div class="sw-pn-list-card clean"><div class="sw-pn-list-head"><span class="sw-pn-list-name">OFAC SDN</span><span class="sw-pn-list-dot"></span></div><div class="sw-pn-list-count">14,832 entidades</div><div class="sw-pn-list-match" style="color:#0ad6ac;">0 coincidencias</div></div>
+                <div class="sw-pn-list-card clean"><div class="sw-pn-list-head"><span class="sw-pn-list-name">ONU Sanciones</span><span class="sw-pn-list-dot"></span></div><div class="sw-pn-list-count">1,176 entidades</div><div class="sw-pn-list-match" style="color:#0ad6ac;">0 coincidencias</div></div>
+                <div class="sw-pn-list-card alert"><div class="sw-pn-list-head"><span class="sw-pn-list-name">PEPs México</span><span class="sw-pn-list-dot"></span></div><div class="sw-pn-list-count">38,420 entidades</div><div class="sw-pn-list-match">2 coincidencias · revisar</div></div>
+                <div class="sw-pn-list-card clean"><div class="sw-pn-list-head"><span class="sw-pn-list-name">69-B SAT</span><span class="sw-pn-list-dot"></span></div><div class="sw-pn-list-count">12,604 contribuyentes</div><div class="sw-pn-list-match" style="color:#0ad6ac;">0 coincidencias</div></div>
+              </div>
+            </div>
+
+            <!-- PANEL 4: MONITOREO TRANSACCIONAL -->
+            <div class="sw-anim-panel sw-p4">
+              <div class="sw-pn-head">
+                <div><div class="sw-pn-sub">EBR continuo</div><div class="sw-pn-title">Monitoreo Transaccional</div></div>
+                <span class="sw-pn-pill">En vivo</span>
+              </div>
+              <div class="sw-pn-txns">
+                <div class="sw-pn-txn"><span class="sw-pn-txn-time">14:32</span><span class="sw-pn-txn-name">Constructora Galindo</span><span class="sw-pn-badge low">Normal</span><span class="sw-pn-txn-amt">$487,200</span></div>
+                <div class="sw-pn-txn"><span class="sw-pn-txn-time">14:31</span><span class="sw-pn-txn-name">Joaquín Torres V.</span><span class="sw-pn-badge med">Revisar</span><span class="sw-pn-txn-amt">$1,240,000</span></div>
+                <div class="sw-pn-txn"><span class="sw-pn-txn-time">14:28</span><span class="sw-pn-txn-name">María Rodríguez C.</span><span class="sw-pn-badge low">Normal</span><span class="sw-pn-txn-amt">$152,800</span></div>
+                <div class="sw-pn-txn"><span class="sw-pn-txn-time">14:25</span><span class="sw-pn-txn-name">Inmobiliaria Pacífico</span><span class="sw-pn-badge high">Inusual</span><span class="sw-pn-txn-amt">$3,815,000</span></div>
+                <div class="sw-pn-txn"><span class="sw-pn-txn-time">14:22</span><span class="sw-pn-txn-name">Roberto Mendoza</span><span class="sw-pn-badge low">Normal</span><span class="sw-pn-txn-amt">$94,300</span></div>
+              </div>
+            </div>
+
+            <!-- PANEL 5: AVISOS SAT (SPPLD) -->
+            <div class="sw-anim-panel sw-p5">
+              <div class="sw-pn-head">
+                <div><div class="sw-pn-sub">SPPLD · XML validado</div><div class="sw-pn-title">Avisos al SAT</div></div>
+                <span class="sw-pn-pill">Auto-generado</span>
+              </div>
+              <div class="sw-pn-avisos-grid">
+                <div class="sw-pn-avisos-list">
+                  <div class="sw-pn-aviso"><span class="sw-pn-aviso-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 1.5h6l3 3v8H3v-11z M9 1.5v3h3" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></span><div class="sw-pn-aviso-info"><div class="sw-pn-aviso-id">AV-2026-0247</div><div class="sw-pn-aviso-type">Operación relevante · 645 UMA</div></div><span class="sw-pn-aviso-status">Enviado</span></div>
+                  <div class="sw-pn-aviso"><span class="sw-pn-aviso-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 1.5h6l3 3v8H3v-11z M9 1.5v3h3" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></span><div class="sw-pn-aviso-info"><div class="sw-pn-aviso-id">AV-2026-0246</div><div class="sw-pn-aviso-type">Operación inusual · revisar</div></div><span class="sw-pn-aviso-status">Enviado</span></div>
+                  <div class="sw-pn-aviso"><span class="sw-pn-aviso-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 1.5h6l3 3v8H3v-11z M9 1.5v3h3" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></span><div class="sw-pn-aviso-info"><div class="sw-pn-aviso-id">AV-2026-0245</div><div class="sw-pn-aviso-type">Operación relevante · 1,605 UMA</div></div><span class="sw-pn-aviso-status">Enviado</span></div>
+                </div>
+                <div class="sw-pn-progress-box">
+                  <div class="sw-pn-progress-label">Acumulado del mes</div>
+                  <div class="sw-pn-progress-num">247</div>
+                  <div class="sw-pn-progress-sub">avisos · 0 rechazados</div>
+                  <div class="sw-pn-progress-circ"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PANEL 6: BENEFICIARIO CONTROLADOR -->
+            <div class="sw-anim-panel sw-p6">
+              <div class="sw-pn-head">
+                <div><div class="sw-pn-sub">Art. 32-B Quáter CFF</div><div class="sw-pn-title">Beneficiario Controlador</div></div>
+                <span class="sw-pn-pill">Identificado</span>
+              </div>
+              <div class="sw-pn-bc">
+                <div class="sw-pn-bc-root"><div><div class="sw-pn-bc-name">Constructora Galindo S.A.</div><div class="sw-pn-bc-role">Persona moral · 100% capital social</div></div></div>
+                <div class="sw-pn-bc-branches">
+                  <div class="sw-pn-bc-node highlight"><div class="sw-pn-bc-node-pct">45%</div><div class="sw-pn-bc-node-name">Roberto Galindo M.</div><div class="sw-pn-bc-node-role">BC · Persona física</div></div>
+                  <div class="sw-pn-bc-node highlight"><div class="sw-pn-bc-node-pct">30%</div><div class="sw-pn-bc-node-name">Lucía Galindo M.</div><div class="sw-pn-bc-node-role">BC · Persona física</div></div>
+                  <div class="sw-pn-bc-node"><div class="sw-pn-bc-node-pct">25%</div><div class="sw-pn-bc-node-name">Inversiones VP</div><div class="sw-pn-bc-node-role">Persona moral</div></div>
+                </div>
+                <span class="sw-pn-bc-flag">✓ 2 BC identificados ≥ 25% participación</span>
+              </div>
+            </div>
+
+            <!-- progress dots -->
+            <div class="sw-anim-dots">
+              <span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CLIENT LOGOS ===== -->
+  <section class="clients" onclick="window.location.href='/casos-de-exito'" style="cursor:pointer;">
+    <p class="clients-label">Empresas que confían en Artu</p>
+    <div class="clients-marquee-wrap">
+      <div class="clients-track">
+        <!-- Set 1 -->
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-4_6_fqzuhk.png" alt="Logo Jeeves - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-1_10_pbk12n.png" alt="Logo Reap - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-3_9_ml158m.png" alt="Logo Rio - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-2_14_rp6gaw.png" alt="Logo Capa - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-5_2_hiaxas.png" alt="Logo Nu bank - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773356006/Untitled_35_kclpb6.png" alt="Logo BDU - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773356007/Untitled_34_pjpoij.png" alt="Logo cliente Artu - software PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773356007/Untitled_33_ogtkst.png" alt="Logo cliente Artu - cumplimiento PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="/assets/REDAMBIENTAL.6df3fa3a.png" alt="Logo Red Ambiental - cliente Artu PLD"></div>
+        <!-- Set 2 -->
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-4_6_fqzuhk.png" alt="Logo Jeeves - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-1_10_pbk12n.png" alt="Logo Reap - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-3_9_ml158m.png" alt="Logo Rio - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-2_14_rp6gaw.png" alt="Logo Capa - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-5_2_hiaxas.png" alt="Logo Nu bank - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773356006/Untitled_35_kclpb6.png" alt="Logo BDU - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773356007/Untitled_34_pjpoij.png" alt="Logo cliente Artu - software PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773356007/Untitled_33_ogtkst.png" alt="Logo cliente Artu - cumplimiento PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="/assets/REDAMBIENTAL.6df3fa3a.png" alt="Logo Red Ambiental - cliente Artu PLD"></div>
+        <!-- Set 3 -->
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-4_6_fqzuhk.png" alt="Logo Jeeves - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-1_10_pbk12n.png" alt="Logo Reap - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-3_9_ml158m.png" alt="Logo Rio - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-2_14_rp6gaw.png" alt="Logo Capa - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-5_2_hiaxas.png" alt="Logo Nu bank - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773356006/Untitled_35_kclpb6.png" alt="Logo BDU - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773356007/Untitled_34_pjpoij.png" alt="Logo cliente Artu - software PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773356007/Untitled_33_ogtkst.png" alt="Logo cliente Artu - cumplimiento PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="/assets/REDAMBIENTAL.6df3fa3a.png" alt="Logo Red Ambiental - cliente Artu PLD"></div>
+        <!-- Set 4 -->
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-4_6_fqzuhk.png" alt="Logo Jeeves - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-1_10_pbk12n.png" alt="Logo Reap - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-3_9_ml158m.png" alt="Logo Rio - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-2_14_rp6gaw.png" alt="Logo Capa - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773355656/Untitled-5_2_hiaxas.png" alt="Logo Nu bank - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773356006/Untitled_35_kclpb6.png" alt="Logo BDU - cliente Artu PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773356007/Untitled_34_pjpoij.png" alt="Logo cliente Artu - software PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773356007/Untitled_33_ogtkst.png" alt="Logo cliente Artu - cumplimiento PLD"></div>
+        <div class="client-logo"><img loading="lazy" src="/assets/REDAMBIENTAL.6df3fa3a.png" alt="Logo Red Ambiental - cliente Artu PLD"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PLD COMPLETE ===== -->
+  <section class="pld-section">
+    <div class="orb orb-pld-left"></div>
+    <div class="orb orb-pld-right"></div>
+    <div class="container text-center">
+      <span class="badge">Sistema automático de cumplimiento en México.</span>
+      <h2 class="section-title">Software de PLD completo! Cumple<br>con todo lo que te pide la <span class="teal">LFPIORPI !</span></h2>
+      <p class="section-body">Implementa Artu con facilidad y automatiza todo tu cumplimiento normativo de principio a fin. Desde KYC, matrices de riesgo, umbrales en UMAs, avisos al SAT (SPPLD), EBR y mas! Todo de un solo lugar — nuestro usuario promedio dedica <strong>solo 5 minutos al mes</strong> en la plataforma y con eso su empresa cumple automáticamente.</p>
+
+      <div class="video-wrapper">
+        <div class="video-bg-gradient"></div>
+        <iframe
+          src="https://www.tella.tv/video/atu-pld-1p9x/embed"
+          class="product-video"
+          allowfullscreen
+          allow="autoplay; fullscreen"
+        ></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FEATURES ===== -->
+  <section class="features">
+    <div class="container">
+      <div class="features-grid">
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <rect x="3" y="3" width="30" height="30" rx="3" stroke="#444" stroke-width="1.8"/>
+              <path d="M9 9h5M9 9v5" stroke="#444" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M27 9h-5M27 9v5" stroke="#444" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M9 27h5M9 27v-5" stroke="#444" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M27 27h-5M27 27v-5" stroke="#444" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Monitoreo de transacciones</h3>
+          <p class="feature-body">Automatiza el monitoreo de transacciones con módulos personalizados de PLD/AML para cada una de las 17 actividades vulnerables.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <path d="M18 4v20M11 17l7 7 7-7" stroke="#444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="5" y="27" width="26" height="5" rx="2" stroke="#444" stroke-width="1.8"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Avisos SAT<br>Automatizados</h3>
+          <p class="feature-body">Genera y envía reportes oficiales de manera rápida y sin complicaciones.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <circle cx="15" cy="12" r="6" stroke="#444" stroke-width="1.8"/>
+              <path d="M6 30c0-5.5 4-9 9-9" stroke="#444" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M24 20l4 4 6-6" stroke="#444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">KYC</h3>
+          <p class="feature-body">Realizamos la verificación de sus clientes contra todas las listas oficiales emitidas por el SAT y llevamos a cabo un EBR!</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <circle cx="18" cy="18" r="14" stroke="#444" stroke-width="1.8"/>
+              <circle cx="18" cy="15" r="5" stroke="#444" stroke-width="1.8"/>
+              <path d="M10 28c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#444" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Capacitación Anual</h3>
+          <p class="feature-body">Curso de capacitación anual enfocado en actualizar a su equipo en las normativas vigentes, mejores prácticas.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== NUESTROS PRODUCTO ===== -->
+  <section class="product-section">
+    <div class="orb orb-product-bl"></div>
+    <div class="container text-center">
+      <a href="/software" class="badge" style="text-decoration:none;cursor:pointer;">Ver el software →</a>
+      <h2 class="section-title">Software hecho a la medida,<br>listo en <span class="teal">24 horas.</span></h2>
+      <p class="section-body wide">En Artu usamos IA para entregarte un software completamente hecho a la medida. Al mismo costo y tiempo de implementación que otras soluciones, pero con capacidades infinitamente más altas.</p>
+
+      <!-- 3 Steps -->
+      <div class="steps-grid">
+
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-icon">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <path d="M4 8h20M4 14h14M4 20h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3 class="step-title">Elige lo que necesitas</h3>
+          <p class="step-body">Selecciona los módulos de compliance que tu actividad vulnerable requiere: KYC, monitoreo transaccional, avisos SAT, EBR y más.</p>
+        </div>
+
+        <div class="step-connector">
+          <svg width="40" height="16" viewBox="0 0 40 16" fill="none">
+            <path d="M0 8h36M30 2l6 6-6 6" stroke="url(#arr)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs><linearGradient id="arr" x1="0" y1="0" x2="40" y2="0"><stop stop-color="#0ad6ac"/><stop offset="1" stop-color="#0b4147"/></linearGradient></defs>
+          </svg>
+        </div>
+
+        <div class="step-card step-card-featured">
+          <div class="step-number">2</div>
+          <div class="step-icon">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <rect x="3" y="5" width="22" height="18" rx="2.5" stroke="currentColor" stroke-width="2"/>
+              <path d="M8 12h5M8 16h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M17 9l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 class="step-title">Obtén una cotización en tiempo real</h3>
+          <p class="step-body">Precio transparente, sin sorpresas. Calculamos el costo exacto de tu solución al instante, personalizado para tu volumen y actividad.</p>
+        </div>
+
+        <div class="step-connector">
+          <svg width="40" height="16" viewBox="0 0 40 16" fill="none">
+            <path d="M0 8h36M30 2l6 6-6 6" stroke="url(#arr2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs><linearGradient id="arr2" x1="0" y1="0" x2="40" y2="0"><stop stop-color="#0ad6ac"/><stop offset="1" stop-color="#0b4147"/></linearGradient></defs>
+          </svg>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-icon">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <rect x="3" y="3" width="22" height="22" rx="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M9 14l3 3 7-7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 class="step-title">Software hecho a la medida</h3>
+          <p class="step-body">Tu plataforma PLD completamente configurada en 24 horas, mientras que otras soluciones tardan 12+. Mismo costo, capacidades infinitamente más altas.</p>
+        </div>
+
+      </div>
+
+      <div class="steps-cta">
+        <a href="https://calendly.com/ceojuanpi/website-product-demo" data-artu-demo target="_blank" class="btn btn-primary btn-lg">Agenda tu demo →</a>
+        <p class="steps-cta-note">Reduce tus costos de compliance hasta <strong>15x</strong></p>
+      </div>
+
+      <!-- PLACEHOLDER - flow diagram kept below, hidden by default -->
+      <div class="flow-diagram" style="display:none">
+        <div class="flow-toolbar">
+          <button class="flow-add-btn">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            Agregar nodo
+          </button>
+          <button class="flow-grid-btn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="1" y="1" width="5" height="5" rx="1" stroke="#666" stroke-width="1.4"/>
+              <rect x="10" y="1" width="5" height="5" rx="1" stroke="#666" stroke-width="1.4"/>
+              <rect x="1" y="10" width="5" height="5" rx="1" stroke="#666" stroke-width="1.4"/>
+              <rect x="10" y="10" width="5" height="5" rx="1" stroke="#666" stroke-width="1.4"/>
+            </svg>
+          </button>
+        </div>
+        <p class="flow-hint">¡Interactúa con las acciones para aprender más!</p>
+
+        <div class="flow-canvas">
+
+          <!-- Node 1 -->
+          <div class="flow-node">
+            <div class="node-header">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="2" rx="1" fill="#666"/><rect x="1" y="6" width="12" height="2" rx="1" fill="#666"/><rect x="1" y="10" width="12" height="2" rx="1" fill="#666"/></svg>
+              Conexión a datos
+            </div>
+            <div class="node-body">
+              <div class="node-field-label">ID</div>
+              <div class="node-field-row"><span class="node-chip">ID</span><span class="node-dot right"></span></div>
+              <div class="node-field-label">Activos</div>
+              <div class="node-field-row"><span class="node-chip">Activos</span><span class="node-dot right"></span></div>
+              <div class="node-field-label">Donde</div>
+              <div class="node-field-row"><span class="node-chip">Donde</span><span class="node-dot right"></span></div>
+            </div>
+          </div>
+
+          <div class="flow-line"></div>
+
+          <!-- Node 2 -->
+          <div class="flow-node">
+            <div class="node-header">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="1.5" stroke="#666" stroke-width="1.3"/><path d="M5 7h4M7 5v4" stroke="#666" stroke-width="1.3" stroke-linecap="round"/></svg>
+              Transformación de data
+            </div>
+            <div class="node-body">
+              <div class="node-field-label">Usuario</div>
+              <div class="node-field-row"><span class="node-dot left"></span><span class="node-chip full">Usuario</span><span class="node-dot right"></span></div>
+              <div class="node-field-label">Fecha</div>
+              <div class="node-field-row"><span class="node-dot left"></span><span class="node-chip full">Fecha</span><span class="node-dot right"></span></div>
+              <div class="node-field-label">Monto</div>
+              <div class="node-field-row"><span class="node-dot left"></span><span class="node-chip full">Monto</span><span class="node-dot right"></span></div>
+              <div class="node-field-label">Fecha de Lote</div>
+              <div class="node-field-row"><span class="node-chip full">Fecha de Lote</span><span class="node-dot right"></span></div>
+              <div class="node-field-label">Nacionalidad</div>
+              <div class="node-field-row"><span class="node-chip full">Nacionalidad</span><span class="node-dot right"></span></div>
+            </div>
+          </div>
+
+          <div class="flow-line"></div>
+
+          <!-- Node 3 -->
+          <div class="flow-node">
+            <div class="node-header">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="#666" stroke-width="1.3"/><path d="M7 4.5V7l1.5 1.5" stroke="#666" stroke-width="1.3" stroke-linecap="round"/></svg>
+              Toma de decisiones
+            </div>
+            <div class="node-body">
+              <div class="node-field-label">Calle</div>
+              <div class="node-field-row"><span class="node-dot left"></span><span class="node-chip full">Calle</span><span class="node-dot right"></span></div>
+              <div class="node-field-label">Barrio</div>
+              <div class="node-field-row"><span class="node-dot left"></span><span class="node-chip full">Barrio</span><span class="node-dot right"></span></div>
+              <div class="node-field-label">Necesidades Especiales</div>
+              <div class="node-field-row"><span class="node-dot left"></span><span class="node-chip full chip-dark">Necesidades Especiales</span><span class="node-dot right"></span></div>
+              <div class="node-field-label">Código Postal</div>
+              <div class="node-field-row"><span class="node-chip full">Código Postal</span><span class="node-dot right"></span></div>
+              <div class="node-field-label">Tasa</div>
+              <div class="node-field-row"><span class="node-chip full">Tasa</span><span class="node-dot right"></span></div>
+              <div class="node-field-label">Ciudad</div>
+              <div class="node-field-row"><span class="node-chip full">Ciudad</span><span class="node-dot right"></span></div>
+            </div>
+          </div>
+
+          <div class="flow-line"></div>
+
+          <!-- Node 4 -->
+          <div class="flow-node flow-node-highlighted">
+            <div class="node-header">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2h7l3 3v7H2V2z" stroke="#666" stroke-width="1.3"/><path d="M9 2v3h3" stroke="#666" stroke-width="1.3"/></svg>
+              Output / Aviso
+            </div>
+            <div class="node-body">
+              <div class="node-field-row" style="margin-bottom:6px">
+                <span class="node-dot left"></span>
+                <span class="node-field-label" style="margin:0;padding:0">Ejemplo de aviso:</span>
+              </div>
+              <div class="node-code-block">
+                <code>&lt;mes_reportado&gt;202501&lt;/mes_reportado&gt;<br>
+&lt;sujeto_obligado&gt;LLL12345<br>789&lt;/sujeto_obligado&gt;<br>
+&lt;actividad_economica&gt;1000<br>008&lt;/actividad_economica&gt;<br>
+&lt;descripcion_alerta&gt;UNDEF<br>INED&lt;/descripcion_alerta&gt;<br>
+&lt;codigo_postal&gt;12345&lt;/co<br>digo_postal&gt;</code>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CONFIADO POR LOS MEJORES ===== -->
+  <section class="trusted-section">
+    <div class="container text-center">
+      <h2 class="section-title">Confiado por los mejores</h2>
+      <p class="section-body">Artu es un software de PLD especializado en actividades vulnerables, respaldado por fondos líderes que confían en la misión y visión de la compañía. Es, por mucho, el software más completo y moderno del mercado.</p>
+
+      <div class="trusted-logos">
+        <div class="trusted-logo-item">
+          <img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773356940/Untitled_38_bcljqc.png" alt="Partner" class="partner-logo">
+        </div>
+        <div class="trusted-logo-item">
+          <img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773356940/Untitled_36_hmc8rw.png" alt="Partner" class="partner-logo">
+        </div>
+        <div class="trusted-logo-item">
+          <img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773356940/Untitled_37_cremce.png" alt="Partner" class="partner-logo">
+        </div>
+        <div class="trusted-logo-item">
+          <img loading="lazy" src="https://res.cloudinary.com/dfmpmintr/image/upload/v1773342216/aws_startup_program_ttcetr.png" alt="AWS Startup Programs" class="partner-logo">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== AGENDA TU DEMO ===== -->
+  <section class="cta-section">
+    <div class="orb orb-cta"></div>
+    <div class="container text-center">
+      <h2 class="cta-title teal">Agenda tu demo hoy!</h2>
+      <p class="section-body">Descubre la tranquilidad de delegar tu<br>compliance y enfócate en hacer crecer tu negocio.</p>
+      <a href="https://calendly.com/ceojuanpi/website-product-demo" data-artu-demo target="_blank" rel="noopener" class="btn btn-primary btn-lg">Solicita una demo</a>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="/" class="logo-link footer-logo-link">
+            <img src="https://res.cloudinary.com/dfmpmintr/image/upload/v1756942025/LOGOTIPO_ARTU-02_ypow49.png" alt="artu" class="logo-img footer-logo-img">
+          </a>
+          <p class="footer-tagline">El software PLD más avanzado para actividades vulnerables en México.</p>
+          <div class="footer-social" style="margin-top:14px;display:flex;gap:10px;">
+            <a href="https://www.linkedin.com/company/artuai/" target="_blank" rel="noopener" aria-label="LinkedIn" style="display:inline-flex;width:34px;height:34px;align-items:center;justify-content:center;border:1.5px solid rgba(255,255,255,0.25);border-radius:50%;color:#fff;transition:background .2s,border-color .2s;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.62 0 4.29 2.38 4.29 5.48v6.26zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg>
+            </a>
+            <a href="https://www.instagram.com/artucompliance/" target="_blank" rel="noopener" aria-label="Instagram" style="display:inline-flex;width:34px;height:34px;align-items:center;justify-content:center;border:1.5px solid rgba(255,255,255,0.25);border-radius:50%;color:#fff;transition:background .2s,border-color .2s;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41-.56-.22-.96-.48-1.38-.9-.42-.42-.68-.82-.9-1.38-.16-.42-.36-1.06-.41-2.23C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.17 8.8 2.16 12 2.16zM12 0C8.74 0 8.33.01 7.05.07 5.78.13 4.9.33 4.14.63a5.91 5.91 0 0 0-2.14 1.39A5.91 5.91 0 0 0 .63 4.14C.33 4.9.13 5.78.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.27.26 2.15.56 2.91.32.8.74 1.48 1.39 2.14a5.91 5.91 0 0 0 2.14 1.39c.76.3 1.64.5 2.91.56C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c1.27-.06 2.15-.26 2.91-.56a5.91 5.91 0 0 0 2.14-1.39 5.91 5.91 0 0 0 1.39-2.14c.3-.76.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.27-.26-2.15-.56-2.91a5.91 5.91 0 0 0-1.39-2.14A5.91 5.91 0 0 0 19.86.63c-.76-.3-1.64-.5-2.91-.56C15.67.01 15.26 0 12 0zm0 5.84a6.16 6.16 0 1 0 0 12.32 6.16 6.16 0 0 0 0-12.32zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.41-11.85a1.44 1.44 0 1 0 0 2.88 1.44 1.44 0 0 0 0-2.88z"/></svg>
+            </a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h4>Soluciones por sector</h4>
+          <a href="/pld-inmobiliarias/">PLD para inmobiliarias</a>
+          <a href="/pld-desarrolladoras/">PLD para desarrolladoras</a>
+          <a href="/pld-sofomes/">PLD para SOFOMes</a>
+          <a href="/pld-arrendadoras/">PLD para arrendadoras</a>
+          <a href="/pld-activos-virtuales/">PLD para activos virtuales</a>
+          <a href="/avisos-sppld/">Avisos SPPLD</a>
+        </div>
+        <div class="footer-col">
+          <h4>Compañía</h4>
+          <a href="/aviso-de-privacidad">Aviso de Privacidad</a>
+          <a href="/terminos">Términos y Condiciones</a>
+          <a href="/politicas-de-devolucion">Políticas de Devolución</a>
+          <a href="/nosotros">Nosotros</a>
+          <a href="/arco">ARCO</a>
+        </div>
+        <div class="footer-col footer-contact">
+          <h4>Contacto</h4>
+          <a href="mailto:admin@artu.ai" class="footer-contact-row">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="3" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 4l6 4 6-4" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+            admin@artu.ai
+          </a>
+          <a href="tel:+525559474943" class="footer-contact-row">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 1.5C4 1.5 3 3 3 4.5c0 4 3 6.5 6.5 6.5 1.5 0 3-1 3-1l-2-2s-.5.5-1 .5c-1 0-3-2-3-3 0-.5.5-1 .5-1L4 1.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+            +52 55 5947 4943
+          </a>
+          <div class="footer-contact-row footer-address">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1C4.8 1 3 2.8 3 5c0 3 4 8 4 8s4-5 4-8c0-2.2-1.8-4-4-4z" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="5" r="1.2" stroke="currentColor" stroke-width="1.3"/></svg>
+            <span>Calle Monte Elbruz 132, Piso 7, Oficina 701,<br>Lomas de Chapultepec III Sección,<br>Miguel Hidalgo, 11000<br>Ciudad de México, CDMX, México</span>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 Artu. Todos los derechos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="/js/translations.js"></script>
+  <script src="/js/i18n.js"></script>
+  <elevenlabs-convai agent-id="agent_4301kjgnfd2vebns2qn4rak214aa"></elevenlabs-convai>
+  <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+</body>
+</html>

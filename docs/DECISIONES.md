@@ -483,6 +483,21 @@ Dos celdas de esa cobertura concentran el riesgo de acreditar de más, y las dos
 
 **Fijado con:** aserciones en la migración `20260829150000` (escala monótona y congelada, nivel del mismo modelo, residual como resta, append-only, solo contra vigente, privilegios declarados) y `tests/persistencia/entidad.test.ts` (motor puro + punta a punta, incluido el tope estructural y el hueco que no escribe).
 
+## ADR-29 · El MER se emite, no se descarga — y solo del modelo vigente — 2026-08-29
+
+**Contexto.** El benchmark del 28-ago lo dijo con todas sus letras: ninguno de los siete competidores declara el MER como **artefacto entregable, versionado y aprobable** — todos construyen scoring, ninguno la evidencia de que el scoring fue diseñado, aprobado y revisado. La acción A-06 lo pidió como eje del pitch, y la pregunta del verificador que el documento contesta es la de BMK-01: «¿por qué este cliente quedó en riesgo medio en marzo de 2027, con qué metodología, aprobada por quién, y puedes reconstruirlo?».
+
+**Decisión.** El MER hereda la doctrina completa de la Constancia (ADR-20):
+
+1. **Emitir es un acto**: el texto (Markdown — se hashea, se diffea, se lee en veinte años) se congela en `mer_emitidos` con su SHA-256, quién y cuándo, y un resumen que cuadra por CHECK. Dos emisiones idénticas del mismo día son el mismo documento. El Manual lo referencia por fecha y huella (Art. 37 ¶2).
+2. **Solo del modelo vigente** — trigger propio: un MER de un borrador documentaría, con el nombre del obligado, una metodología que nadie aprobó.
+3. **Cada afirmación cita su respaldo, y la cobertura no se re-decide**: la sección del Art. 10 Septies 1 viene de `coberturaDeLaMetodologia` (ADR-27), la misma función que pinta la pantalla. Donde falta configuración hay un pendiente con su artículo — incluida la evaluación de entidad ausente (Art. 18 fr. VII) y los mitigantes sin nivel (ADR-28).
+4. **La evaluación de entidad citada es la del modelo vigente**: citar la de una versión anterior le colgaría a esta metodología un resultado que no produjo.
+
+**Ocho secciones**: gobierno y versiones · fr. I · fr. II · fr. III · ¶ final (la matriz 4×2 de los delitos) · escala de grados · evaluación de entidad con su consecuencia de los Arts. 44/45 escrita · cobertura. La sección de cobertura **resume** las no acreditadas sin repetir sus faltas — repetirlas haría parecer el doble de pendientes (lo cazó una prueba, no una revisión).
+
+**Fijado con:** aserciones en la migración `20260829200000` y `tests/persistencia/mer.test.ts` (composición pura con huecos contados, emisión congelada con huella verificada, dedupe del mismo día, append-only).
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde

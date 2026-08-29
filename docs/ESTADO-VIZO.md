@@ -39,6 +39,6 @@ pieza. **Fecha de corte: 29-ago-2026.**
 | 25 | LFPDPPP Capa B (módulo vendible) | ⛔ Diferida (~abr-2027); el pitch no la menciona | issue #23 |
 | 26 | Certificación ISO 27001 | ❌ No iniciada — ruta por definir (D10, carril JP, Q1-2027) | BMK-01 D10 |
 | 27 | Validación legal externa | ❌ **Pendiente** — Escalante Palma es candidato, no contratado. En toda matriz dice «pendiente» | issue #32 · ERR-01 E-1 |
-| 28 | Biometría / prueba de vida | ❌ No integrada; postura por decidir con argumento documentado (A-07) | COMP-01 A-07 |
+| 28 | Biometría / prueba de vida | ✅ **Descartada con posición escrita** (Q4, 28-ago): la norma no la exige, abre el terreno de datos sensibles con la Capa B diferida, y el comprador real no la pide. Cláusula de salida: integración por contrato con costo trasladado | `docs/POSTURA-BIOMETRIA.md` |
 | 29 | Seguridad de base: RLS por tenant, rol sin BYPASSRLS, privilegios declarados uno a uno, verificados en cada CI | ✅ Construido y vigilado (la aserción 1f-bis detectó el hueco del 23–24-ago y se corrigió) | ADR-16/17/18 · smoke test |
 | 30 | Aislamiento de la evidencia: append-only con triggers, timestamps del servidor, montos en centavos, cero regulatorio en código | ✅ Reglas duras 1–6 del proyecto, verificadas por suite y CI | `CLAUDE.md` |

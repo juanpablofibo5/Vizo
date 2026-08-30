@@ -56,6 +56,28 @@ const TRAZOS: Record<Icono, React.ReactNode> = {
       <path d="M6.4 12.7h3.4" />
     </>
   ),
+  // El edificio del obligado: el riesgo propio, no el de sus clientes.
+  entidad: (
+    <>
+      <path d="M4 15.5V4.2L9 2.4l5 1.8v11.3" />
+      <path d="M2.5 15.5h13" />
+      <path d="M6.8 6.6h.05" />
+      <path d="M11.2 6.6h.05" />
+      <path d="M6.8 9.4h.05" />
+      <path d="M11.2 9.4h.05" />
+      <path d="M9 15.5v-3h.05" />
+    </>
+  ),
+  // Documento con sello: el MER se emite y se congela.
+  mer: (
+    <>
+      <path d="M4 2.5h6.2L14.5 6.9v3.1" />
+      <path d="M10 2.6v4.4h4.4" />
+      <path d="M4 2.5v13h4.6" />
+      <circle cx="12.6" cy="13" r="2.7" />
+      <path d="M11.5 13l.8.9 1.4-1.7" />
+    </>
+  ),
   // Escudo con marca: la prueba verificable.
   evidencia: (
     <>

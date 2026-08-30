@@ -34,6 +34,15 @@ import {
   estadoDelCuestionario,
   type EstadoDelCuestionario,
 } from '../../../../src/persistencia/cuestionario'
+import { SeccionScreening } from './screening'
+import {
+  coincidenciasPendientes,
+  listasVigentes,
+  screeningDelSujeto,
+  type ConsultaListada,
+  type ConsultaPendiente,
+} from '../../../../src/persistencia/screening'
+import { ListasIncompletas, type ListaVigente } from '../../../../src/dominio/screening'
 import {
   rielAprobacion,
   rielGradoDeRiesgo,
@@ -107,6 +116,66 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       relacion_negocios: boolean | null
     }
 
+    /*
+      EL SCREENING VA ANTES DE LA PUERTA, a propósito.
+
+      Las siete secciones de conocimiento se asientan EN el expediente, y por
+      eso la puerta del ADR-24 las condiciona. El screening no: consultar a una
+      persona contra listas de control es lo que se hace ANTES de decidir si se
+      abre relación con ella, y la coincidencia sin resolver es urgente exista
+      o no expediente.
+
+      La primera versión de esta pantalla lo dejó dentro de la puerta, y el
+      resultado se vio en la demo: un cliente con coincidencia detectada y sin
+      expediente tenía su alerta en /alertas diciendo «se resuelve en su
+      expediente», y el expediente ofrecía un botón de abrir y nada más. La
+      alerta apuntaba a una pantalla sin la acción que prometía.
+    */
+    const ctxSesion = {
+      usuarioId: sesion.usuarioId,
+      tenantId: sesion.tenantId,
+      rol: sesion.rol,
+    }
+    const screening: ConsultaListada[] = await screeningDelSujeto(db, {
+      sesion: ctxSesion,
+      sujetoTipo: 'cliente',
+      sujetoId: clienteId,
+    })
+    const screeningPendientes: ConsultaPendiente[] = await coincidenciasPendientes(db, {
+      sesion: ctxSesion,
+      sujetoTipo: 'cliente',
+      sujetoId: clienteId,
+    })
+    // Sin las cuatro listas la consulta se DETIENE (regla dura 6). Aquí ese
+    // alto se convierte en un mensaje en pantalla, no en una página rota.
+    let listasScreening: ListaVigente[] | null = null
+    let listasScreeningError: string | null = null
+    try {
+      listasScreening = await listasVigentes(db)
+    } catch (e) {
+      if (!(e instanceof ListasIncompletas)) throw e
+      listasScreeningError = e.message
+    }
+
+    const seccionScreening = (
+      <>
+        <h2>Listas de control</h2>
+        <p className="sub" style={{ maxWidth: '44rem' }}>
+          OFAC, ONU, SAT 69-B y Personas Bloqueadas. VIZO detecta de más a propósito y no
+          descarta nada solo: confirmar o descartar una coincidencia lo firma una persona, con su
+          razonamiento como evidencia.
+        </p>
+        <SeccionScreening
+          clienteId={clienteId}
+          historial={screening}
+          pendientes={screeningPendientes}
+          listas={listasScreening}
+          listasError={listasScreeningError}
+          esAdmin={sesion.rol === 'admin'}
+        />
+      </>
+    )
+
     const exp = await db.query(
       `select e.id, e.estatus::text as estatus, e.actividad_id, e.completitud,
               e.verificado_en::text as verificado_en,
@@ -165,6 +234,11 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
               <button type="submit">Abrir expediente</button>
             </form>
           </div>
+
+          {/* Las listas SÍ se consultan aquí: es lo que se hace antes de
+              decidir si se abre relación, y una coincidencia detectada no
+              espera a que alguien abra el expediente. */}
+          {seccionScreening}
         </Marco>
       )
     }
@@ -538,6 +612,8 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
           secciones={secciones}
           abiertaInicial={seccionAbiertaPorDefecto(secciones)}
         />
+
+        {seccionScreening}
 
         <h2>Subir documento</h2>
         {/*

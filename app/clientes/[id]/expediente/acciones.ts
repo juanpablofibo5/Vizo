@@ -56,6 +56,12 @@ import type {
   EvidenciaDeConsulta,
   PersonaVinculada,
 } from '../../../../src/dominio/medidas-reforzadas'
+import { consultarScreening, resolverScreening } from '../../../../src/persistencia/screening'
+import {
+  DatoDeScreeningInvalido,
+  ListasIncompletas,
+} from '../../../../src/dominio/screening'
+import { leerComoUsuario } from '../../../../src/supabase/conexion'
 
 export interface EstadoSubida {
   problemas: string[]
@@ -623,6 +629,110 @@ export async function asentarAprobacionDirectivo(
     const bruto = e instanceof Error ? e.message : String(e)
     if (/insufficient_privilege|admin|row-level security/i.test(bruto)) {
       return { ok: false, mensaje: 'Solo un administrador asienta la aprobación del Art. 23 Ter 5.' }
+    }
+    return { ok: false, mensaje: bruto }
+  } finally {
+    await db.end()
+  }
+}
+
+/**
+ * La consulta a listas de control (ADR-30).
+ *
+ * El nombre y el RFC NO viajan en el formulario: se leen del cliente bajo RLS.
+ * Un nombre que llega del navegador es un nombre que quien captura puede
+ * teclear distinto, y entonces la evidencia diría que se consultó a alguien
+ * que no es el cliente del expediente.
+ */
+export async function accionConsultarScreening(
+  _previo: EstadoRevision,
+  form: FormData,
+): Promise<EstadoRevision> {
+  const sesion = await sesionRequerida()
+  const ctx = { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol }
+  const clienteId = String(form.get('clienteId') ?? '')
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    const cliente = await leerComoUsuario(db, ctx, async () => {
+      const r = await db.query(
+        `select nombre_o_razon_social, rfc from clientes_finales where id = $1`,
+        [clienteId],
+      )
+      return r.rows[0] as { nombre_o_razon_social: string; rfc: string | null } | undefined
+    })
+    if (cliente === undefined) {
+      return { ok: false, mensaje: 'Este cliente no existe en tu obligado.' }
+    }
+
+    const r = await consultarScreening(db, {
+      sesion: ctx,
+      sujetoTipo: 'cliente',
+      sujetoId: clienteId,
+      nombre: cliente.nombre_o_razon_social,
+      ...(cliente.rfc === null ? {} : { rfc: cliente.rfc }),
+    })
+
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    revalidatePath('/alertas')
+    return r.resultado === 'sin_coincidencia'
+      ? {
+          ok: true,
+          mensaje:
+            `Sin coincidencias en las ${String(r.listas.length)} listas vigentes. La consulta quedó ` +
+            'registrada con el snapshot de versiones: ese folio es la evidencia de que hoy se consultó.',
+        }
+      : {
+          ok: true,
+          mensaje:
+            `${String(r.coincidencias.length)} coincidencia(s) detectada(s) y una alerta levantada. ` +
+            'VIZO detecta de más a propósito; confirmar o descartar le toca a una persona, abajo.',
+        }
+  } catch (e) {
+    if (e instanceof ListasIncompletas || e instanceof DatoDeScreeningInvalido) {
+      return { ok: false, mensaje: e.message }
+    }
+    return { ok: false, mensaje: e instanceof Error ? e.message : 'No se pudo consultar.' }
+  } finally {
+    await db.end()
+  }
+}
+
+/** La resolución humana de una coincidencia: una vez, con quién, cuándo y por qué. */
+export async function accionResolverScreening(
+  _previo: EstadoRevision,
+  form: FormData,
+): Promise<EstadoRevision> {
+  const sesion = await sesionRequerida()
+  const ctx = { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol }
+  const consultaId = String(form.get('consultaId') ?? '')
+  const clienteId = String(form.get('clienteId') ?? '')
+  const resolucion = String(form.get('resolucion') ?? '')
+  const razonamiento = String(form.get('razonamiento') ?? '')
+
+  if (resolucion !== 'confirmada' && resolucion !== 'descartada') {
+    return { ok: false, mensaje: 'Elige si la coincidencia se confirma o se descarta.' }
+  }
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await resolverScreening(db, { sesion: ctx, consultaId, resolucion, razonamiento })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    revalidatePath('/alertas')
+    return {
+      ok: true,
+      mensaje:
+        resolucion === 'descartada'
+          ? 'Descartada como homónimo. Tu razonamiento queda como la evidencia de por qué se puede operar.'
+          : 'Coincidencia confirmada: sí es la persona listada. Queda con tu nombre y la hora; lo que proceda con la relación lo decide el obligado conforme a su Manual — VIZO no lo decide.',
+    }
+  } catch (e) {
+    if (e instanceof DatoDeScreeningInvalido) return { ok: false, mensaje: e.message }
+    const bruto = e instanceof Error ? e.message : String(e)
+    if (/row-level security|permission denied/i.test(bruto)) {
+      return { ok: false, mensaje: 'Solo un administrador resuelve una coincidencia de screening.' }
     }
     return { ok: false, mensaje: bruto }
   } finally {

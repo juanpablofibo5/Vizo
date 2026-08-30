@@ -1,8 +1,9 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import type { Client } from 'pg'
+import { Client } from 'pg'
 import { conectar, crearTenantConUsuario } from '../soporte/db'
 import { type ContextoSesion } from '../../src/persistencia/transaccion'
 import {
+  coincidenciasPendientes,
   consultarScreening,
   listasVigentes,
   resolverScreening,
@@ -188,5 +189,79 @@ describe('El screening contra listas de control', () => {
         razonamiento: 'Pensándolo mejor, sí parece ser la persona listada.',
       }),
     ).rejects.toThrow(/ya fue resuelta/)
+  })
+
+  it('las pendientes traen su detalle, y resolver las vacía — es lo que la pantalla abre', async () => {
+    const r = await consultarScreening(db, {
+      sesion: admin,
+      sujetoTipo: 'cliente',
+      sujetoId: clienteId,
+      nombre: 'Jose Angel Lopez Gomez de la Prueba lpb',
+    })
+    expect(r.resultado).toBe('coincidencia')
+
+    const pendientes = await coincidenciasPendientes(db, {
+      sesion: admin,
+      sujetoTipo: 'cliente',
+      sujetoId: clienteId,
+    })
+    expect(pendientes).toHaveLength(1)
+    expect(pendientes[0]?.consultaId).toBe(r.consultaId)
+    // El detalle completo: es lo que la resolución humana necesita mirar.
+    const c = pendientes[0]?.coincidencias[0]
+    expect(c?.nombreEnLista).toContain('José Ángel López Gómez de la Prueba')
+    expect(c?.similitud).toBeGreaterThan(0)
+
+    await resolverScreening(db, {
+      sesion: admin,
+      consultaId: r.consultaId,
+      resolucion: 'descartada',
+      razonamiento:
+        'Homónimo: el segundo apellido y la fecha de nacimiento del cliente no corresponden.',
+    })
+    const despues = await coincidenciasPendientes(db, {
+      sesion: admin,
+      sujetoTipo: 'cliente',
+      sujetoId: clienteId,
+    })
+    expect(despues).toHaveLength(0)
+  })
+
+  /**
+   * El matching corre con el rol de la APLICACIÓN, no con el administrativo.
+   *
+   * Este caso existe porque el resto del archivo no lo cubría y el defecto
+   * llegó hasta la pantalla. `conectar()` abre como `postgres`, cuyo
+   * search_path incluye `extensions` — donde vive pg_trgm—, así que el
+   * operador `%` resolvía en toda la suite. `vizo_app`, que es como se conecta
+   * el portal, NO lo tiene: la primera consulta real murió con «operator does
+   * not exist: text % text» con la suite entera en verde.
+   *
+   * La lección no es sobre pg_trgm: es que un test que corre con más
+   * privilegios —o con más search_path— que la aplicación puede pasar sobre
+   * código que la aplicación no puede ejecutar.
+   */
+  it('corre con el rol de la aplicación, cuyo search_path no incluye extensions', async () => {
+    const app = new Client({
+      connectionString:
+        process.env['VIZO_DB_URL'] ??
+        'postgresql://vizo_app:vizo-local-dev@127.0.0.1:54322/postgres',
+    })
+    await app.connect()
+    try {
+      const sp = await app.query('show search_path')
+      expect((sp.rows[0] as { search_path: string }).search_path).not.toContain('extensions')
+
+      const r = await consultarScreening(app, {
+        sesion: admin,
+        sujetoTipo: 'cliente',
+        sujetoId: clienteId,
+        nombre: 'Jose Angel Lopez Gomez de la Prueba ofac_sdn',
+      })
+      expect(r.resultado).toBe('coincidencia')
+      expect(r.coincidencias.some((c) => c.criterio === 'nombre')).toBe(true)
+    } finally {
+      await app.end()
+    }
   })
 })

@@ -119,6 +119,16 @@ export async function consultarScreening(
 
     // El % usa el índice de trigramas; el umbral entra por set_config LOCAL a
     // la transacción, así dos consultas concurrentes no se pisan el número.
+    //
+    // EL OPERADOR VA CALIFICADO CON SU ESQUEMA, y no es cosmético. pg_trgm
+    // vive en `extensions`, que está en el search_path de `postgres` —el rol
+    // de los tests— pero NO en el de `vizo_app`, que es como se conecta la
+    // aplicación. Escrito como `%` a secas, esto pasaba toda la suite en verde
+    // y moría en la primera consulta real con «operator does not exist: text %
+    // text». `OPERATOR(extensions.%)` resuelve sin depender del search_path y
+    // sigue usando el índice GIN; `similarity(...) >= umbral` también sería
+    // correcto, pero haría recorrido secuencial sobre listas de cientos de
+    // miles de renglones.
     const normalizado = normalizarNombre(p.nombre)
     await db.query(`select set_config('pg_trgm.similarity_threshold', $1, true)`, [String(umbral)])
     const m = await db.query(
@@ -128,7 +138,7 @@ export async function consultarScreening(
          from entradas_lista e
          join (select distinct on (clave) id, clave from listas_screening
                 order by clave, descargada_en desc) l on l.id = e.lista_id
-        where e.nombre_normalizado % $1
+        where e.nombre_normalizado OPERATOR(extensions.%) $1
            or (coalesce($2, '') <> '' and e.rfc = $2)
         order by similitud desc`,
       [normalizado, rfc === '' ? null : rfc],
@@ -275,6 +285,41 @@ export interface ConsultaListada {
   coincidencias: number
   consultadoEn: string
   resueltoEn: string | null
+}
+
+export interface ConsultaPendiente {
+  consultaId: string
+  consultadoEn: string
+  coincidencias: CoincidenciaScreening[]
+}
+
+/**
+ * Las consultas con coincidencia SIN resolver de un sujeto, con su detalle.
+ *
+ * Es lo único que la pantalla necesita abrir completo: quién aparece en qué
+ * lista y con qué similitud, para que la resolución humana tenga qué mirar.
+ * Las resueltas se listan con `screeningDelSujeto` sin reabrir su detalle —
+ * la evidencia ya quedó congelada en la fila.
+ */
+export async function coincidenciasPendientes(
+  db: EjecutorSql,
+  p: { sesion: ContextoSesion; sujetoTipo: 'cliente' | 'beneficiario'; sujetoId: string },
+): Promise<ConsultaPendiente[]> {
+  const { rows } = await db.query(
+    `select id::text, created_at::text as consultado_en, coincidencias
+       from consultas_screening
+      where tenant_id = $1 and sujeto_tipo = $2 and sujeto_id = $3
+        and resultado = 'coincidencia' and resolucion = 'pendiente'
+      order by created_at desc`,
+    [p.sesion.tenantId, p.sujetoTipo, p.sujetoId],
+  )
+  return (
+    rows as { id: string; consultado_en: string; coincidencias: CoincidenciaScreening[] }[]
+  ).map((f) => ({
+    consultaId: f.id,
+    consultadoEn: f.consultado_en,
+    coincidencias: f.coincidencias,
+  }))
 }
 
 /** El historial de consultas de un sujeto, para su expediente. */

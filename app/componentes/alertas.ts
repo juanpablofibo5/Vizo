@@ -27,6 +27,12 @@ export function tonoDeAlerta(tipo: string, por: string | null): TonoDeRiel {
     // La omisión corre desde el acto: el ¶1 contempla detectarlo después.
     case 'aprobacion_directivo_pendiente':
       return 'critico'
+    // No hay plazo que la ampare: mientras nadie la resuelva, se puede estar
+    // operando con una persona listada — y eso no está «por vencer», está
+    // pasando. Detectar de más fue decisión de diseño (ADR-30); el granate es
+    // su otra mitad: lo detectado de más se mira pronto o estorba.
+    case 'screening':
+      return 'critico'
     // Obligación con plazo: hasta el día 17 del mes siguiente.
     case 'aviso_requerido':
     case 'desviacion_perfil':
@@ -53,6 +59,7 @@ const NOMBRE: Record<string, string> = {
   perfil_ausente: 'perfil ausente',
   revision_identidad: 'revisión de identidad',
   proximidad: 'proximidad',
+  screening: 'listas de control',
 }
 
 export function nombreDeTipo(tipo: string): string {
@@ -82,6 +89,8 @@ const ETIQUETA: Record<string, string> = {
   excedente: 'Excedente',
   via: 'Vía que corresponde',
   grado_vencido: 'El grado estaba vencido',
+  coincidencias: 'Coincidencias detectadas',
+  listas: 'Listas con coincidencia',
 }
 
 /**
@@ -156,6 +165,14 @@ export function calculoDeLaAlerta(detalle: Record<string, unknown>): ParDelCalcu
 function comoTexto(clave: string, valor: unknown): string {
   if (valor === null || valor === undefined) return '—'
   if (typeof valor === 'boolean') return valor ? 'sí' : 'no'
+  // Una lista de textos se lee como lista, no como JSON. La alerta de
+  // screening trae las listas donde hubo coincidencia y salía en pantalla
+  // como ["ofac_sdn"], corchetes y comillas incluidos. Las claves se dejan
+  // crudas a propósito —igual que el resto del desglose— para que una clave
+  // sin traducir se vea; lo que no aporta nada es la sintaxis del JSON.
+  if (Array.isArray(valor) && valor.every((v) => typeof v === 'string')) {
+    return valor.length === 0 ? '—' : (valor as string[]).join(', ')
+  }
   if (clave === 'via' && typeof valor === 'string') return VIA[valor] ?? valor
   if (clave === 'umbral_proximidad_pct') return `${String(valor)}%`
   if (MONEDA.has(clave) && (typeof valor === 'string' || typeof valor === 'number')) {

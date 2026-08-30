@@ -111,4 +111,20 @@ describe('«Con qué se calculó»', () => {
   test('un detalle vacío no produce pares: entonces no hay «Por qué» que abrir', () => {
     expect(calculoDeLaAlerta({ por: 'identidad_sin_rfc_ni_curp', motivo: 'Revísalo' })).toEqual([])
   })
+
+  test('una lista de textos se lee como lista, no como JSON', () => {
+    // La alerta de screening trae las listas donde hubo coincidencia. Salía en
+    // pantalla como ["ofac_sdn"] —corchetes y comillas incluidos— porque el
+    // único camino para lo que no fuera texto o número era JSON.stringify.
+    const pares = calculoDeLaAlerta({ por: 'x', listas: ['ofac_sdn', 'onu'], coincidencias: 2 })
+    expect(pares.map((p) => p.valor)).toEqual(['ofac_sdn, onu', '2'])
+  })
+
+  test('pero una lista de objetos NO se aplana a la fuerza', () => {
+    // `desviaciones` tiene su propio camino; cualquier otra lista de objetos
+    // que aparezca mañana debe seguir viéndose entera, aunque sea fea. Fea es
+    // un recordatorio de que falta traducirla; aplanada es un dato perdido.
+    const pares = calculoDeLaAlerta({ por: 'x', algo_nuevo: [{ a: 1 }] })
+    expect(pares[0]?.valor).toBe('[{"a":1}]')
+  })
 })

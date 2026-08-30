@@ -39,6 +39,8 @@ export type Icono =
   | 'operaciones'
   | 'alertas'
   | 'avisos'
+  | 'entidad'
+  | 'mer'
   | 'evidencia'
   | 'calendario'
   | 'configuracion'
@@ -103,9 +105,15 @@ export const NAVEGACION: Grupo[] = [
     areas: [
       { estado: 'lista', ruta: '/avisos', nombre: 'Avisos', icono: 'avisos' },
       { estado: 'lista', ruta: '/calendario', nombre: 'Calendario', icono: 'calendario' },
-      // La Constancia vive en Cumplimiento y no en Evidencia a propósito: no es
-      // una herramienta de verificación, es un documento que el obligado
-      // entrega. Ver ADR-20.
+      // El riesgo del OBLIGADO, no el de sus clientes: de su grado depende
+      // quién puede hacer su auditoría (Arts. 44/45 del Acuerdo). Por eso vive
+      // en Cumplimiento y no dentro de Configuración: evaluar es un acto
+      // periódico del obligado, no un ajuste que se hace una vez.
+      { estado: 'lista', ruta: '/entidad', nombre: 'Riesgo de la entidad', icono: 'entidad' },
+      // La Constancia y el MER viven en Cumplimiento y no en Evidencia a
+      // propósito: no son herramientas de verificación, son documentos que el
+      // obligado emite y entrega. Ver ADR-20 y ADR-29.
+      { estado: 'lista', ruta: '/mer', nombre: 'MER', icono: 'mer' },
       { estado: 'lista', ruta: '/constancia', nombre: 'Constancia', icono: 'evidencia' },
       {
         estado: 'lista',

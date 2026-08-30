@@ -111,7 +111,7 @@ export async function documentosDelExpediente(
  */
 export async function abrirExpediente(
   db: EjecutorTransaccional,
-  p: { sesion: ContextoSesion; clienteId: string },
+  p: { sesion: ContextoSesion; clienteId: string; actividadId?: string },
 ): Promise<{ expedienteId: string; yaExistia: boolean }> {
   return enTransaccionDeSesion(db, p.sesion, async () => {
     const previo = await db.query(
@@ -122,23 +122,53 @@ export async function abrirExpediente(
       return { expedienteId: (previo.rows[0] as { id: string }).id, yaExistia: true }
     }
 
-    const { rows } = await db.query(
-      `insert into expedientes (tenant_id, cliente_id, actividad_id)
-       select $1, $2, av.id
+    // ── De qué actividad es este expediente ─────────────────────────────
+    //
+    // EL MISMO HALLAZGO X-01, en la otra puerta. Aquí decía
+    // `where av.fraccion = 'V_BIS'`: la corrección de X-01 arregló la puerta
+    // de las OPERACIONES y dejó esta intacta, así que un obligado de la
+    // Fr. VIII podía capturar ventas y no podía abrirle expediente a nadie —
+    // se estrellaba pidiéndole una fracción que no ejerce.
+    //
+    // Además era la regla dura 1 incumplida: una fracción del Art. 17
+    // escrita en un `.ts`. El expediente se abre contra la actividad
+    // CONTRATADA por el obligado, que es la que tiene catálogo de campos
+    // contra el cual medir la completitud.
+    const act = await db.query(
+      `select av.id, av.fraccion
          from actividades_vulnerables av
          join actividades_tenant at on at.actividad_id = av.id and at.tenant_id = $1
-        where av.fraccion = 'V_BIS'
-       returning id`,
-      [p.sesion.tenantId, p.clienteId],
+        where ($2::uuid is null or av.id = $2::uuid)
+        order by av.fraccion`,
+      [p.sesion.tenantId, p.actividadId ?? null],
     )
-    if (rows.length === 0) {
-      // Sin esta actividad dada de alta, el expediente no tendría catálogo
-      // contra el cual medirse y saldría "completo" sin serlo.
+    if (act.rows.length === 0) {
+      // Sin actividad contratada el expediente no tendría catálogo contra el
+      // cual medirse y saldría "completo" sin serlo.
       throw new Error(
-        'Este obligado no tiene registrada la Fracción V Bis, así que no se le puede abrir ' +
-          'un expediente de esa actividad. Revisa actividades_tenant.',
+        p.actividadId === undefined
+          ? 'Este obligado no tiene ninguna actividad vulnerable contratada, así que su ' +
+            'expediente no tendría catálogo contra el cual medirse y saldría «completo» sin ' +
+            'estarlo. Revisa actividades_tenant.'
+          : `La actividad ${p.actividadId} no está contratada por este obligado.`,
       )
     }
+    if (act.rows.length > 1) {
+      const fracciones = (act.rows as Array<{ fraccion: string }>).map((a) => a.fraccion)
+      throw new Error(
+        `Este obligado tiene varias actividades contratadas (${fracciones.join(', ')}) y no se ` +
+          'dijo de cuál es este expediente. No se asume una: cada fracción exige documentos ' +
+          'distintos, y medir la completitud contra el catálogo equivocado da un expediente ' +
+          'que se ve completo y no lo está.',
+      )
+    }
+    const actividadId = (act.rows[0] as { id: string }).id
+
+    const { rows } = await db.query(
+      `insert into expedientes (tenant_id, cliente_id, actividad_id)
+       values ($1, $2, $3) returning id`,
+      [p.sesion.tenantId, p.clienteId, actividadId],
+    )
     const expedienteId = (rows[0] as { id: string }).id
 
     await db.query('select app.bitacora_registrar($1,$2,$3,$4,$5::jsonb,$6)', [

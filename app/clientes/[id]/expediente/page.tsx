@@ -199,6 +199,21 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
     */
     if (exp.rows.length === 0) {
       const abrirEste = abrir.bind(null, clienteId)
+      // ¿La actividad de este obligado tiene catálogo de expediente vigente?
+      // Sin él, `calcularCompletitud` se niega a decir que algo está completo
+      // (regla dura 6, y ya lo hace) — pero llegar hasta ahí significaba dar
+      // un botón que revienta. La pantalla dice antes lo que falta y quién lo
+      // resuelve, en vez de ofrecer una acción que no puede terminar.
+      const catRows = await db.query(
+        `select count(*)::int as n
+           from campos_expediente ce
+           join actividades_tenant at on at.actividad_id = ce.actividad_id
+          where at.tenant_id = $1
+            and daterange(ce.vigente_desde, ce.vigente_hasta, '[]') @> $2::date`,
+        [sesion.tenantId, hoyEnMexico()],
+      )
+      const cat = (catRows.rows[0] as { n: number }).n
+
       return (
         <Marco obligado={obligado} perfil={sesion}>
           <p className="migaja">
@@ -214,9 +229,9 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
             <h2 className="vacio-titulo">Este cliente todavía no tiene expediente</h2>
             <div className="vacio-cuerpo">
               <p>
-                En Fracción V Bis se integra expediente de <strong>cada aportante</strong>, sin
-                importar el monto. No es un paso que se pueda posponer hasta que la operación
-                sea grande: es la primera obligación, y precede a todas las demás.
+                Se integra expediente de <strong>cada cliente</strong>, sin importar el monto. No
+                es un paso que se pueda posponer hasta que la operación sea grande: es la primera
+                obligación, y precede a todas las demás.
               </p>
               <p>
                 Abrirlo desbloquea las siete secciones de conocimiento del cliente, cada una
@@ -230,9 +245,25 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
                 ))}
               </ul>
             </div>
-            <form action={abrirEste}>
-              <button type="submit">Abrir expediente</button>
-            </form>
+            {cat > 0 ? (
+              <form action={abrirEste}>
+                <button type="submit">Abrir expediente</button>
+              </form>
+            ) : (
+              <div className="aviso" style={{ margin: 0, textAlign: 'left' }}>
+                <strong>
+                  Todavía no se puede abrir, y es a propósito: falta el catálogo de expediente de
+                  tu actividad.
+                </strong>
+                <p className="pequeno" style={{ margin: '.5rem 0 0' }}>
+                  Qué documentos integran el expediente lo dice la norma, no VIZO, y ese catálogo
+                  se carga con doble revisión contra el DOF. Sin él, un expediente vacío se vería
+                  <strong> «completo»</strong> — que es peor que no tenerlo, porque de ahí sale
+                  una aprobación y un aviso sobre un expediente que nunca se integró. Lo cargamos
+                  nosotros durante la implementación.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Las listas SÍ se consultan aquí: es lo que se hace antes de

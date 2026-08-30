@@ -66,11 +66,13 @@ Modelo comercial reflejado en software: **unidad de cobro = RFC obligado**; impl
 |---|---|---|
 | `/login` | ● existe | Sin cambios |
 | `/` Inicio | ◐ rediseño | Semáforo: periodo corriente (presentado / vence en N días / vencido), "requiere tu atención" con enlaces a la acción, el mes en números |
-| `/clientes` + `/nuevo` + `/[id]/expediente` | ● existe | Completitud visible en la lista; huella explicada ("sin cambios desde que se subió") |
+| `/clientes` + `/nuevo` + `/[id]/expediente` | ● existe | Completitud visible en la lista; huella explicada ("sin cambios desde que se subió"). + **Listas de control** (30-ago, ADR-30): va **antes** de la puerta del ADR-24, porque consultar listas es lo que se hace antes de decidir si se abre relación — las siete secciones de conocimiento sí siguen condicionadas al expediente |
 | `/operaciones` + `/nueva` | ● existe | + **Veredicto explicable** por operación |
 | `/alertas` | ● existe | + veredicto explicable y enlaces a operación/cliente |
 | `/avisos` | ○ nueva | Lista por periodo con estado del pipeline y plazo; los meses sin generar aparecen (el informe en cero es obligación, no ausencia) |
 | `/avisos/[id]` | ○ nueva | Stepper de estados con quién/cuándo · lotes descargables con hash y tamaño · **Aprobar** (solo admin) · zona de acuse (subirlo mueve a `presentado`) · texto de frontera: "VIZO no presenta" |
+| `/entidad` | ✅ **construida el 30-ago** | El riesgo del propio obligado (ADR-28). La consecuencia de los Arts. 44/45 se lee antes que el número: auditor externo certificado ante la UIF, o área interna. Inherente y residual siempre juntos —la mitigación no es un descuento—, escala de efectividad con su evidencia exigible, y el hueco con nombre cuando falta configuración |
+| `/mer` | ✅ **construida el 30-ago** | Las emisiones del MER con su huella, y el botón que emite (ADR-29). Dice de quién es el documento antes que nada; sin modelo vigente no ofrece emitir |
 | `/evidencia` | ○ nueva | Tres pestañas: manifiestos (generar/verificar/historial), cadena de bitácora (verificar → "íntegra" o dónde se rompió), reconstrucción histórica (expediente + fecha → estado a ese corte) |
 | `/calendario` | ○ nueva | Plazos por periodo con estados de `plazoDePresentacion`. Muestra "desde cuándo debo" solo cuando exista la fecha de alta (#16, entra en F1) |
 | `/configuracion` | ○ nueva | Pestañas: Obligado (RFC, razón social, **fecha de alta ante la autoridad** #16, actividades contratadas) · Usuarios (listar/rol/desactivar) · Sucursales (CRUD) · Desarrollos (CRUD) · Plan (informativo) |

@@ -29,6 +29,7 @@ export function FormularioOperacion({
   clientes,
   sucursales,
   desarrollos,
+  requiereDesarrollo,
   instrumentos,
   monedas,
   yaDeclararon,
@@ -37,6 +38,9 @@ export function FormularioOperacion({
   clientes: Opcion[]
   sucursales: Opcion[]
   desarrollos: Opcion[]
+  /** Lo dice el catálogo por actividad, no la pantalla: la V Bis describe un
+   *  desarrollo en su aviso; una agencia de vehículos no tiene ninguno. */
+  requiereDesarrollo: boolean
   instrumentos: CodigoDeCatalogo[]
   monedas: CodigoDeCatalogo[]
   /** Clientes que ya tienen Perfil transaccional: a esos no se les vuelve a preguntar. */
@@ -109,50 +113,65 @@ export function FormularioOperacion({
       </div>
 
       {/* Lo que el AVISO necesita describir. No es burocracia de captura: sin
-          estos tres campos la operación no se puede reportar, y hasta hace poco
-          se guardaba igual y desaparecía del aviso sin que nada fallara. */}
+          estos campos la operación no se puede reportar, y hasta hace poco se
+          guardaba igual y desaparecía del aviso sin que nada fallara. El
+          desarrollo solo existe donde el catálogo lo exige (V Bis); pintárselo
+          a una agencia de autos era pedirle un dato que su giro no tiene. */}
       <div className="fila">
-        <label>
-          <span>
-            Desarrollo inmobiliario{' '}
-            <span className="pista">— el aviso lo describe</span>
-          </span>
-          <select name="desarrolloId" required defaultValue={previo('desarrolloId')}>
-            <option value="">Elige…</option>
-            {desarrollos.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.etiqueta}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>Instrumento monetario</span>
-          <select
-            name="instrumentoMonetario"
-            required
-            defaultValue={previo('instrumentoMonetario', '1')}
-          >
-            {instrumentos.map((i) => (
-              <option key={i.codigo} value={i.codigo}>
-                {i.descripcion}
-              </option>
-            ))}
-          </select>
-        </label>
+        {requiereDesarrollo && (
+          <label>
+            <span>
+              Desarrollo inmobiliario{' '}
+              <span className="pista">— el aviso lo describe</span>
+            </span>
+            <select name="desarrolloId" required defaultValue={previo('desarrolloId')}>
+              <option value="">Elige…</option>
+              {desarrollos.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.etiqueta}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {/* Instrumento y moneda son códigos DEL CATÁLOGO de la actividad (los
+            fija el instructivo de su aviso). Cuando el catálogo todavía no
+            está cargado —una fracción cuyo XSD aún no se publica—, el campo
+            no se pinta: un select obligatorio sin opciones no es un campo,
+            es un formulario que nunca se puede enviar y no explica por qué.
+            El dato se captura cuando VIZO cargue el catálogo (runbook 02);
+            el aviso de esa fracción está detenido por la misma razón. */}
+        {instrumentos.length > 0 && (
+          <label>
+            <span>Instrumento monetario</span>
+            <select
+              name="instrumentoMonetario"
+              required
+              defaultValue={previo('instrumentoMonetario', '1')}
+            >
+              {instrumentos.map((i) => (
+                <option key={i.codigo} value={i.codigo}>
+                  {i.descripcion}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
       <div className="fila">
-        <label>
-          <span>Moneda</span>
-          <select name="monedaCodigo" required defaultValue={previo('monedaCodigo', '1')}>
-            {monedas.map((m) => (
-              <option key={m.codigo} value={m.codigo}>
-                {m.descripcion}
-              </option>
-            ))}
-          </select>
-        </label>
+        {monedas.length > 0 && (
+          <label>
+            <span>Moneda</span>
+            <select name="monedaCodigo" required defaultValue={previo('monedaCodigo', '1')}>
+              {monedas.map((m) => (
+                <option key={m.codigo} value={m.codigo}>
+                  {m.descripcion}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label>
           <span>
             Institución <span className="pista">(si el pago pasó por una)</span>
@@ -160,6 +179,14 @@ export function FormularioOperacion({
           <input name="nombreInstitucion" defaultValue={previo('nombreInstitucion')} />
         </label>
       </div>
+
+      {(instrumentos.length === 0 || monedas.length === 0) && (
+        <p className="pista" style={{ margin: '0 0 .5rem' }}>
+          El instrumento monetario y la moneda se capturarán cuando VIZO cargue el catálogo del
+          SAT de tu actividad — llega junto con el formato oficial del aviso. La evaluación de
+          umbrales no los necesita: eso corre desde hoy.
+        </p>
+      )}
 
       <label className="casilla">
         <input

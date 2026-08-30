@@ -63,6 +63,18 @@ function legible(bruto: string): string {
   if (/carpeta del obligado|ruta_del_obligado/i.test(bruto)) {
     return 'La ruta del acuse no pertenece a este obligado.'
   }
+  if (/formato de aviso vigente/i.test(bruto)) {
+    // El mensaje del motor trae el UUID de la actividad y pide cargar
+    // `formatos_aviso` — instrucciones para el backoffice de VIZO (runbook
+    // 02), no para el obligado que está viendo esta pantalla. A él le toca
+    // saber qué pasa y quién lo resuelve, no una tabla que no puede tocar.
+    return (
+      'El formato oficial de aviso de tu actividad todavía no está cargado en VIZO ' +
+      '(el SPPLD lo publica como XSD y nosotros lo cargamos con doble revisión). Hasta ' +
+      'entonces el aviso no se puede generar — VIZO no supone un formato, porque un aviso ' +
+      'con el formato equivocado es un aviso rechazado. Avísanos y lo priorizamos.'
+    )
+  }
   return bruto
 }
 

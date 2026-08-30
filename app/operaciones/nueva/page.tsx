@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function NuevaOperacion() {
   return conBase(async ({ db, sesion, perfil, obligado }) => {
-    const { clientes, sucursales, desarrollos, instrumentos, monedas, yaDeclararon } =
+    const { clientes, sucursales, desarrollos, requiereDesarrollo, instrumentos, monedas, yaDeclararon } =
       await leerComoUsuario(
       db,
       sesion,
@@ -18,9 +18,25 @@ export default async function NuevaOperacion() {
           order by nombre_o_razon_social`,
       )
       const s = await db.query(`select id, nombre, clave from sucursales order by nombre`)
-      // El desarrollo que el aviso describe. Se pide en la captura porque el
-      // aviso lo exige y porque sin él la operación quedaría fuera del aviso
-      // sin que nada falle — el defecto que encontró
+      // Si esta captura pide desarrollo lo decide el CATÁLOGO, no la pantalla:
+      // `requiere_desarrollo` es de la actividad (la V Bis lo exige porque su
+      // aviso describe el desarrollo; una agencia de la Fr. VIII no tiene ni
+      // necesita uno). La primera versión lo pedía a todos, y el obligado
+      // automotriz de la demo no podía registrar una venta: la pantalla lo
+      // mandaba a dar de alta desarrollos inmobiliarios que no existen en su
+      // giro. La base ya aplicaba la regla buena (trigger de la migración
+      // 20260814050000); la pantalla la contradecía por su cuenta.
+      const req = await db.query(
+        `select bool_or(av.requiere_desarrollo) as requiere
+           from actividades_tenant at
+           join actividades_vulnerables av on av.id = at.actividad_id
+          where at.tenant_id = $1`,
+        [sesion.tenantId],
+      )
+      const requiereDesarrollo = (req.rows[0] as { requiere: boolean | null }).requiere === true
+      // El desarrollo que el aviso describe (solo actividades que lo exigen).
+      // Se pide en la captura porque sin él la operación quedaría fuera del
+      // aviso sin que nada falle — el defecto que encontró
       // `tests/aviso/operacion-sin-desarrollo.test.ts`.
       const d = await db.query(
         `select id, nombre, registro_licencia from desarrollos_inmobiliarios order by nombre`,
@@ -49,6 +65,7 @@ export default async function NuevaOperacion() {
       )
       return {
         yaDeclararon: (yd.rows as Array<{ id: string }>).map((r) => r.id),
+        requiereDesarrollo,
         desarrollos: (d.rows as Array<Record<string, string>>).map(
           (r): Opcion => ({
             id: String(r['id']),
@@ -73,7 +90,8 @@ export default async function NuevaOperacion() {
     },
     )
 
-    if (clientes.length === 0 || sucursales.length === 0 || desarrollos.length === 0) {
+    const faltaDesarrollo = requiereDesarrollo && desarrollos.length === 0
+    if (clientes.length === 0 || sucursales.length === 0 || faltaDesarrollo) {
       return (
         <Marco obligado={obligado} perfil={perfil}>
           <h1>Registrar operación</h1>
@@ -87,7 +105,7 @@ export default async function NuevaOperacion() {
             {sucursales.length === 0 && (
               <p>Este obligado no tiene sucursales registradas.</p>
             )}
-            {desarrollos.length === 0 && (
+            {faltaDesarrollo && (
               <p>
                 No hay desarrollos inmobiliarios registrados, y el aviso de esta fracción tiene que
                 describir uno. Sin desarrollo la operación no se puede reportar, así que tampoco se
@@ -110,6 +128,7 @@ export default async function NuevaOperacion() {
           clientes={clientes}
           sucursales={sucursales}
           desarrollos={desarrollos}
+          requiereDesarrollo={requiereDesarrollo}
           instrumentos={instrumentos}
           monedas={monedas}
           yaDeclararon={yaDeclararon}

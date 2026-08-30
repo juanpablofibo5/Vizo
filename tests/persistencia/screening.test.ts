@@ -228,6 +228,53 @@ describe('El screening contra listas de control', () => {
   })
 
   /**
+   * Quién consulta y quién resuelve NO es lo mismo.
+   *
+   * La pantalla del expediente le ofrece «Consultar listas» a cualquiera con
+   * sesión y esconde el formulario de resolución a quien no es admin. La regla
+   * del proyecto es que un control escondido significa que la base lo
+   * rechazaría — si no fuera cierto, la pantalla estaría inventando un permiso
+   * que nadie aplica.
+   */
+  it('un capturista consulta, pero NO puede resolver la coincidencia', async () => {
+    const marca = String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 900) + 100)
+    const capturista = await crearTenantConUsuario(db, marca, 'capturista')
+    const c = await db.query(
+      `insert into clientes_finales (tenant_id,tipo_persona,rfc,nombre_o_razon_social,nacionalidad)
+       values ($1,'fisica',$2,'Cliente del Capturista','MX') returning id::text`,
+      [capturista.tenantId, `CAP${marca}`],
+    )
+    const suCliente = (c.rows[0] as { id: string }).id
+
+    // Consultar sí: es parte de capturar, y toda consulta es evidencia.
+    const r = await consultarScreening(db, {
+      sesion: capturista,
+      sujetoTipo: 'cliente',
+      sujetoId: suCliente,
+      nombre: 'Jose Angel Lopez Gomez de la Prueba onu',
+    })
+    expect(r.resultado).toBe('coincidencia')
+
+    // Resolver no: descartar una coincidencia es la decisión que la regla
+    // dura 5 reserva a una persona con firma, no a quien teclea la venta.
+    await expect(
+      resolverScreening(db, {
+        sesion: capturista,
+        consultaId: r.consultaId,
+        resolucion: 'descartada',
+        razonamiento: 'Me parece que no es la misma persona, así que sigo con la venta.',
+      }),
+    ).rejects.toThrow()
+
+    const sigue = await coincidenciasPendientes(db, {
+      sesion: capturista,
+      sujetoTipo: 'cliente',
+      sujetoId: suCliente,
+    })
+    expect(sigue).toHaveLength(1)
+  })
+
+  /**
    * El matching corre con el rol de la APLICACIÓN, no con el administrativo.
    *
    * Este caso existe porque el resto del archivo no lo cubría y el defecto

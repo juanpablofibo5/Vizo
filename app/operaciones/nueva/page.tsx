@@ -3,6 +3,7 @@ import { conBase, leerComoUsuario } from '../../../src/supabase/conexion'
 import { hoyEnMexico } from '../../../src/dominio/fechas'
 import { Marco } from '../../componentes/marco'
 import { FormularioOperacion, type Opcion } from './formulario'
+import { preparacionDelCatalogo } from '../../../src/persistencia/preparacion'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,22 +19,19 @@ export default async function NuevaOperacion() {
           order by nombre_o_razon_social`,
       )
       const s = await db.query(`select id, nombre, clave from sucursales order by nombre`)
-      // Si esta captura pide desarrollo lo decide el CATÁLOGO, no la pantalla:
-      // `requiere_desarrollo` es de la actividad (la V Bis lo exige porque su
-      // aviso describe el desarrollo; una agencia de la Fr. VIII no tiene ni
-      // necesita uno). La primera versión lo pedía a todos, y el obligado
-      // automotriz de la demo no podía registrar una venta: la pantalla lo
-      // mandaba a dar de alta desarrollos inmobiliarios que no existen en su
-      // giro. La base ya aplicaba la regla buena (trigger de la migración
-      // 20260814050000); la pantalla la contradecía por su cuenta.
-      const req = await db.query(
-        `select bool_or(av.requiere_desarrollo) as requiere
-           from actividades_tenant at
-           join actividades_vulnerables av on av.id = at.actividad_id
-          where at.tenant_id = $1`,
-        [sesion.tenantId],
-      )
-      const requiereDesarrollo = (req.rows[0] as { requiere: boolean | null }).requiere === true
+      // Qué pide esta captura lo decide la PREPARACIÓN DEL CATÁLOGO, no la
+      // pantalla. La primera versión preguntaba por su cuenta y pedía
+      // desarrollo inmobiliario a todos: el obligado automotriz de la demo no
+      // podía registrar una venta porque lo mandaba a dar de alta desarrollos
+      // que no existen en su giro. La base ya aplicaba la regla buena (trigger
+      // de la migración 20260814050000) y la pantalla la contradecía.
+      //
+      // Ahora hay un solo lugar que responde, y esta pantalla lo pinta.
+      const preparacion = await preparacionDelCatalogo(db, {
+        sesion,
+        hoy: hoyEnMexico(),
+      })
+      const requiereDesarrollo = preparacion.some((a) => a.requiereDesarrollo)
       // El desarrollo que el aviso describe (solo actividades que lo exigen).
       // Se pide en la captura porque sin él la operación quedaría fuera del
       // aviso sin que nada falle — el defecto que encontró

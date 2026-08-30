@@ -43,6 +43,7 @@ import {
   type ConsultaPendiente,
 } from '../../../../src/persistencia/screening'
 import { ListasIncompletas, type ListaVigente } from '../../../../src/dominio/screening'
+import { preparacionDelCatalogo } from '../../../../src/persistencia/preparacion'
 import {
   rielAprobacion,
   rielGradoDeRiesgo,
@@ -204,15 +205,14 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       // (regla dura 6, y ya lo hace) — pero llegar hasta ahí significaba dar
       // un botón que revienta. La pantalla dice antes lo que falta y quién lo
       // resuelve, en vez de ofrecer una acción que no puede terminar.
-      const catRows = await db.query(
-        `select count(*)::int as n
-           from campos_expediente ce
-           join actividades_tenant at on at.actividad_id = ce.actividad_id
-          where at.tenant_id = $1
-            and daterange(ce.vigente_desde, ce.vigente_hasta, '[]') @> $2::date`,
-        [sesion.tenantId, hoyEnMexico()],
-      )
-      const cat = (catRows.rows[0] as { n: number }).n
+      const preparacion = await preparacionDelCatalogo(db, {
+        sesion: ctxSesion,
+        hoy: hoyEnMexico(),
+      })
+      const puedeAbrir = preparacion.some((a) => a.puedeAbrirExpediente)
+      const faltaExpediente = preparacion
+        .flatMap((a) => a.faltantes)
+        .find((f) => f.clave === 'expediente')
 
       return (
         <Marco obligado={obligado} perfil={sesion}>
@@ -245,22 +245,22 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
                 ))}
               </ul>
             </div>
-            {cat > 0 ? (
+            {puedeAbrir ? (
               <form action={abrirEste}>
                 <button type="submit">Abrir expediente</button>
               </form>
             ) : (
               <div className="aviso" style={{ margin: 0, textAlign: 'left' }}>
-                <strong>
-                  Todavía no se puede abrir, y es a propósito: falta el catálogo de expediente de
-                  tu actividad.
-                </strong>
+                <strong>Todavía no se puede abrir, y es a propósito.</strong>
+                {/* El porqué lo dice la PREPARACIÓN, no esta pantalla: así una
+                    fracción nueva que entre por INSERTs hereda la explicación
+                    sin que nadie se acuerde de venir a escribirla aquí. */}
                 <p className="pequeno" style={{ margin: '.5rem 0 0' }}>
-                  Qué documentos integran el expediente lo dice la norma, no VIZO, y ese catálogo
-                  se carga con doble revisión contra el DOF. Sin él, un expediente vacío se vería
-                  <strong> «completo»</strong> — que es peor que no tenerlo, porque de ahí sale
-                  una aprobación y un aviso sobre un expediente que nunca se integró. Lo cargamos
-                  nosotros durante la implementación.
+                  {faltaExpediente?.bloquea ??
+                    'A tu actividad le falta configuración de catálogo que VIZO carga durante la implementación.'}
+                </p>
+                <p className="pequeno tenue" style={{ margin: '.5rem 0 0' }}>
+                  Ese catálogo se carga con doble revisión contra el DOF, y lo hacemos nosotros.
                 </p>
               </div>
             )}

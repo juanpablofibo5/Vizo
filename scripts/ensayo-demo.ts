@@ -9,6 +9,8 @@ import {
 import { camposCapturables, guardarDatosDeCaptura } from '../src/persistencia/datos-expediente'
 import { recalcularCompletitud } from '../src/persistencia/expediente'
 import { hoyEnMexico } from '../src/dominio/fechas'
+import { preparacionDelCatalogo } from '../src/persistencia/preparacion'
+import { enTransaccionDeSesion } from '../src/persistencia/transaccion'
 import type { ContextoSesion } from '../src/persistencia/transaccion'
 
 /**
@@ -18,6 +20,12 @@ import type { ContextoSesion } from '../src/persistencia/transaccion'
  * comprueba lo que un clic no alcanza a ver: que cada afirmación del guion
  * coincida con lo que la base responde, y que el pipeline del aviso corra
  * completo sin tocar la interfaz.
+ *
+ * Y desde el 30-ago-2026 comprueba algo más, porque levantar la demo a mano
+ * encontró cuatro defectos que este script no veía: LA PREPARACIÓN DEL
+ * CATÁLOGO de cada obligado de la demo. Los cuatro eran pantallas ofreciendo
+ * acciones que su catálogo no podía sostener, y todos se leen aquí antes de
+ * que alguien los descubra enseñándolos.
  *
  * Se corre contra LOCAL, después de `pnpm db:reset && pnpm demo:datos`:
  *
@@ -60,6 +68,20 @@ async function main(): Promise<void> {
     console.log(`     (hoy: ${String(p1.dias)} días vencido — el guion dice leerlo de la pantalla)`)
 
     console.log('\nPASO 2 · El veredicto explicable — el corazón')
+    // EL FILTRO POR OBLIGADO VA EXPLÍCITO, y cuesta explicarlo porque el
+    // defecto estuvo aquí meses sin verse. Este script corre con el rol
+    // administrativo —lo necesita para preparar y para verificar la bitácora—
+    // y ese rol SE SALTA RLS. Sin `tenant_id` en el where, esta consulta veía
+    // las operaciones de TODOS los obligados de la demo.
+    //
+    // Mientras hubo un solo obligado con operaciones, la respuesta salía bien
+    // por casualidad. Al entrar la agencia automotriz (29-ago) el ensayo
+    // empezó a contar 7 pagos donde el guion promete 3 — y lo que estaba mal
+    // no era el guion.
+    //
+    // Es la misma lección que el operador de pg_trgm: una herramienta que
+    // corre con más privilegio que la aplicación puede afirmar cosas que la
+    // aplicación nunca vería.
     const ops = (
       await db.query(
         `select o.fecha_operacion::text as fecha, o.monto_base::text as monto,
@@ -67,7 +89,9 @@ async function main(): Promise<void> {
            from operaciones o
            join lateral (select * from evaluaciones_umbral x where x.operacion_id = o.id
                           order by x.evaluado_en desc limit 1) e on true
+          where o.tenant_id = $1
           order by o.fecha_operacion`,
+        [TENANT],
       )
     ).rows as Array<{ fecha: string; monto: string; veredicto: string; motivo: string }>
     comprobar('2', 'hay tres pagos', ops.length === 3, String(ops.length))
@@ -151,6 +175,39 @@ async function main(): Promise<void> {
     const n = await uno<{ n: number }>(
       `select count(*)::int as n from bitacora where tenant_id = $1`, [TENANT])
     console.log(`     ${String(n.n)} eventos encadenados`)
+
+    console.log('\nPASO 6 · La preparación del catálogo de cada obligado de la demo')
+    for (const [nombre, tenantId, usuarioId] of [
+      ['V Bis · Inversiones Palma Maya', TENANT, ADMIN],
+      [
+        'VIII · Grupo Automotriz del Sureste',
+        '00000000-0000-4000-8000-000000000005',
+        '00000000-0000-4000-8000-0000000000a5',
+      ],
+    ] as const) {
+      const s: ContextoSesion = { usuarioId, tenantId, rol: 'admin' }
+      const prep = await enTransaccionDeSesion(db, s, () =>
+        preparacionDelCatalogo(db, { sesion: s, hoy: hoyEnMexico() }),
+      )
+      if (prep.length === 0) {
+        comprobar('6', `${nombre} tiene actividad contratada`, false, 'ninguna')
+        continue
+      }
+      for (const a of prep) {
+        const puede = [
+          a.puedeCapturarOperacion ? 'capturar' : null,
+          a.puedeAbrirExpediente ? 'expediente' : null,
+          a.puedeGenerarAviso ? 'aviso' : null,
+        ].filter((x) => x !== null)
+        console.log(`     ${nombre} → ${puede.join(' · ') || 'nada'}`)
+        // Capturar es la acción mínima: sin ella el obligado no puede ni
+        // empezar, y eso NO puede pasar desapercibido en un ensayo.
+        comprobar('6', `${nombre} puede capturar una operación`, a.puedeCapturarOperacion, 'no')
+        for (const f of a.faltantes) {
+          console.log(`       ⬚ falta ${f.nombre.toLowerCase()} — ${f.bloquea.slice(0, 90)}…`)
+        }
+      }
+    }
 
     console.log(
       fallos === 0

@@ -257,9 +257,24 @@ async function agenciaAutomotriz(db: Client): Promise<void> {
   }
 
   // ── El obligado, sus usuarios y sus dos sucursales ─────────────────────
+  //
   // Sin contraseña a propósito: para entrar al portal se le asigna una desde
   // el panel de Supabase (mismo criterio que el obligado fideicomiso — una
   // contraseña en el repositorio sería peor que este paso manual).
+  //
+  // PERO LA FILA VA COMPLETA, y eso costó descubrirlo el 30-ago. La versión
+  // anterior insertaba cinco columnas y dejaba el resto en NULL, así que
+  // asignar la contraseña desde el panel NO alcanzaba: GoTrue lee las
+  // columnas de token como texto y muere con «Database error querying
+  // schema», y sin `raw_app_meta_data` el JWT no lleva tenant ni rol, así que
+  // el portal no sabría de quién es la sesión. El paso documentado —«se le
+  // pone contraseña desde el panel»— no producía un login que funcionara, y
+  // eso se habría descubierto en vivo, delante de la agencia.
+  //
+  // `seed.sql` ya advertía de esto con estas palabras: «es el tropiezo clásico
+  // de sembrar usuarios directo en auth.users en vez de darlos de alta por la
+  // API». El aviso estaba escrito y este script, más nuevo, no lo siguió.
+  // Ahora lo único que falta para entrar es la contraseña.
   await db.query(
     `insert into tenants (id, rfc, razon_social, tipo_persona)
      values ($1, 'GAS150610KL8', 'Grupo Automotriz del Sureste SA de CV', 'moral')
@@ -271,9 +286,32 @@ async function agenciaAutomotriz(db: Client): Promise<void> {
     [CAPTURISTA_AGENCIA, 'capturista', 'Rodrigo Uc', 'agencia-ventas@vizo.mx'],
   ] as const) {
     await db.query(
-      `insert into auth.users (id, instance_id, aud, role, email)
-       values ($1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', $2)
+      `insert into auth.users (
+         id, instance_id, aud, role, email,
+         email_confirmed_at, created_at, updated_at,
+         raw_app_meta_data, raw_user_meta_data,
+         confirmation_token, recovery_token, email_change_token_new, email_change,
+         email_change_token_current, phone_change, phone_change_token, reauthentication_token
+       ) values (
+         $1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', $2,
+         now(), now(), now(),
+         jsonb_build_object('provider','email','providers',jsonb_build_array('email'),
+                            'tenant_id',$3::text,'rol',$4::text),
+         '{}'::jsonb,
+         '', '', '', '', '', '', '', ''
+       )
        on conflict (id) do nothing`,
+      [id, correo, TENANT_AGENCIA, rol],
+    )
+    // Sin identidad no hay inicio de sesión con correo y contraseña, por
+    // completa que esté la fila del usuario.
+    await db.query(
+      `insert into auth.identities (id, user_id, provider_id, provider, identity_data, created_at, updated_at)
+       select gen_random_uuid(), $1::uuid, $1::text, 'email',
+              jsonb_build_object('sub',$1::text,'email',$2::text,'email_verified',true),
+              now(), now()
+        where not exists (
+          select 1 from auth.identities where user_id = $1::uuid and provider = 'email')`,
       [id, correo],
     )
     await db.query(

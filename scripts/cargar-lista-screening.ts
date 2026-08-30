@@ -2,7 +2,13 @@
  * Carga UNA lista de control como versión nueva del catálogo global.
  *
  *   pnpm tsx scripts/cargar-lista-screening.ts \
- *     --clave ofac_sdn --archivo ./sdn.csv --fuente https://www.treasury.gov/ofac/downloads/sdn.csv
+ *     --clave ofac_sdn --archivo ./sdn.csv --alias ./alt.csv \
+ *     --fuente https://www.treasury.gov/ofac/downloads/sdn.csv
+ *
+ * `--alias` es de OFAC y va SIEMPRE que se cargue el SDN: sin alt.csv se carga
+ * la mitad de los nombres buscables y la consulta diría «sin coincidencias»
+ * sobre alguien listado bajo otro nombre. Los dos archivos tienen que ser de
+ * la misma descarga — el parser lo verifica y se niega si no cuadran.
  *
  * Corre con VIZO_DB_URL_ADMIN (como el seed y las migraciones): las listas son
  * catálogo GLOBAL y la aplicación no tiene escritura sobre ellas. El runbook
@@ -14,7 +20,12 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { Client } from 'pg'
-import { PARSERS } from '../src/catalogo/listas-screening'
+import {
+  PARSERS,
+  parseOfacAlt,
+  principalesDeOfac,
+  type EntradaDeLista,
+} from '../src/catalogo/listas-screening'
 
 const NOMBRES: Record<string, string> = {
   ofac_sdn: 'OFAC — Specially Designated Nationals',
@@ -49,8 +60,9 @@ async function main(): Promise<void> {
   const parser = PARSERS[claveParser]
   if (parser === undefined) {
     console.error(
-      `«${claveParser}» no tiene parser (ONU y LPB están pendientes — runbook 06). Para la vía ` +
-        'provisional: convierte a CSV genérico (encabezado nombre,rfc) y usa --parser generico.',
+      `«${claveParser}» no tiene parser. LPB sigue pendiente: su formato no está confirmado ` +
+        '(runbook 06). Para la vía provisional: convierte a CSV genérico (encabezado nombre,rfc) ' +
+        'y usa --parser generico.',
     )
     process.exit(1)
   }
@@ -58,7 +70,32 @@ async function main(): Promise<void> {
   const crudo = readFileSync(archivo)
   const hash = createHash('sha256').update(crudo).digest('hex')
   const texto = crudo.toString(LATIN1.has(clave) ? 'latin1' : 'utf8')
-  const entradas = parser(texto)
+  let entradas: EntradaDeLista[] = parser(texto)
+
+  // Los alias de OFAC viven en su propio archivo y se cargan en la MISMA
+  // versión de lista: son nombres de las mismas personas, y separarlos en dos
+  // versiones haría que una consulta mirara unos y no otros.
+  const iAlias = process.argv.indexOf('--alias')
+  const archivoAlias = iAlias === -1 ? undefined : process.argv[iAlias + 1]
+  if (archivoAlias !== undefined) {
+    if (claveParser !== 'ofac_sdn') {
+      console.error('--alias solo aplica a ofac_sdn: es el alt.csv del SDN.')
+      process.exit(1)
+    }
+    const alias = parseOfacAlt(
+      readFileSync(archivoAlias).toString('utf8'),
+      principalesDeOfac(entradas),
+    )
+    console.log(`  alias de OFAC: ${String(alias.length)} desde ${archivoAlias}`)
+    entradas = [...entradas, ...alias]
+  } else if (claveParser === 'ofac_sdn') {
+    // No se detiene —cargar el SDN sin alias sigue siendo mejor que no
+    // cargarlo— pero tiene que quedar dicho: es media lista buscable.
+    console.warn(
+      'AVISO: se está cargando OFAC SIN sus alias. Baja alt.csv de la misma fecha y vuelve a ' +
+        'correr con --alias, o la consulta no comparará contra los nombres alternos.',
+    )
+  }
 
   const url = process.env['VIZO_DB_URL_ADMIN']
   if (url === undefined) {

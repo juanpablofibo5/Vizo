@@ -95,6 +95,17 @@ const TRAZOS: Record<Icono, React.ReactNode> = {
       <path d="M11.5 11.2v.05" />
     </>
   ),
+  // Una pizarra y quien está frente a ella: la sesión, no el diploma. El
+  // birrete diría «título»; lo que el Art. 39 Bis pide es el curso.
+  capacitacion: (
+    <>
+      <rect x="2.4" y="2.6" width="13.2" height="8.4" rx="1.4" />
+      <path d="M5.4 5.6h5.2" />
+      <path d="M5.4 8.1h3" />
+      <circle cx="9" cy="13.9" r="1.5" />
+      <path d="M6.2 16.4a3 3 0 0 1 5.6 0" />
+    </>
+  ),
   // Deslizadores: lo que se ajusta una vez y se deja.
   configuracion: (
     <>

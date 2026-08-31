@@ -43,6 +43,7 @@ export type Icono =
   | 'mer'
   | 'evidencia'
   | 'calendario'
+  | 'capacitacion'
   | 'configuracion'
 
 export interface SubEnlace {
@@ -113,6 +114,21 @@ export const NAVEGACION: Grupo[] = [
       // La Constancia y el MER viven en Cumplimiento y no en Evidencia a
       // propósito: no son herramientas de verificación, son documentos que el
       // obligado emite y entrega. Ver ADR-20 y ADR-29.
+      // La capacitación es un acto PERIÓDICO del obligado —el periodo es el
+      // año calendario y se acredita o no—, no un ajuste que se hace una vez.
+      // Por eso vive aquí y no dentro de Configuración, igual que el riesgo de
+      // la entidad.
+      {
+        estado: 'lista',
+        ruta: '/capacitacion',
+        nombre: 'Capacitación',
+        icono: 'capacitacion',
+        sub: [
+          { ruta: '/capacitacion', ancla: 'pendientes', nombre: 'Evaluaciones pendientes' },
+          { ruta: '/capacitacion', ancla: 'sesiones', nombre: 'Sesiones del periodo' },
+          { ruta: '/capacitacion', ancla: 'plantilla', nombre: 'Plantilla' },
+        ],
+      },
       { estado: 'lista', ruta: '/mer', nombre: 'MER', icono: 'mer' },
       { estado: 'lista', ruta: '/constancia', nombre: 'Constancia', icono: 'evidencia' },
       {

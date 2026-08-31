@@ -51,6 +51,20 @@ describe('quién tenía que capacitarse en el periodo', () => {
   it('quien entra DESPUÉS del periodo tampoco', () => {
     expect(plantillaDelPeriodo([persona('a', 'directivo', '2028-02-01')], 2027)).toEqual([])
   })
+
+  it('la cobertura cuenta a los DEL PERIODO, no a los del padrón', () => {
+    // Con una persona dada de baja el año anterior, «faltantes: 0» es cierto y
+    // «toda la plantilla acredita» es falso: no había a quién medir. La
+    // pantalla necesita distinguirlos y de `personasFaltantes` no se deduce.
+    const c = coberturaDelPeriodo({
+      anio: 2027,
+      personas: [persona('a', 'directivo', '2025-01-01', '2026-12-31')],
+      sesiones: [],
+      experienciaMinima: 5,
+    })
+    expect(c.personasFaltantes).toEqual([])
+    expect(c.personasEnElPeriodo).toBe(0)
+  })
 })
 
 describe('la cobertura del periodo anual', () => {

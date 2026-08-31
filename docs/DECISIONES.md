@@ -514,6 +514,25 @@ Dos celdas de esa cobertura concentran el riesgo de acreditar de más, y las dos
 
 **Fijado con:** aserciones en la migración `20260829230000` y las pruebas de `tests/catalogo/listas-screening.test.ts` + `tests/persistencia/screening.test.ts` (paridad de normalización, las cuatro exigidas, snapshot, RFC exacto, folio limpio, resolución única).
 
+## ADR-31 · El Cap. XII: lo que acredita es la CONSTANCIA, y el primer periodo lo fija el catálogo — 2026-08-31
+
+**Contexto.** El Art. 39 Bis pide capacitación anual a nueve papeles del obligado sobre cinco temas, impartida por quien acredite cinco años de experiencia; el 39 Bis 1 le cuelga la evaluación, la constancia, diez años de conservación y —en su ¶3— una obligación **distinta**: capacitar de manera previa o simultánea al ingreso al área. VIZO no puede impartir la capacitación: la fr. III pide una persona con experiencia acreditada. Lo que sí puede es contestar, cualquier día del año, quién falta.
+
+**Decisión.** Seis piezas:
+
+1. **La cobertura cuenta CONSTANCIAS, no asistencias.** El ¶2 ata la constancia a una evaluación satisfactoria, así que es lo único que acredita. Contar asistencias diría que basta con sentarse en la sala. En la base es inexpresable lo contrario: `constancia_exige_evaluacion_satisfactoria`.
+2. **El ¶3 se reporta APARTE de la cobertura anual.** Son dos obligaciones y mezclarlas en un marcador dejaría a quien entró en noviembre viéndose cubierto por un curso de marzo al que no fue. Alcanza solo a los papeles que la frase nombra —atención al público y administración de recursos—, no a los nueve.
+3. **La plantilla es la del artículo, no la de la aplicación.** El enlace a `usuarios` es opcional: el consejo de administración tiene que capacitarse y normalmente no entra al portal. Quien deja el área se da de **baja**, no se borra: quien estuvo parte del año cuenta para ese periodo completo, y borrarlo cambiaría hacia atrás la respuesta a «quién faltaba».
+4. **El periodo lo fija el catálogo, no la pantalla.** Antes del primer periodo del Transitorio Séptimo no hay nada que acreditar y la base lo rechaza (`anio_desde_el_primer_periodo`), así que la pantalla trabaja sobre el primer periodo real y no ofrece un formulario que solo podría fallar. Los tres plazos —periodicidad, años de experiencia y retención— salen de `parametros_motor` con su fuente: la regla dura 1 vale también para este capítulo.
+5. **Se registra lo impartido, no lo programado.** Una sesión fechada en el futuro se rechaza: su lista de asistencia sería de gente que no fue.
+6. **Cero de cero no es cumplimiento.** Con la plantilla del periodo vacía la pantalla dice «nadie en la plantilla del periodo» y no «toda la plantilla acredita» — y por eso el dominio expone `personasEnElPeriodo`, que no se deduce de `personasFaltantes`.
+
+**Lo que se rechazó:** contar asistencias como acreditación; poner la pantalla dentro de Configuración (capacitar es un acto periódico, no un ajuste que se hace una vez — el mismo criterio que ADR-28 para el riesgo de la entidad); y una guarda `sesiones.length > 0` en `acreditado`, que resultó lógica muerta: los temas salen de las sesiones, así que sin ninguna los cinco faltan y la conjunción ya da falso.
+
+**Asimetría conocida:** las tres tablas de evidencia —programas, sesiones y asistencias— bloquean `DELETE` por trigger; la plantilla no, porque también sirve para corregir un alta equivocada. Un borrado desde la base cambiaría la cobertura de un periodo cerrado. No es alcanzable desde el producto (la pantalla solo ofrece baja) y queda anotado aquí para no descubrirlo dos veces.
+
+**Fijado con:** las 13 aserciones de la migración `20260831100000`, `tests/clientes/capacitacion.test.ts` (dominio, 17 casos) y `tests/persistencia/capacitacion.test.ts` (base real, 16 casos: el mínimo de años leído del catálogo, la constancia sin evaluación, la sesión de otro año, la futura, la evaluación de otro obligado que no pasa en silencio y la baja que no borra el pasado).
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde

@@ -141,6 +141,16 @@ export interface InstructorSinAcreditar {
 export interface CoberturaDelPeriodo {
   readonly anio: number
   readonly huboAlgunaSesion: boolean
+  /**
+   * Cuánta gente tenía que capacitarse EN ESTE PERIODO.
+   *
+   * No es `personas.length`: quien se dio de baja el año pasado sigue en el
+   * padrón y no cuenta aquí. La pantalla lo necesita para no decir «toda la
+   * plantilla acredita» cuando lo cierto es que no había a quién medir —cero
+   * de cero no es cumplimiento— y no puede deducirlo de `personasFaltantes`,
+   * que también está vacío en ese caso.
+   */
+  readonly personasEnElPeriodo: number
   readonly temasFaltantes: readonly FaltaDeTema[]
   readonly personasFaltantes: readonly FaltaDePersona[]
   readonly instructoresSinAcreditar: readonly InstructorSinAcreditar[]
@@ -223,6 +233,7 @@ export function coberturaDelPeriodo(entrada: {
   return {
     anio,
     huboAlgunaSesion: sesiones.length > 0,
+    personasEnElPeriodo: plantilla.length,
     temasFaltantes,
     personasFaltantes,
     instructoresSinAcreditar,

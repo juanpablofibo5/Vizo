@@ -99,7 +99,9 @@ Art. 37 Bis: **catorce** apartados (fracciones I a XIV). Art. 37: dentro de los 
 ### Cap. XII · Capacitación y selección de personal — **1 ene 2027**
 Art. 39 Bis: cursos **al menos una vez al año** para consejo, administrador, directivos, el REC y el personal de atención al público, identificación, envío de avisos o auditoría. Contenido mínimo en cuatro incisos, y los temas deben ser **coherentes con los resultados de la metodología** del Cap. II Quáter. Fracción III: quien imparta la capacitación debe **acreditar experiencia de por lo menos cinco años**.
 
-**En VIZO:** nada. Es repositorio de evidencia con retención, no motor — y el requisito del capacitador lo vuelve **canal de distribución**, no línea de producto.
+**En VIZO (31-ago-2026): construido.** Sigue sin ser motor y el requisito del capacitador lo mantiene como **canal de distribución**, no línea de producto — pero el seguimiento sí es producto, y es lo que decide si el obligado llega al 31 de diciembre cumplido: pantalla `/capacitacion` con la plantilla de los nueve papeles del ¶1, las sesiones con sus cinco temas, la evaluación que expide la constancia y la cobertura del periodo diciendo tema por tema y persona por persona qué falta. El ¶3 —capacitación previa o simultánea al ingreso— se reporta aparte por ser obligación distinta. Cuatro tablas con retención de diez años por trigger, los tres plazos en catálogo con su fuente, y el primer periodo (2027) impuesto por la base. Ver **ADR-31**.
+
+**Lo que sigue sin cubrir del capítulo:** el Art. 39 Bis 2 —los procedimientos de selección de personal, con fecha propia el 1 de marzo de 2027 y solo para nuevas contrataciones (Transitorio Sexto)—, y la coherencia entre los temas impartidos y los resultados de la metodología del Cap. II Quáter, que hoy no se contrasta.
 
 ### Cap. XIII · Mecanismos automatizados — **1 jun 2027**
 Art. 41, **seis** funciones mínimas. Es una especificación de producto ya escrita:

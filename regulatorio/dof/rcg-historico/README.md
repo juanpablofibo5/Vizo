@@ -46,5 +46,32 @@ catálogo o citado ante un tercero se contrasta contra el DOF, como todo lo dem�
   periodo actual de la constancia entró en la migración `20260828100000`,
   pendiente de la doble revisión del runbook 02 antes de aplicarse a
   producción.
-- La consolidación completa de los Anexos 3, 4, 4 Bis, 5, 6, 6 Bis y 8
-  (2013+2014+2026) sigue siendo trabajo de gabinete abierto — issue #31.
+- ~~La consolidación completa de los Anexos 3, 4, 4 Bis, 5, 6, 6 Bis y 8
+  (2013+2014+2026).~~ **Hecha a medias el 30-ago-2026: los Anexos 3 y 4**
+  (persona física nacional o residente, y persona moral mexicana) quedaron
+  transcritos completos y sembrados en `campos_expediente` para la Fr. VIII
+  (migración `20260830140000`). **Faltan 4 Bis, 5, 6, 6 Bis, 7, 7 Bis y 8** —
+  issue #31 sigue abierto, y hoy son inexpresables de todos modos porque
+  `campos_expediente.aplica_a` solo distingue persona física de moral
+  (`docs/DECISIONES.md`, POR CONFIRMAR-17).
+
+## Lo que la transcripción de los Anexos 3 y 4 dejó ver (30-ago-2026)
+
+- **La identificación NO se organiza por fracción, sino por tipo de cliente.**
+  El sujeto del Art. 12 es «quienes realicen Actividades Vulnerables», sin
+  distinguir cuál. Las únicas excepciones por fracción en todo el texto son los
+  Arts. 12 Bis (fr. XI), 13 y 13 Bis (fr. XII). Por eso el Acuerdo 115/2026 no
+  menciona vehículos ni una sola vez: no le tocaba.
+- **El límite de tres meses del comprobante de domicilio cuelga de ALGUNOS
+  documentos aceptados**, no del campo. «recibo de pago por servicios
+  domiciliados o estados de cuenta bancarios, *todos ellos* con una antigüedad
+  no mayor a tres meses» — pero el «contrato de arrendamiento vigente» y la
+  «Constancia de inscripción en el RFC» se aceptan sin límite. Eso explica la
+  coletilla del Art. 21 («conforme a los Anexos […] que así lo solicitan») y
+  pone en duda la fila del 30-nov-2026 de la V Bis (POR CONFIRMAR-15).
+- **En persona física el comprobante de domicilio es condicional** («cuando el
+  domicilio manifestado […] no coincida con el de la identificación o ésta no
+  lo contenga», Anexo 3 b iii); **en persona moral no lo es** (Anexo 4 b iii).
+- **El Anexo 4 b) v) cambia de naturaleza el 30-nov-2026**: de constancia
+  firmada a obligación de identificar al Beneficiario Controlador
+  (POR CONFIRMAR-16).

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import {
   DatosDeClienteInvalidos,
-  PARTICIPACION_BENEFICIARIO_PCT,
   PATRON_CURP,
   PATRON_RFC_FISICA,
   PATRON_RFC_MORAL,
@@ -156,10 +155,6 @@ describe('Alta de clientes', () => {
   })
 
   describe('beneficiario controlador', () => {
-    it('el umbral de participación es 25%, no 50%: cambió con la reforma de 2025', () => {
-      expect(PARTICIPACION_BENEFICIARIO_PCT).toBe(25)
-    })
-
     it('personas morales y fideicomisos lo requieren', () => {
       expect(requiereBeneficiario('moral')).toBe(true)
       expect(requiereBeneficiario('fideicomiso')).toBe(true)

@@ -159,7 +159,9 @@ Columna por columna, contra el Cap. III Quinquies:
 
 ## 5. Diseño en papel del registro del camino de prelación
 
-**Esto es una propuesta de modelo de datos, NO una migración.** No se ejecuta nada; se somete al especialista PLD junto con las preguntas de §6.
+> **CONSTRUIDO el 2-sep-2026** en la migración `20260902100000_beneficiario_controlador.sql`. Lo que sigue es el diseño tal como se escribió el 20-ago; **dos cosas cambiaron al implementarlo** y están razonadas en el ADR-32: la identidad NO se movió a una tabla hija (§5.3) —el hallazgo apunta a `beneficiarios_controladores`, que ya es el sujeto del screening, para no dejar dos respuestas a «quién es el Beneficiario Controlador»—, y el umbral se sembró como **dos** parámetros y no uno, porque el borde («o más» -vs- «más del») es parte de la regla. Las nueve preguntas de §6 siguen abiertas y ninguna bloqueó la construcción: lo que dependía de ellas no se construyó.
+
+**El texto original de esta sección era una propuesta de modelo de datos, NO una migración.**
 
 La idea central: el Cap. III Quinquies no pide guardar un resultado, pide poder reconstruir un procedimiento dos años después. Eso es exactamente lo mismo que ya resolvió `integrantes_estructura` (§1.3) para la estructura del propio obligado: datos inmutables, un ciclo de estado, y la corrección modelada como baja + fila nueva, nunca como `UPDATE`. La propuesta reusa ese patrón para el Beneficiario Controlador **del cliente**, no del obligado — son conceptos distintos aunque el patrón de tabla se parezca.
 

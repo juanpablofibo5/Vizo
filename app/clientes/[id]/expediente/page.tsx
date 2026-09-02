@@ -26,6 +26,11 @@ import {
 import { ConocimientoDelCliente, type SeccionDeConocimiento } from './conocimiento'
 import { SeccionCuestionario } from './cuestionario'
 import { SeccionMedidasReforzadas } from './reforzadas'
+import { SeccionBeneficiario } from './beneficiario'
+import {
+  estadoDelBeneficiario,
+  type EstadoBeneficiarioControlador,
+} from '../../../../src/persistencia/beneficiario-controlador'
 import {
   estadoDeMedidasReforzadas,
   type EstadoDeMedidas,
@@ -50,6 +55,7 @@ import {
   rielPep,
   rielPerfil,
   rielCuestionario,
+  rielBeneficiario,
   rielMedidasReforzadas,
   rielRevisionAnual,
   seccionAbiertaPorDefecto,
@@ -395,6 +401,12 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       hoy: hoyEnMexico(),
     })
 
+    const beneficiario: EstadoBeneficiarioControlador = await estadoDelBeneficiario(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+      hoy: hoyEnMexico(),
+    })
+
     const aprobacion: EstadoAprobacion = await estadoDeAprobacion(db, {
       sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
       clienteId,
@@ -473,6 +485,12 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
     const estadoPepRiel = rielPep(estadoPep)
     const estadoCuestionario = rielCuestionario(cuestionario)
     const estadoReforzadas = rielMedidasReforzadas(reforzadas)
+    const estadoBeneficiario = rielBeneficiario({
+      requiere: beneficiario.requiere,
+      vigente: beneficiario.vigente,
+      anticipado: beneficiario.umbral.anticipado,
+      exigibleDesde: beneficiario.umbral.exigibleDesde,
+    })
 
     const secciones: SeccionDeConocimiento[] = [
       {
@@ -557,6 +575,17 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
           <SeccionMedidasReforzadas
             clienteId={clienteId}
             estado={reforzadas}
+            puede={sesion.rol === 'admin'}
+          />
+        ),
+      },
+      {
+        ...SECCIONES_DEL_CONOCIMIENTO[7],
+        ...estadoBeneficiario,
+        contenido: (
+          <SeccionBeneficiario
+            clienteId={clienteId}
+            estado={beneficiario}
             puede={sesion.rol === 'admin'}
           />
         ),

@@ -274,6 +274,12 @@ export const SECCIONES_DEL_CONOCIMIENTO = [
     articulo: 'Art. 23 Ter 3',
   },
   { id: 'reforzadas', numero: '07', titulo: 'Medidas reforzadas', articulo: 'Art. 23 Ter 4' },
+  {
+    id: 'beneficiario',
+    numero: '08',
+    titulo: 'Beneficiario Controlador',
+    articulo: 'Cap. III Quinquies',
+  },
 ] as const
 
 export interface CuestionarioParaRiel {
@@ -386,5 +392,76 @@ export function rielMedidasReforzadas(m: MedidasParaRiel): EstadoDeRiel {
         tono: 'ok',
         reloj: `${fr} · el ${m.cobertura.medidas.fechaAdopcion}`,
       }
+  }
+}
+
+export interface BeneficiarioParaRiel {
+  /** Personas morales y fideicomisos; a una física se le pregunta otra cosa. */
+  readonly requiere: boolean
+  readonly vigente:
+    | null
+    | {
+        readonly via: string
+        readonly fechaIdentificacion: string
+        readonly hallazgos: readonly unknown[]
+      }
+  readonly anticipado: boolean
+  readonly exigibleDesde: string
+}
+
+/**
+ * El Beneficiario Controlador, en una palabra.
+ *
+ * Dos cosas que esta función NO dice, y son deliberadas:
+ *
+ * `identificado` no lleva fecha de vencimiento. El Art. 23 Quinquies pide
+ * mantener la identificación actualizada «durante la vigencia de la Relación
+ * de negocios» y no fija un plazo — inventar uno aquí sería regulación escrita
+ * en el riel. Si esa actualización debe correr con la revisión anual del Art.
+ * 21 es la pregunta 8 del especialista; hasta que se conteste, el reloj que se
+ * enseña es el del Art. 21, no uno propio.
+ *
+ * Y una identificación por EXCEPCIÓN sale `ok`, no neutro: el Art. 23
+ * Quinquies 2 libera de recabar los datos, así que el obligado está en regla
+ * — no es un hueco.
+ */
+export function rielBeneficiario(b: BeneficiarioParaRiel): EstadoDeRiel {
+  if (!b.requiere) {
+    return {
+      estado: 'No aplica',
+      tono: 'neutro',
+      reloj: 'El procedimiento es de personas morales y fideicomisos (Art. 18 fr. III de la Ley).',
+    }
+  }
+  if (b.vigente === null) {
+    return {
+      estado: 'Sin identificar',
+      tono: b.anticipado ? 'neutro' : 'critico',
+      reloj: b.anticipado
+        ? `Exigible desde el ${b.exigibleDesde}.`
+        : 'La identificación va antes del acto o al establecer la Relación de negocios (Art. 23 Quinquies 1).',
+    }
+  }
+  if (b.vigente.via === 'excepcion') {
+    return {
+      estado: 'Exceptuado',
+      tono: 'ok',
+      reloj: `Art. 23 Quinquies 2, acreditado el ${b.vigente.fechaIdentificacion}.`,
+    }
+  }
+  // Un procedimiento corrido que no llegó a nadie no es una identificación
+  // completa: el capítulo pide identificar a una persona física, y quedarse
+  // sin ninguna es un hueco que alguien tiene que mirar.
+  if (b.vigente.hallazgos.length === 0) {
+    return {
+      estado: 'Sin resultado',
+      tono: 'aviso',
+      reloj: 'El orden de prelación se agotó sin identificar a ninguna persona física.',
+    }
+  }
+  return {
+    estado: 'Identificado',
+    tono: 'ok',
+    reloj: `Procedimiento documentado el ${b.vigente.fechaIdentificacion}.`,
   }
 }

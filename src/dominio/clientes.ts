@@ -148,15 +148,18 @@ export function prepararAltaCliente(datos: DatosAltaCliente): ClienteNormalizado
 // Beneficiario controlador
 // ─────────────────────────────────────────────────────────────────────────
 
-/**
- * Umbral de participación del beneficiario controlador.
- *
- * Bajó de 50% a 25% con la reforma de 2025. Se expone como constante nombrada
- * para que la UI pueda avisar, pero NO se usa para rechazar: la ley obliga a
- * identificar a quien controla, y el control puede ejercerse por otras vías
- * además de la participación accionaria (`control_por = 'control_efectivo'`).
- */
-export const PARTICIPACION_BENEFICIARIO_PCT = 25
+/*
+  AQUÍ VIVÍA `PARTICIPACION_BENEFICIARIO_PCT = 25`, y se fue el 2-sep-2026.
+
+  Era el umbral de la fr. I del Art. 23 Quinquies escrito en un `.ts`. No
+  decidía nada —ninguna función lo leía; solo una prueba afirmaba que valía
+  25— pero eso es precisamente lo que lo hacía peligroso: el día que alguien
+  lo usara para comparar, estaría comparando contra un número sin vigencia y
+  sin fuente. Ahora vive en `parametros_motor` como
+  `beneficiario_umbral_control_pct`, con su cita del DOF y con su BORDE al
+  lado (`beneficiario_umbral_inclusivo`), porque «25% o más» y «más del 25%»
+  no son el mismo umbral y en 25.00% exacto dan respuestas opuestas.
+*/
 
 export interface DatosBeneficiario {
   nombre: string

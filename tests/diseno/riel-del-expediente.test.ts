@@ -8,6 +8,7 @@ import {
   rielExpediente,
   peorEstado,
   peorTono,
+  rielBeneficiario,
   seccionAbiertaPorDefecto,
 } from '../../app/componentes/riel'
 import type { EstadoAprobacion } from '../../src/persistencia/aprobacion'
@@ -282,5 +283,52 @@ describe('el resumen de la lista se queda con lo más grave', () => {
 
   test('pero un verde sí gana al neutro: en regla no se ve igual que sin evaluar', () => {
     expect(peorTono(['neutro', 'ok'])).toBe('ok')
+  })
+})
+
+describe('El Beneficiario Controlador en una palabra', () => {
+  const base = { requiere: true, vigente: null, anticipado: false, exigibleDesde: '2027-03-01' }
+
+  test('a una persona física NO se le pide este procedimiento', () => {
+    const r = rielBeneficiario({ ...base, requiere: false })
+    expect(r.tono).toBe('neutro')
+    expect(r.estado).toBe('No aplica')
+  })
+
+  test('sin identificar y ya exigible es ROJO: el acto no espera', () => {
+    expect(rielBeneficiario(base).tono).toBe('critico')
+  })
+
+  test('sin identificar pero ANTES del 1 de marzo de 2027 es neutro, no rojo', () => {
+    const r = rielBeneficiario({ ...base, anticipado: true })
+    expect(r.tono).toBe('neutro')
+    expect(r.reloj).toMatch(/2027-03-01/)
+  })
+
+  test('la EXCEPCIÓN del Art. 23 Quinquies 2 sale verde: libera de recabar, no es un hueco', () => {
+    const r = rielBeneficiario({
+      ...base,
+      vigente: { via: 'excepcion', fechaIdentificacion: '2027-04-01', hallazgos: [] },
+    })
+    expect(r.tono).toBe('ok')
+    expect(r.estado).toBe('Exceptuado')
+  })
+
+  test('UN PROCEDIMIENTO SIN NINGUNA PERSONA no es verde: el capítulo pide llegar a una física', () => {
+    const r = rielBeneficiario({
+      ...base,
+      vigente: { via: 'prelacion_persona_moral', fechaIdentificacion: '2027-04-01', hallazgos: [] },
+    })
+    expect(r.tono).toBe('aviso')
+    expect(r.estado).toBe('Sin resultado')
+  })
+
+  test('con hallazgo, verde — y sin inventarle un vencimiento que el artículo no da', () => {
+    const r = rielBeneficiario({
+      ...base,
+      vigente: { via: 'prelacion_persona_moral', fechaIdentificacion: '2027-04-01', hallazgos: [{}] },
+    })
+    expect(r.tono).toBe('ok')
+    expect(r.reloj).not.toMatch(/vence|Vence/)
   })
 })

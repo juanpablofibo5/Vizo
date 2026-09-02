@@ -533,6 +533,27 @@ Dos celdas de esa cobertura concentran el riesgo de acreditar de más, y las dos
 
 **Fijado con:** las 13 aserciones de la migración `20260831100000`, `tests/clientes/capacitacion.test.ts` (dominio, 17 casos) y `tests/persistencia/capacitacion.test.ts` (base real, 16 casos: el mínimo de años leído del catálogo, la constancia sin evaluación, la sesión de otro año, la futura, la evaluación de otro obligado que no pasa en silencio y la baja que no borra el pasado).
 
+## ADR-32 · El Cap. III Quinquies: lo que se guarda es el PROCEDIMIENTO, y el orden lo impone la base — 2026-09-02
+
+**Contexto.** El motor del Beneficiario Controlador existía desde el 20-ago-2026 —`src/dominio/beneficiario-controlador.ts`, con el orden de prelación del Art. 23 Quinquies, el control efectivo del 23 Quinquies 1 y sus pruebas— y **nada lo importaba**. `docs/BENEFICIARIO-CONTROLADOR.md` §5 traía el modelo de datos en papel, marcado «NO es una migración». Esto lo construye.
+
+**Lo que decide el modelo no es el 25%**, es el párrafo de cierre, que aparece dos veces —una por régimen— casi palabra por palabra: «deberán documentar el **procedimiento seguido** […], conservar la información […], mantenerlos actualizados durante la vigencia de la Relación de negocios y resguardarlos en términos del artículo 18, fracción IV de la Ley». Guardar quién ganó no cumple ninguno de los cuatro verbos.
+
+**Decisión.** Seis piezas:
+
+1. **Se asienta el camino, no el resultado.** Una fila por **cada fracción evaluada**, no solo por la que resolvió, con el motivo obligatorio cuando no encontró a nadie. Eso es lo que demuestra que la fr. I y la fr. II se agotaron antes de caer en la III — y sin ello «llegué por la fracción III» es indistinguible de un atajo.
+2. **El orden es irrompible desde el esquema.** Un trigger inmediato rechaza una fracción cuya anterior no quedó sin resultado, y también continuar después de que una encontró. La pantalla, en consecuencia, **no tiene selector de fracción**: se capturan insumos y el motor decide.
+3. **La identidad NO se duplica.** El diseño en papel (§5.3) ponía los datos de la persona en una tabla hija nueva; aquí el hallazgo **apunta** a `beneficiarios_controladores`, que ya es el sujeto de `consultas_screening`. Mover la identidad habría dejado dos respuestas posibles a «quién es el Beneficiario Controlador de este cliente». Es una desviación deliberada del documento.
+4. **El umbral y su BORDE salen del catálogo y se congelan en la fila.** Dos parámetros, no uno: parametrizar el 25 y dejar el `>=` en el código es la mitad de la regla escrita en código igual. En 25.00% exacto la lectura del Art. 23 Quinquies fr. I («o más», sobre capital) y la del Art. 3 fr. IV b) ii) de la Ley («más del», sobre voto) dan respuestas opuestas. El snapshot va en la identificación porque una determinación de 2027 tiene que poder reconstruirse en 2029.
+5. **Reidentificar sustituye, nunca edita.** «Mantenerlos actualizados» solo se puede demostrar si la anterior sigue entera. Un índice parcial garantiza una sola vigente por cliente; el UPDATE está acotado por trigger a `vigente → sustituida` y nada más.
+6. **La excepción del Art. 23 Quinquies 2 se registra, no se deduce.** La de bolsa exige la clave de pizarra que el texto condiciona con «siempre que». `anexo_7a` y `anexo_7bisa` existen en el enum y **ninguna regla los llena**: el texto de esos anexos no está contrastado, y decidir por regla que un cliente cae en ellos sería sembrar una fuente que nadie leyó.
+
+**Lo que se rechazó:** ensanchar `beneficiarios_controladores` con más columnas (no hay dónde poner un camino en una fila); dejar que el capturista elija la fracción; y cablear el descenso del Art. 23 Quinquies 1 ¶2 como un árbol en memoria — se aplana en identificaciones encadenadas, igual que el Anexo 2 Bis para el fideicomiso anidado.
+
+**Un número que se fue:** `PARTICIPACION_BENEFICIARIO_PCT = 25` vivía en `src/dominio/clientes.ts`. Ninguna función lo leía —solo una prueba afirmaba que valía 25—, y eso es lo que lo hacía peligroso: el día que alguien lo usara para comparar, compararía contra un número sin vigencia y sin fuente.
+
+**Fijado con:** las 12 aserciones de la migración `20260902100000`, `tests/persistencia/beneficiario-controlador.test.ts` (14 casos) y seis casos de riel. Dos de esas pruebas existen **solo** en la persistencia y no pueden estar en la migración: el disparador de coherencia es DIFERIDO y el bloque de aserciones revierte antes del COMMIT, así que ahí nunca llegaría a dispararse.
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde

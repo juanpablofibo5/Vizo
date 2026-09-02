@@ -52,6 +52,11 @@ import {
   DatoDeMedidasInvalido,
   asentarMedidasReforzadas,
 } from '../../../../src/persistencia/medidas-reforzadas'
+import {
+  DatoDeBeneficiarioInvalido,
+  identificarBeneficiarioControlador,
+  registrarExcepcion,
+} from '../../../../src/persistencia/beneficiario-controlador'
 import type {
   EvidenciaDeConsulta,
   PersonaVinculada,
@@ -934,6 +939,165 @@ export async function accionAdoptarMedidas(
       }
     }
     return { ok: false, mensaje: bruto, problemas: [] }
+  } finally {
+    await db.end()
+  }
+}
+
+/**
+ * Corre el orden de prelación del Art. 23 Quinquies y asienta su camino.
+ *
+ * El formulario captura INSUMOS, no conclusiones: quién tiene cuánto, quién
+ * controla por qué medio, quién es el funcionario de mayor grado. Cuál fracción
+ * resuelve lo decide el motor con el umbral del catálogo — y por eso la
+ * pantalla no tiene ningún selector de fracción. Elegirla a mano sería poder
+ * declarar «fr. III» sin haber agotado la I y la II, que es justo lo que el
+ * orden de prelación prohíbe.
+ */
+export async function accionIdentificarBeneficiario(
+  _previo: EstadoCaptura,
+  datos: FormData,
+): Promise<EstadoCaptura> {
+  const clienteId = String(datos.get('clienteId') ?? '')
+  const sesion = await sesionRequerida()
+
+  const identidades: Record<string, { nombre: string; rfc?: string; curp?: string }> = {}
+  const tenencias: Array<{
+    titularId: string; esGrupo: boolean; porcentaje: number
+    via: 'directa' | 'indirecta'
+  }> = []
+  const control: Array<{
+    titularId: string; esGrupo: boolean; medio: string
+    areasControladas: Array<'estrategia' | 'toma_de_decisiones' | 'politicas_principales'>
+  }> = []
+  const funcionarios: Array<{
+    titularId: string; esGrupo: boolean; cargo: string; rango: number
+  }> = []
+
+  const cuantos = Number(datos.get('cuantosCandidatos') ?? '0')
+  for (let i = 0; i < cuantos; i += 1) {
+    const nombre = String(datos.get(`nombre${String(i)}`) ?? '').trim()
+    // Un renglón que se abrió y no se llenó no es un candidato.
+    if (nombre === '') continue
+
+    // El id es opaco y local a esta determinación: al dominio nunca le llega
+    // un nombre (regla dura 3, que vale también dentro del dominio).
+    const titularId = `t${String(i)}`
+    const rfc = String(datos.get(`rfc${String(i)}`) ?? '').trim()
+    const curp = String(datos.get(`curp${String(i)}`) ?? '').trim()
+    identidades[titularId] = {
+      nombre,
+      ...(rfc === '' ? {} : { rfc }),
+      ...(curp === '' ? {} : { curp }),
+    }
+
+    const clase = String(datos.get(`clase${String(i)}`) ?? 'tenencia')
+    const esGrupo = datos.get(`grupo${String(i)}`) === 'si'
+
+    if (clase === 'tenencia') {
+      tenencias.push({
+        titularId,
+        esGrupo,
+        porcentaje: Number(datos.get(`porcentaje${String(i)}`) ?? '0'),
+        via: datos.get(`via${String(i)}`) === 'indirecta' ? 'indirecta' : 'directa',
+      })
+    } else if (clase === 'control') {
+      const areas = datos.getAll(`areas${String(i)}`).map(String) as Array<
+        'estrategia' | 'toma_de_decisiones' | 'politicas_principales'
+      >
+      control.push({
+        titularId,
+        esGrupo,
+        medio: String(datos.get(`medio${String(i)}`) ?? '').trim(),
+        areasControladas: areas,
+      })
+    } else {
+      funcionarios.push({
+        titularId,
+        esGrupo,
+        cargo: String(datos.get(`cargo${String(i)}`) ?? '').trim(),
+        rango: Number(datos.get(`rango${String(i)}`) ?? '1'),
+      })
+    }
+  }
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await identificarBeneficiarioControlador(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      hoy: hoyEnMexico(),
+      datos: {
+        clienteId,
+        fechaIdentificacion: String(datos.get('fechaIdentificacion') ?? ''),
+        insumos: {
+          sujeto: {
+            tipo: 'persona_moral',
+            insumos: {
+              tenenciasCapital: tenencias,
+              controlPorOtrosMedios: control,
+              funcionariosAltaDireccion: funcionarios,
+            },
+          },
+        },
+        identidades,
+      },
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return {
+      ok: true,
+      mensaje:
+        'Procedimiento asentado con el camino completo: qué fracción se evaluó, en qué orden y ' +
+        'con qué resultado.',
+      problemas: [],
+    }
+  } catch (e) {
+    if (e instanceof DatoDeBeneficiarioInvalido) {
+      return { ok: false, mensaje: 'No se asentó la identificación.', problemas: e.problemas }
+    }
+    const bruto = e instanceof Error ? e.message : String(e)
+    if (/permission denied|admin/i.test(bruto)) {
+      return {
+        ok: false,
+        mensaje: 'Solo un administrador asienta la identificación. La regla la aplica la base.',
+        problemas: [],
+      }
+    }
+    return { ok: false, mensaje: bruto, problemas: [] }
+  } finally {
+    await db.end()
+  }
+}
+
+/** La excepción del Art. 23 Quinquies 2. El motor no la evalúa: se registra. */
+export async function accionRegistrarExcepcionBc(
+  _previo: EstadoCaptura,
+  datos: FormData,
+): Promise<EstadoCaptura> {
+  const clienteId = String(datos.get('clienteId') ?? '')
+  const sesion = await sesionRequerida()
+  const clave = String(datos.get('clavePizarra') ?? '').trim()
+  const detalle = String(datos.get('detalleExcepcion') ?? '').trim()
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await registrarExcepcion(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+      fechaIdentificacion: String(datos.get('fechaIdentificacion') ?? ''),
+      tipo: String(datos.get('tipoExcepcion') ?? 'bolsa_de_valores') as 'bolsa_de_valores',
+      ...(clave === '' ? {} : { clavePizarra: clave }),
+      ...(detalle === '' ? {} : { detalle }),
+      hoy: hoyEnMexico(),
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return { ok: true, mensaje: 'Excepción registrada con su sustento.', problemas: [] }
+  } catch (e) {
+    if (e instanceof DatoDeBeneficiarioInvalido) {
+      return { ok: false, mensaje: 'No se registró la excepción.', problemas: e.problemas }
+    }
+    return { ok: false, mensaje: e instanceof Error ? e.message : String(e), problemas: [] }
   } finally {
     await db.end()
   }

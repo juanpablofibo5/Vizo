@@ -32,10 +32,15 @@ const ORDEN: Record<string, number> = {
   aprobacion_directivo_pendiente: 0,
   screening: 1,
   aviso_requerido: 2,
-  revision_identidad: 3,
-  desviacion_perfil: 4,
-  perfil_ausente: 5,
-  proximidad: 6,
+  // Las del Art. 41 fr. V van aquí: no hay plazo corriendo —por eso no
+  // compiten con la aprobación ni el screening— pero sí condicionan lo que
+  // hay que hacer con ese acto, así que se ven antes que la identidad.
+  cliente_riesgo_alto: 3,
+  cliente_pep: 4,
+  revision_identidad: 5,
+  desviacion_perfil: 6,
+  perfil_ausente: 7,
+  proximidad: 8,
 }
 
 export default async function Alertas() {

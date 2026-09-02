@@ -63,7 +63,7 @@ Art. 10 Septies 1 pide **tres** cosas de la metodología, y dentro de la primera
 ### Cap. III Bis · Grado de riesgo — **1 mar 2027**
 Art. 23 Bis: modelo de evaluación coherente con la metodología del Cap. II Quáter, **al menos tres clasificaciones** (bajo, medio, alto) y los intermedios que se quieran. Art. 23 Bis 1: reevaluación **al menos cada seis meses**, más frecuente cuanto mayor el riesgo. Art. 23 Bis 4: **riesgo alto por defecto** para no residentes de jurisdicciones señaladas y para PEP extranjeras.
 
-**En VIZO:** `clientes_finales.nivel_riesgo` y la tabla `factores_riesgo` existen **vacías** desde la migración 001. La puerta quedó abierta a propósito (ADR-06).
+**En VIZO (contrastado el 2-sep-2026): construido.** *La versión anterior decía «existen vacías desde la migración 001», y era falsa: están `modelos_riesgo`, `grados_riesgo` con su escala, `evaluaciones_riesgo` append-only y la vista `clientes_riesgo_vigente`, más la sección 02 del expediente que clasifica.* Es la tercera línea de este documento que daba por vacío algo construido; el patrón ya costó una recomendación equivocada.
 
 ### Cap. III Ter · Conocimiento del cliente — **1 mar 2027**
 Perfil transaccional, alertas ante desviaciones, y para riesgo alto cuestionarios de origen y destino de recursos. Aprobación de un directivo antes de operar con PEP o riesgo alto.
@@ -108,14 +108,18 @@ Art. 39 Bis: cursos **al menos una vez al año** para consejo, administrador, di
 ### Cap. XIII · Mecanismos automatizados — **1 jun 2027**
 Art. 41, **seis** funciones mínimas. Es una especificación de producto ya escrita:
 
+**Contrastado contra el código el 2-sep-2026.** La columna anterior era de antes de media docena de capítulos y daba por «no» tres funciones ya construidas.
+
 | | Qué pide | VIZO hoy |
 |---|---|---|
 | I | Conservar, actualizar y permitir consulta del expediente único | **sí** |
-| II | Base consolidada por cliente, monitoreo de desviaciones del perfil y **acumulación** | **parcial** — acumula; no hay perfil |
-| III | Proveer la información de la metodología del Cap. II Quáter | no |
-| IV | Ejecutar el modelo de riesgo **conservando el histórico de modificaciones** del grado | no |
-| V | Sistema de alertas para riesgo alto, PEP y listados | no |
+| II | Base consolidada por cliente, monitoreo de desviaciones del perfil y **acumulación** | **sí** — el Perfil transaccional se construyó el 21-ago (ADR-22); la línea anterior decía «no hay perfil» |
+| III | Proveer la información de la metodología del Cap. II Quáter | **sí** — el Cap. II Quáter se cerró el 24-ago (ADR-27) |
+| IV | Ejecutar el modelo de riesgo **conservando el histórico de modificaciones** del grado | **sí** — `evaluaciones_riesgo` es append-only por trigger |
+| V | Sistema de alertas para riesgo alto, PEP, listados y **jurisdicciones** | **parcial** — los tres primeros sí (`cliente_riesgo_alto` y `cliente_pep`, ADR-33; `screening`, ADR-30). **Falta el cuarto** |
 | VI | Monitoreo de efectivo y metales preciosos (Art. 32) | **parcial** — el umbral existe |
+
+**Lo único que falta de la fr. V, y por qué no se construyó:** el texto pide alertar también sobre los actos que «involucren países o jurisdicciones que la legislación mexicana considera que aplican regímenes fiscales preferentes o que las autoridades mexicanas, organismos internacionales o agrupaciones intergubernamentales […] determinen que no cuentan con medidas». La regla es citable; **la lista no está en el Acuerdo**. Para construirlo hacen falta dos fuentes contrastadas que hoy no tenemos —los regímenes fiscales preferentes de la legislación mexicana, y las determinaciones vigentes de los organismos— y un dato que el modelo tampoco guarda todavía: la jurisdicción involucrada en el acto. Sembrar una lista sin fuente es lo que la regla dura 1 prohíbe.
 
 ### Cap. XIV · Auditoría — **1 ene 2028**
 Art. 48: cada obligación evaluada se cataloga en **cinco** niveles — *Cumple · Cumple mayoritariamente · Cumple parcialmente · No cumple · No aplica*. Art. 49: el dictamen lleva hallazgos, acciones correctivas y el **seguimiento** que hizo el auditado.

@@ -22,6 +22,11 @@ export function tonoDeAlerta(tipo: string, por: string | null): TonoDeRiel {
   // El efectivo del Art. 32 NO es un aviso más: recibirlo está PROHIBIDO. Va
   // antes que el tipo porque comparte `aviso_requerido` con los otros dos.
   if (por === 'efectivo_restringido') return 'critico'
+  // El Art. 41 fr. V alerta sobre el acto con cliente de Grado de Riesgo alto.
+  // Si el grado que lo disparó YA ESTABA VENCIDO el día del acto, no es solo
+  // algo que revisar: la reevaluación del Cap. III Bis se debía desde antes, y
+  // el acto se hizo describiendo un riesgo de hace más de un ciclo.
+  if (por === 'grado_de_riesgo_alto_vencido') return 'critico'
 
   switch (tipo) {
     // La omisión corre desde el acto: el ¶1 contempla detectarlo después.
@@ -38,6 +43,11 @@ export function tonoDeAlerta(tipo: string, por: string | null): TonoDeRiel {
     case 'desviacion_perfil':
     case 'perfil_ausente':
     case 'revision_identidad':
+    // El Art. 41 fr. V no prohíbe operar con estos clientes ni deja una
+    // omisión corriendo: pide que alguien lo mire y aplique lo reforzado que
+    // corresponda. Ámbar, y no granate, es exactamente eso.
+    case 'cliente_riesgo_alto':
+    case 'cliente_pep':
       return 'aviso'
     // Nada se cruzó. Es aviso de que la siguiente operación puede cruzarlo.
     case 'proximidad':
@@ -60,6 +70,8 @@ const NOMBRE: Record<string, string> = {
   revision_identidad: 'revisión de identidad',
   proximidad: 'proximidad',
   screening: 'listas de control',
+  cliente_riesgo_alto: 'cliente de riesgo alto',
+  cliente_pep: 'cliente PEP',
 }
 
 export function nombreDeTipo(tipo: string): string {
@@ -91,6 +103,14 @@ const ETIQUETA: Record<string, string> = {
   grado_vencido: 'El grado estaba vencido',
   coincidencias: 'Coincidencias detectadas',
   listas: 'Listas con coincidencia',
+  fundamento: 'Fundamento',
+  grado: 'Grado de Riesgo',
+  puntaje: 'Puntaje',
+  vence: 'La clasificación vence el',
+  clasificacion_vencida_al_acto: 'Ya había vencido al momento del acto',
+  fecha_operacion: 'Fecha del acto',
+  fecha_declaracion: 'Fecha de la declaración',
+  declaracion_revisada: 'Declaración revisada por un administrador',
 }
 
 /**

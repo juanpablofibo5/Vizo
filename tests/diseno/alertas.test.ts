@@ -128,3 +128,35 @@ describe('«Con qué se calculó»', () => {
     expect(pares[0]?.valor).toBe('[{"a":1}]')
   })
 })
+
+describe('Las alertas del Art. 41 fr. V', () => {
+  test('operar con cliente de riesgo alto es ÁMBAR: hay que mirarlo, no está prohibido', () => {
+    expect(tonoDeAlerta('cliente_riesgo_alto', 'grado_de_riesgo_alto')).toBe('aviso')
+    expect(tonoDeAlerta('cliente_pep', 'pep_por_funcion')).toBe('aviso')
+  })
+
+  test('PERO si el grado ya había vencido al acto, es GRANATE', () => {
+    // No es «algo que revisar»: la reevaluación del Cap. III Bis ya se debía
+    // cuando ocurrió el acto, y el grado que disparó la alerta describía un
+    // riesgo de hace más de un ciclo.
+    expect(tonoDeAlerta('cliente_riesgo_alto', 'grado_de_riesgo_alto_vencido')).toBe('critico')
+  })
+
+  test('los dos tipos se dicen en palabras, no con el nombre del enum', () => {
+    expect(nombreDeTipo('cliente_riesgo_alto')).toBe('cliente de riesgo alto')
+    expect(nombreDeTipo('cliente_pep')).toBe('cliente PEP')
+  })
+
+  test('el desglose traduce las claves nuevas en vez de enseñarlas crudas', () => {
+    const pares = calculoDeLaAlerta({
+      por: 'grado_de_riesgo_alto',
+      grado: 'Alto',
+      vence: '2027-10-01',
+      clasificacion_vencida_al_acto: false,
+    })
+    expect(pares.map((p) => p.etiqueta)).toEqual([
+      'Grado de Riesgo', 'La clasificación vence el', 'Ya había vencido al momento del acto',
+    ])
+    expect(pares[2]?.valor).toBe('no')
+  })
+})

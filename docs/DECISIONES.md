@@ -554,6 +554,24 @@ Dos celdas de esa cobertura concentran el riesgo de acreditar de más, y las dos
 
 **Fijado con:** las 12 aserciones de la migración `20260902100000`, `tests/persistencia/beneficiario-controlador.test.ts` (14 casos) y seis casos de riel. Dos de esas pruebas existen **solo** en la persistencia y no pueden estar en la migración: el disparador de coherencia es DIFERIDO y el bloque de aserciones revierte antes del COMMIT, así que ahí nunca llegaría a dispararse.
 
+## ADR-33 · Las alertas del Art. 41 fr. V cuelgan del ACTO, no del cliente — 2026-09-02
+
+**Contexto.** El `ROADMAP-2027.md` daba el Cap. XIII por casi vacío («III no · IV no · V no»), y su columna era anterior a media docena de capítulos ya construidos. Contrastadas las seis funciones contra la base, el único hueco real de la fr. V eran dos de sus cuatro supuestos.
+
+**Lo que decide el diseño es la preposición.** El texto dice «alertas respecto de aquellos **actos u operaciones que se pretendan llevar a cabo CON** Clientes o Usuarias de Grado de Riesgo alto, Personas Políticamente Expuestas […]». No pide una alerta al clasificar a alguien: pide una por cada acto con esa clase de cliente. Por eso se levantan desde `registrarOperacion`, en la misma transacción, como la desviación de perfil — y dos operaciones del mismo cliente alto levantan **dos** alertas.
+
+**Decisión.** Cinco piezas:
+
+1. **Dos tipos, no uno.** Se atienden distinto: el riesgo alto pide medidas reforzadas y cuestionario; el PEP, aprobación de directivo y seguimiento. Un solo tipo obligaría a leer el `detalle` para saber qué hacer.
+2. **Cada alerta nombra su hecho, y la base lo exige.** `cliente_riesgo_alto` no existe sin la evaluación del Cap. III Bis que clasificó, ni `cliente_pep` sin la declaración del Cap. III Quáter — mismo principio que ya obliga a `desviacion_perfil` a decir contra qué perfil se desvió.
+3. **El vencimiento se mide contra la FECHA DEL ACTO, no contra el reloj.** La vista `clientes_riesgo_vigente` calcula `vencida` con `now()`, que contesta «¿está vencida hoy?». Para una alerta que habla de un acto, lo que importa es si la clasificación seguía viva ese día: registrar hoy una operación de hace tres meses no debe teñirse con el calendario de hoy. Y cuando ya había vencido, el tono sube a granate por el canal `por`, el mismo que usa `efectivo_restringido`.
+4. **El PEP solo alcanza a personas físicas**, porque la declaración del Cap. III Quáter solo existe para ellas y la base lo impide para una moral. Si el Beneficiario Controlador de una moral es PEP, el texto no lo dice con todas sus letras: es pregunta para el especialista, y hasta que se conteste no se inventa aquí una alerta que el artículo no pide.
+5. **El cuarto supuesto —países o jurisdicciones— NO se construye.** La regla es citable; la LISTA no está en el Acuerdo, que remite a «la legislación mexicana» y a lo que determinen autoridades y organismos internacionales. Sembrar jurisdicciones sin contrastar su fuente es lo que la regla dura 1 prohíbe, y una alerta que no dispara sobre la lista correcta es peor que ninguna: tranquiliza.
+
+**Un error que corrigió una prueba.** El módulo afirmaba en su docstring que el caso «no se sabe si es alto o PEP» ya lo cubría `aprobacion_directivo_pendiente`. **Es falso**: esa alerta solo nace cuando la exigencia es `exigible`; con `indeterminable` devuelve `null`. Hoy ese hueco se ve en el riel del cliente pero no llega a la bandeja de alertas. Queda escrito en el código y fijado por una prueba que lo documenta, para que el día que se decida cerrarlo se sepa que el cambio fue a propósito.
+
+**Fijado con:** las 6 aserciones de `20260902160100`, `tests/persistencia/alertas-art41.test.ts` (9 casos) y 4 de vocabulario. Los tipos del enum van en una migración aparte (`20260902160000`) porque Postgres no deja usar un valor de enum en la misma transacción que lo crea.
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde

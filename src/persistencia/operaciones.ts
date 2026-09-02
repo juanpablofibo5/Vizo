@@ -7,6 +7,7 @@ import { centavos, centavosAPesosTexto, pesosTextoACentavos, type Centavos } fro
 import type { Evaluacion } from '../dominio/tipos'
 import { asentarPerfil, contrastarConSuPerfil, perfilVigenteDe } from './perfil'
 import { contrastarAprobacionAlOperar } from './aprobacion'
+import { alertarPorRiesgoYPep } from './alertas-art41'
 import type { ExigenciaDeAprobacion } from '../dominio/aprobacion-directivo'
 import type { ResultadoPerfil } from '../dominio/perfil-transaccional'
 
@@ -340,6 +341,17 @@ export async function registrarOperacion(
       operacion: { id: operacionId, fecha: d.fechaOperacion },
     })
     if (aprobacion.alertaId !== null) alertas.push(aprobacion.alertaId)
+
+    // Art. 41 fr. V. Va aquí y no en la pantalla que clasifica al cliente
+    // porque el texto habla de los ACTOS que se pretendan llevar a cabo con
+    // esa clase de cliente, no de la clasificación en sí.
+    const art41 = await alertarPorRiesgoYPep(db, {
+      sesion: p.sesion,
+      clienteId: d.clienteId,
+      operacion: { id: operacionId, fecha: d.fechaOperacion },
+    })
+    if (art41.riesgoAltoId !== null) alertas.push(art41.riesgoAltoId)
+    if (art41.pepId !== null) alertas.push(art41.pepId)
 
     // REGLA DURA 3: montos y resultado sí; nombre, RFC y CURP del cliente NO.
     // El cliente va como id opaco, que es lo que permite auditar sin filtrar.

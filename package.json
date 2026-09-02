@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit",
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
-    "db:migrate": "supabase db push",
+    "db:migrate": "supabase db push --linked",
     "db:types": "supabase gen types typescript --local > src/tipos/supabase.ts",
     "demo:datos": "node --import tsx scripts/datos-demo.ts",
     "demo:datos:remoto": "node --env-file=.env.produccion --import tsx scripts/datos-demo.ts",

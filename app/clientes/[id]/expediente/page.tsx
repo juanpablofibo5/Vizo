@@ -29,6 +29,7 @@ import { SeccionMedidasReforzadas } from './reforzadas'
 import { SeccionBeneficiario } from './beneficiario'
 import {
   estadoDelBeneficiario,
+  UmbralDeControlAusente,
   type EstadoBeneficiarioControlador,
 } from '../../../../src/persistencia/beneficiario-controlador'
 import {
@@ -401,11 +402,33 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       hoy: hoyEnMexico(),
     })
 
-    const beneficiario: EstadoBeneficiarioControlador = await estadoDelBeneficiario(db, {
-      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
-      clienteId,
-      hoy: hoyEnMexico(),
-    })
+    /*
+      UN PARÁMETRO QUE FALTA NO TIRA EL EXPEDIENTE ENTERO.
+
+      La regla dura 6 manda detenerse ante un catálogo incompleto en vez de
+      suponer un valor, y eso se cumple: sin el umbral no se identifica a nadie.
+      Pero detenerse tiene que ser proporcional. La primera versión dejaba que
+      `UmbralDeControlAusente` subiera hasta la página, y entonces un cliente
+      no podía abrir NINGUNA sección de su expediente —revisión anual, perfil,
+      alertas— por una fila del catálogo que solo usa la sección 08. Se
+      descubrió en producción el 2-sep-2026, con el código desplegado antes de
+      correr su migración.
+
+      Así que el error se atrapa aquí y se convierte en el estado de UNA
+      sección, que dice en voz alta qué falta. Sigue sin calcularse nada.
+    */
+    let beneficiario: EstadoBeneficiarioControlador | null = null
+    let faltaElUmbral: string | null = null
+    try {
+      beneficiario = await estadoDelBeneficiario(db, {
+        sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+        clienteId,
+        hoy: hoyEnMexico(),
+      })
+    } catch (e) {
+      if (!(e instanceof UmbralDeControlAusente)) throw e
+      faltaElUmbral = e.message
+    }
 
     const aprobacion: EstadoAprobacion = await estadoDeAprobacion(db, {
       sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
@@ -485,12 +508,19 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
     const estadoPepRiel = rielPep(estadoPep)
     const estadoCuestionario = rielCuestionario(cuestionario)
     const estadoReforzadas = rielMedidasReforzadas(reforzadas)
-    const estadoBeneficiario = rielBeneficiario({
-      requiere: beneficiario.requiere,
-      vigente: beneficiario.vigente,
-      anticipado: beneficiario.umbral.anticipado,
-      exigibleDesde: beneficiario.umbral.exigibleDesde,
-    })
+    const estadoBeneficiario =
+      beneficiario === null
+        ? {
+            estado: 'Falta catálogo',
+            tono: 'critico' as const,
+            reloj: 'El umbral del Art. 23 Quinquies no está sembrado.',
+          }
+        : rielBeneficiario({
+            requiere: beneficiario.requiere,
+            vigente: beneficiario.vigente,
+            anticipado: beneficiario.umbral.anticipado,
+            exigibleDesde: beneficiario.umbral.exigibleDesde,
+          })
 
     const secciones: SeccionDeConocimiento[] = [
       {
@@ -582,13 +612,19 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       {
         ...SECCIONES_DEL_CONOCIMIENTO[7],
         ...estadoBeneficiario,
-        contenido: (
-          <SeccionBeneficiario
-            clienteId={clienteId}
-            estado={beneficiario}
-            puede={sesion.rol === 'admin'}
-          />
-        ),
+        contenido:
+          beneficiario === null ? (
+            <div className="error" style={{ margin: 0 }}>
+              <strong>Falta un parámetro del catálogo y por eso esta sección no calcula nada.</strong>
+              <p className="pequeno" style={{ margin: '.5rem 0 0' }}>{faltaElUmbral}</p>
+            </div>
+          ) : (
+            <SeccionBeneficiario
+              clienteId={clienteId}
+              estado={beneficiario}
+              puede={sesion.rol === 'admin'}
+            />
+          ),
       },
     ]
 

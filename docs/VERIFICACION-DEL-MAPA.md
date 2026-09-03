@@ -149,3 +149,38 @@ Se anotan aquí y **no se construyen** en este trabajo.
   anexo esté no quiere decir que esté el numeral que se necesita.
 - **El riesgo alto por defecto de las PEP extranjeras** (Art. 23 Bis 4,
   exigible 1-mar-2027) no está construido. Verificado el 2-sep.
+
+---
+
+## Entrega de la rama `barrido-del-mapa` — 3-sep-2026
+
+Once commits. Lo que hay que hacer con ellos, en este orden:
+
+1. `git log --oneline main..barrido-del-mapa` para ver qué pasó.
+2. Abrir el PR y esperar CI en verde.
+3. **Aplicar las tres migraciones nuevas** y verificar **contra la base**, no
+   contra lo que imprima la terminal — el `supabase db push` ya demostró que
+   puede fallar ruidosamente y aun así decir «Finished»:
+
+   ```
+   20260903090000_apartado_iv_al_dia.sql
+   20260903100000_seleccion_de_personal.sql
+   20260903140000_piso_del_beneficiario.sql
+   ```
+
+4. Recién entonces, mergear a `main`.
+
+**Cuidado con el orden**, que ya rompió producción dos veces el 2-sep: el push
+a `main` despliega el código de inmediato y las migraciones no se aplican
+solas. El código nuevo lee `seleccion_personal_alcance` y
+`beneficiario_piso_anexo3` del catálogo; sin ellos, la pantalla de
+capacitación y la sección 08 del expediente se detienen con su error
+accionable — no tiran la página, pero no calculan.
+
+### Estado al cerrar
+
+- 993 pruebas en verde · typecheck y build limpios.
+- Smoke estructural en verde sobre base recién reseteada, y las seis guardas
+  (`privilegios_declarados`, `rls`, `privilegios_por_omision`, `append_only`,
+  `tenancy`, `grants`) devolviendo cero.
+- Nada se aplicó a producción.

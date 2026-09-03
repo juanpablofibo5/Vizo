@@ -48,7 +48,7 @@ producción. Si al verificar aparece un hueco real, se anota aquí y se sigue.
 | Cap. III Ter · Cuestionario del Art. 23 Ter 3 (~75) | ✅ 2-sep-2026 | **Exacta.** `cuestionarios_riesgo_alto`, con pantalla y pruebas |
 | Cap. III Ter · Medidas reforzadas del Art. 23 Ter 4 (~77) | ✅ 2-sep-2026 | **Exacta.** `medidas_reforzadas`, con pantalla y pruebas |
 | Cap. III Quinquies · Beneficiario Controlador (~90) | ✅ 2-sep-2026 | Decía «falta el árbol»; el árbol estaba desde el 20-ago sin que nadie lo importara |
-| Cap. X · Manual (~94) | ⬜ por verificar | No afirma nada de VIZO, pero dice que falta una decisión de alcance: comprobar que siga abierta |
+| Cap. X · Manual (~94) | ✅ 2-sep-2026 | **Decía que faltaba decidir una frontera, y llevaba diecisiete días decidida** (ADR-20, 16-ago). El índice del Manual existe en `apartados_manual` y sale en la Constancia. El reparto ya no es 7 y 7: es 5 acreditados, 3 parciales y 6 del obligado. Lo que sí falta es el documento del Manual. **Esta línea me hizo aconsejar mal**: el 2-sep le dije al usuario que el Cap. X «sigue bloqueado por una decisión tuya» |
 | Cap. XII · Capacitación (~104) | ✅ 31-ago y 2-sep-2026 | |
 | Cap. XIII · Mecanismos automatizados, tabla de seis funciones (~108) | ✅ 2-sep-2026 | Tres filas daban «no» sobre cosas construidas; la fr. V quedó parcial de verdad |
 | Cap. XIV · Auditoría (~124) | ✅ 2-sep-2026 | **Tenía la peor de todas**: decía que el grado de riesgo de la ENTIDAD «no existe en el modelo» (issue #30). Existe desde el 30-ago y de él cuelga qué auditor aplica. Corregida. Lo del paquete de evidencia por obligación sigue siendo cierto: hay `manifiestos` y bitácora encadenada, no exportación por obligación |
@@ -83,6 +83,28 @@ alcance.
 | `/calendario` | ✅ 2-sep-2026 | Decía `○ nueva`; existe. Corregida |
 | `/configuracion` | ✅ 2-sep-2026 | Decía `○ nueva`; existe con sus siete anclas. Corregida |
 | Tabla de estimación (~151) | ✅ 2-sep-2026 | Las once rutas existen: ya no estima, describe. Marcada como histórico y conservada, porque el contraste estimado-vs-real es el único dato para estimar lo que sigue |
+
+## Cierre del barrido — 2-sep-2026
+
+Veintisiete afirmaciones contrastadas entre los dos documentos. **Once habían
+caducado**, y ninguna por descuido: cada capítulo construido dejó atrás una
+línea que nadie volvió a leer.
+
+Las tres que más costaron, por orden de daño:
+
+1. **Cap. XIV** decía que el grado de riesgo de la entidad «no existe en el
+   modelo» y lo colgaba de un issue abierto. Existía desde el 30-ago, y de él
+   cuelga qué auditor puede dictaminar — la decisión más cara del capítulo.
+2. **Cap. X** decía que faltaba decidir una frontera decidida diecisiete días
+   antes. Con esa línea le recomendé al usuario que el capítulo seguía
+   bloqueado por una decisión suya.
+3. **§5** daba por no transcritos anexos que sí están, y con eso bloqueaba el
+   piso documental del Art. 12 fr. VII.
+
+El patrón se repite en las once: **el documento se escribió antes de
+construir y nadie volvió a leerlo después**. La única defensa barata es que
+cada capítulo que se cierre actualice su línea en el mismo commit — como ya
+se hizo con el Cap. XII y el Cap. III Quinquies, que salieron exactos.
 
 ## Huecos reales encontrados durante el barrido
 

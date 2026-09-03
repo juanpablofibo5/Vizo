@@ -89,7 +89,7 @@ Modelo comercial reflejado en software: **unidad de cobro = RFC obligado**; impl
 | ~~Rol REC como figura propia + aceptación de designación~~ | ✅ **construido el 15-ago** | Issue #12 cerrado. La designación es un estado con su tabla, sus transiciones y su paso de arranque. El REC sigue sin ser un rol de la app —es una figura con exposición personal— y eso no cambia |
 | Aviso modificatorio y aviso 24h | F2 / bloqueado | El 24h espera Resolución de formatos (Transitorio Quinto) |
 | ~~Grado de riesgo~~ · ~~perfil transaccional~~ · ~~aprobación de directivo~~ · ~~cuestionarios~~ | ✅ **construidos el 20, 21, 22 y 23-ago** | ADR-21, ADR-22, ADR-23, ADR-25 y ADR-26. **El Cap. III Ter queda completo.** Detalle en `ROADMAP-2027.md` |
-| Manual de Políticas Internas | F2, **con frontera decidida** | ADR-20: VIZO acredita los 7 apartados que puede demostrar y deja el hueco en los otros 7. No redacta política |
+| Manual de Políticas Internas | F2, **con frontera decidida** | ADR-20: VIZO acredita lo que puede demostrar y deja el hueco en lo demás. No redacta política. *Contrastado el 2-sep: el ADR-20 hablaba de 7 y 7; construyendo se movió a **5 acreditados, 3 parciales y 6 del obligado**. El índice existe en `apartados_manual` y sale en la Constancia; el documento del Manual, no* |
 | Parser CFDI | F2 | Recortable desde el plan original; captura manual completa existe |
 | Notificaciones por correo | F2 | El semáforo cubre la necesidad en F1 |
 | Multi-RFC / grupos | F3 | Issue #13; toca la decisión más delicada del esquema (aislamiento) |

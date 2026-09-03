@@ -100,7 +100,11 @@ Art. 37 Bis: **catorce** apartados (fracciones I a XIV). Art. 37: dentro de los 
 
 **El puente honesto:** la fracción VIII exige *«los mecanismos para dar seguimiento y acumular actos u operaciones»* — que es exactamente lo que VIZO ya hace y puede enseñar funcionando. Ver `docs/DEMO.md`.
 
-**Antes de construirlo hay que decidir una frontera:** generar el Manual desde la configuración real del obligado es producto; generar texto que interpreta la norma es asesoría legal (`ALCANCE.md §0`).
+**En VIZO (contrastado el 2-sep-2026): la frontera YA está decidida, y el índice construido.** *Esta línea decía «antes de construirlo hay que decidir una frontera», y llevaba diecisiete días caduca: la decidió el ADR-20 el 16-ago.* VIZO acredita los apartados que puede demostrar con un dato del sistema y **deja el hueco** —con su artículo citado y sus preguntas para el obligado— en los que ocurren fuera. Eso vive en `apartados_manual`, lo lee `src/persistencia/constancia.ts` y sale en la Constancia de mecanismos.
+
+El reparto se movió desde el ADR-20, que hablaba de siete y siete: hoy son **5 acreditados, 3 acreditados parcialmente y 6 del obligado**. Se movió construyendo, que es como tenía que moverse.
+
+**Lo que falta:** el documento del Manual en sí. Hoy existe su índice con el origen y el hueco de cada apartado; no hay una ruta que lo genere ni lo entregue.
 
 ### Cap. XII · Capacitación y selección de personal — **1 ene 2027**
 Art. 39 Bis: cursos **al menos una vez al año** para consejo, administrador, directivos, el REC y el personal de atención al público, identificación, envío de avisos o auditoría. Contenido mínimo en cuatro incisos, y los temas deben ser **coherentes con los resultados de la metodología** del Cap. II Quáter. Fracción III: quien imparta la capacitación debe **acreditar experiencia de por lo menos cinco años**.

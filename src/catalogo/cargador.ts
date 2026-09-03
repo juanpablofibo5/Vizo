@@ -100,6 +100,11 @@ export async function cargarConfigActividad(
   const ventanaMeses = await parametroEntero(db, actividad.id, 'ventana_acumulacion_meses', fechaOperacion)
   const proximidadPct = await parametroEntero(db, actividad.id, 'umbral_proximidad_pct', fechaOperacion)
 
+  // Los instrumentos que el Art. 32 prohíbe. GLOBAL y no por actividad: la
+  // prohibición es de la Ley y alcanza a todas las Actividades Vulnerables;
+  // lo que cambia por actividad es el umbral, no la lista de instrumentos.
+  const instrumentosRestringidos = await instrumentosDelArticulo32(db)
+
   const version = await unaFila<{ v: string }>(db, 'select app.catalogo_version() as v')
   if (!version?.v) {
     throw new CatalogoIncompleto('No se pudo calcular la versión del catálogo')
@@ -114,6 +119,7 @@ export async function cargarConfigActividad(
     umbrales,
     ventanaMeses,
     proximidadPct,
+    instrumentosRestringidos,
     catalogoVersion: version.v,
   }
 }
@@ -150,4 +156,29 @@ async function unaFila<T>(db: EjecutorSql, sql: string, parametros: unknown[] = 
 async function varias<T>(db: EjecutorSql, sql: string, parametros: unknown[] = []): Promise<T[]> {
   const { rows } = await db.query(sql, parametros)
   return rows as T[]
+}
+
+/**
+ * Los instrumentos monetarios cuyo uso prohíbe el Art. 32.
+ *
+ * Si el catálogo no los tiene, se DETIENE. Devolver una lista vacía dejaría al
+ * motor calculando sin la mitad de la prohibición y sin que nada avise — que
+ * es exactamente el hueco que esta lista vino a tapar: durante meses el motor
+ * miró solo la forma de pago y un pago en oro pasaba como operación normal.
+ */
+async function instrumentosDelArticulo32(db: EjecutorSql): Promise<string[]> {
+  const fila = await unaFila<{ valor: unknown }>(
+    db,
+    `select valor from parametros_motor
+      where clave = 'art32_instrumentos_restringidos' and actividad_id is null
+      order by vigente_desde desc limit 1`,
+  )
+  if (fila === null || fila === undefined) {
+    throw new CatalogoIncompleto(
+      'El catálogo no tiene "art32_instrumentos_restringidos". Sin esa lista el motor no puede ' +
+        'aplicar la prohibición del Art. 32 sobre Metales Preciosos, y calcularía solo la mitad ' +
+        'que mira la forma de pago.',
+    )
+  }
+  return fila.valor as string[]
 }

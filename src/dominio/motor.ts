@@ -103,11 +103,29 @@ export function evaluar(entrada: EntradaEvaluacion, config: ConfigActividad): Ev
   // especialista PLD antes del piloto.
   const avisoPorAcumulacion = !avisoIndividual && alcanza(sumaVentana, uAviso)
 
-  // ── 4. Restricción de efectivo (Art. 32) ───────────────────────────────
-  // Solo aplica cuando el pago fue en efectivo, y se mide sobre el total
-  // CON IVA y accesorios.
+  // ── 4. Restricción del Art. 32 ─────────────────────────────────────────
+  // NO es solo de efectivo, y durante meses aquí se calculó como si lo fuera:
+  // «monedas y billetes […] Y METALES PRECIOSOS», que el Art. 3 fr. IX define
+  // como el oro, la plata y el platino. Un pago en oro pasaba como operación
+  // normal, sin la alerta que sí levantaba el mismo monto en billetes.
+  //
+  // Se mide sobre el total CON IVA y accesorios (Art. 6 ¶3 del Reglamento).
+  //
+  // BASTA CON QUE UNA DE LAS DOS DECLARACIONES lo diga. `formaPago` y
+  // `instrumentoMonetario` son dos respuestas del capturista sobre el mismo
+  // pago, y la segunda no siempre se captura. Exigir que coincidan dejaría de
+  // detectar efectivo declarado solo por forma de pago; exigir solo la segunda
+  // perdería todo lo capturado antes de que existiera. Ante una PROHIBICIÓN,
+  // detectar de más y que lo mire un humano es el error barato — el mismo
+  // criterio del screening (ADR-30).
   const montoParaEfectivo = montoContra(operacion, uEfectivo)
-  const efectivoRestringido = operacion.esEfectivo && alcanza(montoParaEfectivo, uEfectivo)
+  const instrumentoRestringido =
+    operacion.instrumentoMonetario !== null &&
+    config.instrumentosRestringidos.includes(operacion.instrumentoMonetario)
+      ? operacion.instrumentoMonetario
+      : null
+  const porInstrumentoOEfectivo = operacion.esEfectivo || instrumentoRestringido !== null
+  const efectivoRestringido = porInstrumentoOEfectivo && alcanza(montoParaEfectivo, uEfectivo)
 
   // ── 5. Alerta de proximidad ────────────────────────────────────────────
   // Decisión de producto, no obligación legal: avisar cuando falta poco.
@@ -132,6 +150,9 @@ export function evaluar(entrada: EntradaEvaluacion, config: ConfigActividad): Ev
     requiereIdentificacion,
     resultadoAviso,
     efectivoRestringido,
+    // Cuál instrumento la disparó, para que el booleano no sea un cajón único:
+    // `null` cuando la disparó la forma de pago y no el instrumento.
+    instrumentoRestringido: efectivoRestringido ? instrumentoRestringido : null,
     alertaProximidad,
     requiereRevisionIdentidad,
     sumaVentana,

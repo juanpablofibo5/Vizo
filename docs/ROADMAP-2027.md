@@ -129,7 +129,7 @@ Art. 41, **seis** funciones mínimas. Es una especificación de producto ya escr
 | III | Proveer la información de la metodología del Cap. II Quáter | **sí** — el Cap. II Quáter se cerró el 24-ago (ADR-27) |
 | IV | Ejecutar el modelo de riesgo **conservando el histórico de modificaciones** del grado | **sí** — `evaluaciones_riesgo` es append-only por trigger |
 | V | Sistema de alertas para riesgo alto, PEP, listados y **jurisdicciones** | **parcial** — los tres primeros sí (`cliente_riesgo_alto` y `cliente_pep`, ADR-33; `screening`, ADR-30). **Falta el cuarto** |
-| VI | Monitoreo de efectivo y metales preciosos (Art. 32) | **parcial** — el umbral existe |
+| VI | Monitoreo de efectivo y metales preciosos (Art. 32) | **sí** (3-sep-2026, ADR-36) — lo «parcial» no era el monitoreo: era la prohibición. El motor miraba solo la forma de pago y un pago en oro pasaba como operación normal |
 
 **Lo único que falta de la fr. V, y por qué no se construyó:** el texto pide alertar también sobre los actos que «involucren países o jurisdicciones que la legislación mexicana considera que aplican regímenes fiscales preferentes o que las autoridades mexicanas, organismos internacionales o agrupaciones intergubernamentales […] determinen que no cuentan con medidas». La regla es citable; **la lista no está en el Acuerdo**. Para construirlo hacen falta dos fuentes contrastadas que hoy no tenemos —los regímenes fiscales preferentes de la legislación mexicana, y las determinaciones vigentes de los organismos— y un dato que el modelo tampoco guarda todavía: la jurisdicción involucrada en el acto. Sembrar una lista sin fuente es lo que la regla dura 1 prohíbe.
 

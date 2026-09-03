@@ -158,7 +158,13 @@ Y en la misma frase entrega el argumento contrario: *«siempre que sus funciones
 
 ## 5. Lo que sigue sin verificar
 
-- **⚠️ Los Anexos** citados por el Cap. III Quinquies para las excepciones de Beneficiario Controlador (bolsa reconocida y similares). El Acuerdo trae sus anexos al final; solo se transcribieron el 2 Bis y el 2 Ter.
-- **⚠️ El Anexo 10** que menciona el Art. 23 Quáter 2.
+*Corregido el 2-sep-2026 en el barrido: esta lista era más pesimista que la realidad y bloqueaba trabajo que ya se podía hacer.* Decía que «solo se transcribieron el 2 Bis y el 2 Ter» y marcaba el Anexo 10 como ausente. **El `.txt` trae los Anexos 1 al 10 completos** (líneas 490 a 739), incluidos el 3, el 4 Bis, el 6 Bis y el 10.
+
+Lo que de verdad falta son **dos**, y la distinción importa porque es fácil confundirlos con los que sí están:
+
+- **⚠️ El Anexo 7-A y el Anexo 7 Bis-A.** No son los Anexos 7 y 7 Bis. El **7** dice qué *datos y documentos* se piden de las personas morales, dependencias y entidades «referidas en el Anexo 7-A»; el **7-A** es la *lista* de esas entidades, y esa lista no está transcrita. Igual con el 7 Bis y el 7 Bis-A. El Art. 23 Quinquies 2 fr. II (línea 265) exime a los clientes «previstos en los Anexos 4 Bis, 6 Bis, **7-A y 7 Bis A**», así que de esos cuatro solo dos tienen texto verificable — y por eso la migración del Cap. III Quinquies modela los cuatro tipos pero **ninguna regla llena** los dos últimos (ADR-32).
+- También los cita el Art. 12 fr. V (líneas 160–161) para las medidas simplificadas.
+
+**Lo que esto desbloquea:** el Anexo 3 sí está (línea 611), así que el piso documental del Art. 12 fr. VII para el Beneficiario Controlador identificado se puede construir contra texto verificado.
 
 Nada de esto se siembra en el catálogo hasta contrastarlo. Un umbral con fuente equivocada es peor que uno faltante: el faltante revienta, el equivocado calcula.

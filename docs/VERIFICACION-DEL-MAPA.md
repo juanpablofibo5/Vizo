@@ -58,8 +58,8 @@ producción. Si al verificar aparece un hueco real, se anota aquí y se sigue.
 | Sección | Estado | Qué se encontró |
 |---|---|---|
 | §1 · La tabla de fechas y sus transitorios | ✅ 2-sep-2026 | Trece renglones contra los Transitorios Primero a Décimo Segundo (líneas 741–754). Las tres fechas calculadas cuadran (30-nov-2026 + 6, 8 y 9 meses). **Una imprecisión corregida**: el renglón del Décimo decía que la aplicación Consulta PEP 2.0 «queda disponible»; el texto difiere la CONSULTA, no dice nada de la aplicación. De ahí colgaba un argumento de venta entero |
-| §3 · Lo que el contraste corrigió del análisis original | ⬜ por verificar | |
-| §5 · Lo que sigue sin verificar | ⬜ por verificar | La lista de pendientes puede tener cosas ya resueltas |
+| §3 · Lo que el contraste corrigió del análisis original | ✅ 2-sep-2026 | **Exacta, las tres.** Cap. XI es «De los mecanismos de prevención» (línea 414) y su Art. 38 es lo que establece la UIF; Cap. XII es «Capacitación y selección de personal»; la fecha de la consulta PEP es derivable |
+| §5 · Lo que sigue sin verificar | ✅ 2-sep-2026 | **Era más pesimista que la realidad y bloqueaba trabajo.** Decía que solo estaban transcritos el 2 Bis y el 2 Ter y marcaba el Anexo 10 como ausente; están los Anexos 1 al 10. Lo que falta de verdad son el **7-A** y el **7 Bis-A**, que no son el 7 ni el 7 Bis: aquéllos son las listas de entidades, éstos los datos que se piden de ellas. La decisión del ADR-32 de no llenar esos dos tipos era correcta |
 
 ## `docs/ALCANCE.md` — el mapa de rutas de F1
 

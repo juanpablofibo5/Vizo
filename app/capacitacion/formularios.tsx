@@ -10,6 +10,8 @@ import {
 } from '../../src/dominio/capacitacion'
 import {
   accionAgregarAPlantilla,
+  accionRecabarDeclaracion,
+  accionRegistrarContratacion,
   accionDarDeBaja,
   accionEvaluar,
   accionRegistrarSesion,
@@ -410,6 +412,194 @@ export function FormularioBaja({
       </label>
       <button type="submit" className="secundario pequeno" disabled={!puede || guardando}>
         {guardando ? 'Registrando…' : 'Registrar la baja'}
+      </button>
+    </form>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Art. 39 Bis 2 · Selección de personal
+// ─────────────────────────────────────────────────────────────────────────
+
+export function FormularioContratacion({
+  personaId,
+  hoy,
+  puede,
+}: {
+  personaId: string
+  hoy: string
+  puede: boolean
+}) {
+  const [estado, accion, guardando] = useActionState<Resultado, FormData>(
+    accionRegistrarContratacion,
+    INICIAL,
+  )
+  const { clave } = useRepintado(estado)
+  const [abierto, setAbierto] = useState(false)
+
+  if (!abierto) {
+    return (
+      <button
+        type="button"
+        className="secundario pequeno"
+        onClick={() => { setAbierto(true) }}
+        disabled={!puede}
+      >
+        Decir cuándo
+      </button>
+    )
+  }
+
+  return (
+    <form key={clave} action={accion} style={{ display: 'grid', gap: '.4rem' }}>
+      <Mensaje estado={estado} />
+      <input type="hidden" name="personaId" value={personaId} />
+      <label style={{ margin: 0 }}>
+        <span className="pequeno">Fecha de contratación</span>
+        <input type="date" name="fechaContratacion" max={hoy} disabled={!puede} required />
+      </label>
+      <button type="submit" className="secundario pequeno" disabled={!puede || guardando}>
+        {guardando ? 'Registrando…' : 'Registrar'}
+      </button>
+    </form>
+  )
+}
+
+/**
+ * La declaración firmada del ¶2.
+ *
+ * Las tres manifestaciones de la fr. II son casillas SIN marcar de origen. Es
+ * deliberado: el artículo pide que en la declaración *conste* que la persona
+ * no fue sentenciada ni inhabilitada, y traerlas marcadas convertiría esa
+ * manifestación en un valor por omisión que nadie leyó. Que la casilla esté
+ * vacía obliga a afirmarla una por una.
+ */
+export function FormularioDeclaracion({
+  personaId,
+  nombre,
+  hoy,
+  puede,
+}: {
+  personaId: string
+  nombre: string
+  hoy: string
+  puede: boolean
+}) {
+  const [estado, accion, guardando] = useActionState<Resultado, FormData>(
+    accionRecabarDeclaracion,
+    INICIAL,
+  )
+  const { clave, texto } = useRepintado(estado)
+  const [otroSector, setOtroSector] = useState(false)
+  const [hash, setHash] = useState('')
+
+  useEffect(() => {
+    if (estado.ok === false) {
+      setOtroSector(texto('laboroEnSectorObligado') === 'si')
+      setHash(texto('firmaHash'))
+    }
+  }, [estado, texto])
+
+  return (
+    <form key={clave} action={accion} style={{ display: 'grid', gap: '.8rem', maxWidth: '34rem' }}>
+      <Mensaje estado={estado} />
+      <input type="hidden" name="personaId" value={personaId} />
+
+      <p className="pequeno tenue" style={{ margin: 0 }}>
+        Lo que <strong>{nombre}</strong> firmó. VIZO no produce ni valida la firma: guarda la
+        huella del documento que recabaste.
+      </p>
+
+      <label style={{ margin: 0, maxWidth: '16rem' }}>
+        <span>Fecha de la declaración</span>
+        <input
+          type="date"
+          name="fechaDeclaracion"
+          defaultValue={texto('fechaDeclaracion')}
+          max={hoy}
+          disabled={!puede}
+          required
+        />
+      </label>
+
+      <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: '.45rem' }}>
+        <legend className="pequeno" style={{ padding: 0 }}>
+          Fracción I <span className="pista">otros sectores obligados donde haya laborado</span>
+        </legend>
+        <label className="pequeno" style={{ margin: 0, display: 'flex', gap: '.5rem' }}>
+          <input
+            type="checkbox"
+            name="laboroEnSectorObligado"
+            value="si"
+            checked={otroSector}
+            onChange={(e) => { setOtroSector(e.target.checked) }}
+            disabled={!puede}
+          />
+          <span>Laboró antes en otro sector sujeto a las obligaciones de la Ley</span>
+        </label>
+        {otroSector && (
+          <label style={{ margin: 0 }}>
+            <span className="pequeno">En cuáles, y cuándo</span>
+            <input
+              type="text"
+              name="sectoresPrevios"
+              defaultValue={texto('sectoresPrevios')}
+              disabled={!puede}
+              required
+            />
+          </label>
+        )}
+      </fieldset>
+
+      <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: '.45rem' }}>
+        <legend className="pequeno" style={{ padding: 0 }}>
+          Fracción II <span className="pista">marca solo lo que la persona declaró</span>
+        </legend>
+        {[
+          ['sinSentenciaPatrimonial', 'No ha sido sentenciada por delitos patrimoniales'],
+          ['sinInhabilitacionComercio', 'No está inhabilitada para ejercer el comercio'],
+          [
+            'sinInhabilitacionServicioOFinanciero',
+            'No está inhabilitada para el servicio público ni para el sistema financiero mexicano',
+          ],
+        ].map(([campo, dice]) => (
+          <label key={campo} className="pequeno" style={{ margin: 0, display: 'flex', gap: '.5rem' }}>
+            <input type="checkbox" name={campo} value="si" disabled={!puede} />
+            <span>{dice}</span>
+          </label>
+        ))}
+      </fieldset>
+
+      <label style={{ margin: 0 }}>
+        <span>
+          Huella de la declaración firmada{' '}
+          <span className="pista">SHA-256 · opcional, pero es lo que la vuelve evidencia</span>
+        </span>
+        <input
+          type="text"
+          name="firmaHash"
+          className="mono pequeno"
+          value={hash}
+          onChange={(e) => { setHash(e.target.value.trim()) }}
+          disabled={!puede}
+        />
+      </label>
+
+      {hash !== '' && (
+        <label style={{ margin: 0 }}>
+          <span>Nombre del archivo</span>
+          <input
+            type="text"
+            name="firmaArchivo"
+            defaultValue={texto('firmaArchivo')}
+            disabled={!puede}
+            required
+          />
+        </label>
+      )}
+
+      <button type="submit" disabled={!puede || guardando}>
+        {guardando ? 'Asentando…' : 'Asentar la declaración'}
       </button>
     </form>
   )

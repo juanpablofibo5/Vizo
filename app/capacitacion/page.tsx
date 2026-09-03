@@ -8,7 +8,13 @@ import { NOMBRE_DEL_ROL, NOMBRE_DEL_TEMA } from '../../src/dominio/capacitacion'
 import { hoyEnMexico } from '../../src/dominio/fechas'
 import { Marco } from '../componentes/marco'
 import {
+  estadoDeSeleccionPersonal,
+  type EstadoDeSeleccionPersonal,
+} from '../../src/persistencia/seleccion-personal'
+import {
   FormularioBaja,
+  FormularioContratacion,
+  FormularioDeclaracion,
   FormularioEvaluar,
   FormularioPersona,
   FormularioSesion,
@@ -176,6 +182,96 @@ function Resumen({ estado }: { estado: EstadoDeCapacitacion }) {
   )
 }
 
+function SeccionSeleccion({
+  estado,
+  hoy,
+  puede,
+}: {
+  estado: EstadoDeSeleccionPersonal
+  hoy: string
+  puede: boolean
+}) {
+  const { cobertura, alcance } = estado
+  const pendientes = [...cobertura.faltantes, ...cobertura.conImpedimento]
+
+  return (
+    <div className="tarjeta" style={{ display: 'grid', gap: '1.1rem' }}>
+      <div>
+        <span
+          className={
+            alcance.anticipado ? 'estado neutro' : cobertura.acreditado ? 'estado ok' : 'estado aviso'
+          }
+        >
+          {alcance.anticipado
+            ? 'Todavía no es exigible'
+            : cobertura.alcanzadas === 0 && cobertura.indeterminadas.length === 0
+              ? 'Nadie contratado bajo este artículo'
+              : cobertura.acreditado
+                ? `${String(cobertura.cubiertas)} de ${String(cobertura.alcanzadas)} con su declaración`
+                : `Faltan ${String(pendientes.length + cobertura.indeterminadas.length)}`}
+        </span>
+        <p className="pequeno tenue" style={{ margin: '.5rem 0 0' }}>
+          El Transitorio Sexto lo acota a las contrataciones desde el {alcance.exigibleDesde}.
+        </p>
+      </div>
+
+      {/* Sin fecha de contratación la respuesta NO es «no le aplica»: es que no
+          se sabe. Va primero porque es lo que impide contestar la pregunta. */}
+      {cobertura.indeterminadas.length > 0 && (
+        <div className={alcance.anticipado ? 'tarjeta pequeno' : 'aviso'}>
+          <strong>No se puede saber a quiénes alcanza.</strong>
+          <p className="pequeno" style={{ margin: '.5rem 0 .3rem' }}>
+            Estas personas no tienen fecha de contratación registrada, y el artículo solo alcanza
+            a las nuevas contrataciones. Sin esa fecha no es «no aplica»: es que no se sabe.
+          </p>
+          <ul style={{ margin: 0, paddingLeft: '1.1rem' }}>
+            {cobertura.indeterminadas.map((p) => (
+              <li key={p.personaId} className="pequeno">{p.nombre}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {cobertura.conImpedimento.length > 0 && (
+        <div>
+          <div className="tenue pequeno" style={{ marginBottom: '.4rem' }}>
+            Declararon algo que el ¶3 te pide atender
+          </div>
+          <ul style={{ margin: 0, paddingLeft: '1.05rem' }}>
+            {cobertura.conImpedimento.map((p) => (
+              <li key={p.personaId} className="pequeno" style={{ marginBottom: '.35rem' }}>
+                <strong>{p.nombre}</strong>
+                <br />
+                <span className="tenue">{p.impedimentos.join(' · ')}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="pequeno tenue" style={{ margin: '.5rem 0 0' }}>
+            No es un error de captura: es lo que la persona firmó, y el ¶3 pide que tu Manual diga
+            qué medidas aplican. VIZO lo registra, no lo juzga.
+          </p>
+        </div>
+      )}
+
+      {cobertura.faltantes.length > 0 && (
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          <div className="tenue pequeno">Les falta su declaración firmada</div>
+          {cobertura.faltantes.map((p) => (
+            <div key={p.personaId} style={{ borderTop: '1px solid var(--linea)', paddingTop: '.9rem' }}>
+              <FormularioDeclaracion
+                personaId={p.personaId}
+                nombre={p.nombre}
+                hoy={hoy}
+                puede={puede}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default async function Capacitacion() {
   return conBase(async ({ db, sesion, perfil, obligado }) => {
     const hoy = hoyEnMexico()
@@ -196,6 +292,12 @@ export default async function Capacitacion() {
       return estadoDeCapacitacion(db, { sesion, anio, hoy })
     })
     const anio = estado.anio
+
+    // El Art. 39 Bis 2 comparte la plantilla con el 39 Bis: son la misma gente
+    // vista por dos artículos, y por eso vive en esta pantalla y no en otra.
+    const seleccion: EstadoDeSeleccionPersonal = await leerComoUsuario(db, sesion, () =>
+      estadoDeSeleccionPersonal(db, { sesion, hoy }),
+    )
     const puede = perfil.rol === 'admin'
 
     return (
@@ -343,6 +445,7 @@ export default async function Capacitacion() {
               <tr>
                 <th>Nombre</th>
                 <th>Papel</th>
+                <th>Contratada el</th>
                 <th>Ingresó al área</th>
                 <th>Baja del área</th>
               </tr>
@@ -350,7 +453,7 @@ export default async function Capacitacion() {
             <tbody>
               {estado.plantilla.length === 0 ? (
                 <tr>
-                  <td className="vacia" colSpan={4}>
+                  <td className="vacia" colSpan={5}>
                     Nadie en la plantilla. Sin ella, VIZO no puede decir a quién le falta.
                   </td>
                 </tr>
@@ -359,6 +462,11 @@ export default async function Capacitacion() {
                   <tr key={p.id}>
                     <td>{p.nombre}</td>
                     <td>{NOMBRE_DEL_ROL[p.rol]}</td>
+                    <td className="mono pequeno">
+                      {seleccion.personas.find((x) => x.id === p.id)?.fechaContratacion ?? (
+                        <FormularioContratacion personaId={p.id} hoy={hoy} puede={puede} />
+                      )}
+                    </td>
                     <td className="mono pequeno">{p.ingresoAlArea}</td>
                     <td className="mono pequeno">
                       {p.bajaDelArea ?? <FormularioBaja personaId={p.id} hoy={hoy} puede={puede} />}
@@ -369,6 +477,15 @@ export default async function Capacitacion() {
             </tbody>
           </table>
         </div>
+
+        <h2 id="seleccion">Selección de personal</h2>
+        <p className="tenue pequeno" style={{ marginTop: '-.4rem', maxWidth: '46rem' }}>
+          El Art. 39 Bis 2 pide tres cosas y solo una se acredita con un dato: la{' '}
+          <strong>declaración firmada</strong> de cada persona. Los procedimientos de selección
+          que garanticen calidad técnica, experiencia y honorabilidad —y las medidas para cuando
+          alguien deje de tenerlas— son del obligado y van en su Manual.
+        </p>
+        <SeccionSeleccion estado={seleccion} hoy={hoy} puede={puede} />
 
         <h3 style={{ marginTop: '1.4rem' }}>Agregar a la plantilla</h3>
         <div className="tarjeta">

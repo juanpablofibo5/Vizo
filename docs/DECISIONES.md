@@ -572,6 +572,23 @@ Dos celdas de esa cobertura concentran el riesgo de acreditar de más, y las dos
 
 **Fijado con:** las 6 aserciones de `20260902160100`, `tests/persistencia/alertas-art41.test.ts` (9 casos) y 4 de vocabulario. Los tipos del enum van en una migración aparte (`20260902160000`) porque Postgres no deja usar un valor de enum en la misma transacción que lo crea.
 
+## ADR-34 · El Art. 39 Bis 2: se acredita la declaración, no la honorabilidad — 2026-09-03
+
+**Contexto.** El Cap. XII quedó al 90% el 31-ago: faltaba su segundo artículo, con fecha propia (Transitorio Sexto: nuevas contrataciones desde el 1-mar-2027). Contrastado contra el DOF el 3-sep (líneas 439–443 y 748).
+
+**El artículo pide tres cosas y solo una es de VIZO.** El ¶1 manda *establecer procedimientos de selección* que garanticen calidad técnica, experiencia y honorabilidad; el ¶3 manda tener *medidas* para cuando alguien deje de tenerlas, y las manda al Manual. Las dos son del obligado — VIZO no juzga honorabilidad. Lo único acreditable con un dato es el ¶2: que exista la **declaración firmada**, con fecha, diciendo lo que el texto manda que diga.
+
+**Decisión.** Cuatro piezas:
+
+1. **La declaración se guarda tal como se firmó, incluso en falso.** Las tres negativas de la fr. II van en columnas separadas y **ninguna tiene CHECK que la obligue a ser verdadera**. Es la excepción razonada a «hacer el error imposible»: quien declara con verdad que sí fue sentenciado produce un hecho real que el obligado necesita para aplicar las medidas de su ¶3. Rechazar esa fila empujaría a no registrarla, o a mentir en el formulario. La cobertura la reporta aparte, como declaración que no satisface la fracción.
+2. **Hizo falta una fecha nueva: `fecha_contratacion`.** No sirve `ingreso_al_area` —la que el Art. 39 Bis 1 ¶3 ata a la capacitación—: alguien contratado en 2020 puede entrar a atención al público en 2027 sin ser una contratación nueva. Son dos hechos distintos.
+3. **Sin esa fecha la respuesta es «no se sabe», no «no aplica».** Lógica de tres valores, y `acreditado` exige que no queden indeterminadas: con una sola persona sin fecha, decir «cubierto» afirmaría algo sobre gente de la que no se sabe si entra.
+4. **Comparte la plantilla del Cap. XII.** Son la misma gente vista por dos artículos, y dos padrones darían dos respuestas a «quién trabaja aquí».
+
+**Lo que se rechazó:** un CHECK que rechace la manifestación en falso (ver 1); un padrón propio de personal; y derivar la exigibilidad de `ingreso_al_area`, que habría contado como nueva contratación a quien solo cambió de área.
+
+**Fijado con:** las 9 aserciones de la migración `20260903100000`, `tests/clientes/seleccion-personal.test.ts` (13 casos de dominio) y `tests/persistencia/seleccion-personal.test.ts` (11 contra la base real).
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde

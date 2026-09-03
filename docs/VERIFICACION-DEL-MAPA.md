@@ -106,6 +106,11 @@ construir y nadie volvió a leerlo después**. La única defensa barata es que
 cada capítulo que se cierre actualice su línea en el mismo commit — como ya
 se hizo con el Cap. XII y el Cap. III Quinquies, que salieron exactos.
 
+## Después del barrido
+
+- **Art. 39 Bis 2 · selección de personal** — construido el 3-sep-2026 (ADR-34).
+  Con él, el Cap. XII queda completo salvo la coherencia temas↔metodología.
+
 ## Huecos reales encontrados durante el barrido
 
 Se anotan aquí y **no se construyen** en este trabajo.

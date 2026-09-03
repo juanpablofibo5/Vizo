@@ -111,7 +111,9 @@ Art. 39 Bis: cursos **al menos una vez al año** para consejo, administrador, di
 
 **En VIZO (31-ago-2026): construido.** Sigue sin ser motor y el requisito del capacitador lo mantiene como **canal de distribución**, no línea de producto — pero el seguimiento sí es producto, y es lo que decide si el obligado llega al 31 de diciembre cumplido: pantalla `/capacitacion` con la plantilla de los nueve papeles del ¶1, las sesiones con sus cinco temas, la evaluación que expide la constancia y la cobertura del periodo diciendo tema por tema y persona por persona qué falta. El ¶3 —capacitación previa o simultánea al ingreso— se reporta aparte por ser obligación distinta. Cuatro tablas con retención de diez años por trigger, los tres plazos en catálogo con su fuente, y el primer periodo (2027) impuesto por la base. Ver **ADR-31**.
 
-**Lo que sigue sin cubrir del capítulo:** el Art. 39 Bis 2 —los procedimientos de selección de personal, con fecha propia el 1 de marzo de 2027 y solo para nuevas contrataciones (Transitorio Sexto)—, y la coherencia entre los temas impartidos y los resultados de la metodología del Cap. II Quáter, que hoy no se contrasta.
+**El Art. 39 Bis 2 quedó construido el 3-sep-2026 (ADR-34).** De sus tres exigencias, VIZO acredita la única que se puede acreditar con un dato: la declaración firmada del ¶2, con sus dos fracciones y su huella. Los procedimientos del ¶1 y las medidas del ¶3 son del obligado y van al Manual. Se guarda tal como se firmó —incluso cuando una manifestación viene en falso, porque eso es evidencia y no un error de captura— y el Transitorio Sexto se respeta con una fecha de contratación nueva, distinta de la de ingreso al área; sin ella la respuesta no es «no aplica», es que no se sabe.
+
+**Lo que sigue sin cubrir del capítulo:** la coherencia entre los temas impartidos y los resultados de la metodología del Cap. II Quáter, que hoy no se contrasta.
 
 ### Cap. XIII · Mecanismos automatizados — **1 jun 2027**
 Art. 41, **seis** funciones mínimas. Es una especificación de producto ya escrita:

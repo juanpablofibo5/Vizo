@@ -93,7 +93,9 @@ Art. 23 Quinquies 1 para fideicomisos: quien ejerza el control efectivo, y si so
 
 **En VIZO (2-sep-2026): construido.** *La versión anterior de esta línea decía «falta el árbol», y era falsa a medias: el árbol estaba desde el 20-ago-2026 en `src/dominio/beneficiario-controlador.ts` con sus pruebas — lo que faltaba era que algo lo importara.* Hoy la sección 08 del expediente corre el orden de prelación con el umbral del catálogo y asienta el camino completo: cada fracción evaluada con su resultado y, cuando no encontró a nadie, con el motivo. El orden lo impone la base, no el procedimiento escrito: un trigger rechaza la fr. II sin una fr. I sin resultado. Reidentificar sustituye sin borrar, y la excepción del Art. 23 Quinquies 2 se registra con la clave de pizarra que el texto exige. Ver **ADR-32**.
 
-**Lo que sigue sin cubrir:** el piso documental del Art. 12 fr. VII (los numerales del Anexo 3 para el Beneficiario Controlador identificado), el vínculo a `documentos` para la evidencia que sustenta el camino, y las nueve preguntas de `docs/BENEFICIARIO-CONTROLADOR.md` §6 — entre ellas si la actualización «durante la vigencia de la Relación de negocios» corre con la revisión anual del Art. 21 o tiene disparador propio.
+**El piso del Art. 12 fr. VII quedó construido el 3-sep-2026 (ADR-35):** identificar no basta, hay que recabar sus datos, y la sección 08 dice numeral por numeral cuáles faltan. Los numerales exigidos salen del Acuerdo; qué dice cada uno sale de `campos_expediente`, sin repetirlo.
+
+**Lo que sigue sin cubrir:** el vínculo a `documentos` para la evidencia que sustenta el camino, y las nueve preguntas de `docs/BENEFICIARIO-CONTROLADOR.md` §6 — entre ellas si la actualización «durante la vigencia de la Relación de negocios» corre con la revisión anual del Art. 21 o tiene disparador propio.
 
 ### Cap. X · Manual de Políticas Internas — **1 mar 2027**
 Art. 37 Bis: **catorce** apartados (fracciones I a XIV). Art. 37: dentro de los **90 días naturales** siguientes al alta. Art. 37 Bis 1 para grupos empresariales; Art. 37 Bis 2 exime de los supuestos que no se realizan **si se hace constar**.

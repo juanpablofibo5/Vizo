@@ -589,6 +589,21 @@ Dos celdas de esa cobertura concentran el riesgo de acreditar de más, y las dos
 
 **Fijado con:** las 9 aserciones de la migración `20260903100000`, `tests/clientes/seleccion-personal.test.ts` (13 casos de dominio) y `tests/persistencia/seleccion-personal.test.ts` (11 contra la base real).
 
+## ADR-35 · El piso del Art. 12 fr. VII: dos catálogos, y ninguno repite al otro — 2026-09-03
+
+**Contexto.** Identificar al Beneficiario Controlador (Cap. III Quinquies, ADR-32) no cierra la obligación: el Art. 12 fr. VII manda además **recabar sus datos**. El barrido del mapa lo había dado por desbloqueado diciendo que el Anexo 3 estaba transcrito; al ir a construirlo resultó falso — el encabezado está, el inciso a) viene elidido, y de los cuatro numerales que el artículo cita solo el i) tiene texto.
+
+**Decisión.** Cuatro piezas:
+
+1. **Dos catálogos, y ninguno repite al otro.** Cuáles numerales se exigen sale de `parametros_motor` —ese párrafo sí está verbatim en el DOF, línea 163, con su «en todos los casos»—. Qué dice cada numeral **no se siembra**: ya vive en `campos_expediente` desde el 30-ago, transcrito del RCG histórico y con su propio `PENDIENTE: contraste directo contra el DOF`. Repetirlo habría creado una segunda verdad sobre el mismo Anexo, que es exactamente cómo se desincronizan dos catálogos.
+2. **El mapeo numeral → columna vive en código, y se dice por qué.** Qué significa el numeral ii) lo dice el catálogo; en qué columna guardamos nosotros esa respuesta es presentación, no regulación. Y un numeral que el módulo no sepa leer **se detiene** en vez de darse por cubierto o por faltante: las dos respuestas serían inventadas.
+3. **El ix) se cumple con CURP *o* con RFC.** El numeral los nombra juntos y condicionados —«cuando cuente con ellas»—, así que exigir los dos sería inventar un requisito que el texto no pone.
+4. **El piso se reporta, no se impone.** Las columnas nuevas son nulables y la fila de identidad se guarda sin ellas. Bloquearla empujaría a no registrar el hallazgo del Art. 23 Quinquies mientras se consiguen los datos, y se perdería el procedimiento entero — que es lo que más cuesta reconstruir dos años después.
+
+**Los dos regímenes del artículo, que no son el mismo:** el ¶1 pide los datos del Beneficiario Controlador de un cliente **persona física** «en caso de que […] cuente con dicha información»; el ¶2 los pide de un cliente **persona moral o fideicomiso** «en todos los casos». Este piso evalúa el segundo, que es el incondicional y el que alcanza a los clientes del Cap. III Quinquies.
+
+**Fijado con:** las 6 aserciones de la migración `20260903140000`, `tests/clientes/piso-beneficiario.test.ts` (6 casos) y cuatro casos nuevos en las pruebas de persistencia del capítulo.
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde

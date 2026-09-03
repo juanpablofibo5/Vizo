@@ -110,6 +110,9 @@ se hizo con el Cap. XII y el Cap. III Quinquies, que salieron exactos.
 
 - **Art. 39 Bis 2 · selección de personal** — construido el 3-sep-2026 (ADR-34).
   Con él, el Cap. XII queda completo salvo la coherencia temas↔metodología.
+- **Art. 12 fr. VII · el piso del Beneficiario Controlador** — construido el
+  3-sep-2026 (ADR-35), apoyado en `campos_expediente` en vez de repetir el
+  Anexo. Hereda su `PENDIENTE: contraste directo contra el DOF`.
 
 ## Huecos reales encontrados durante el barrido
 

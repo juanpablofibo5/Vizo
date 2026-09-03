@@ -8,6 +8,9 @@ import {
   identificarBeneficiarioControlador,
   registrarExcepcion,
   umbralDeControl,
+  completarPisoDelBeneficiario,
+  pisoDeLosBeneficiarios,
+  pisoExigido,
 } from '../../src/persistencia/beneficiario-controlador'
 import type { InsumosBeneficiarioControlador } from '../../src/dominio/beneficiario-controlador'
 
@@ -316,6 +319,91 @@ describe('El procedimiento del Art. 23 Quinquies', () => {
     expect(e.vigente?.pasos).toEqual([])
     expect(e.vigente?.hallazgos[0]?.rol).toBe('fideicomitente')
     expect(e.vigente?.hallazgos[0]?.fraccion).toBeNull()
+  })
+
+  it('EL PISO SALE DE DOS CATÁLOGOS: los numerales del Acuerdo, su texto del otro', async () => {
+    const e = await enTransaccionDeSesion(db, sesion, () => pisoExigido(db, HOY))
+    expect(e.numerales).toEqual(['i', 'ii', 'iv', 'ix'])
+    // Las etiquetas no las escribe el módulo del piso: vienen de
+    // `campos_expediente`, con su propia fuente y su propio pendiente.
+    expect(e.etiquetas['ii']).toMatch(/[Ff]echa/)
+    expect(e.etiquetas['iv']).toMatch(/[Nn]acionalidad|[Pp]aís/)
+  })
+
+  it('el Art. 12 fr. VII: identificar no basta, hay que recabar sus datos', async () => {
+    await identificarBeneficiarioControlador(db, {
+      sesion, hoy: HOY,
+      datos: {
+        clienteId, fechaIdentificacion: FECHA,
+        insumos: moral({ tenencias: [{ titularId: 't1', porcentaje: 40 }] }),
+        identidades: { t1: { nombre: 'Sin piso todavía' } },
+      },
+    })
+
+    let p = await enTransaccionDeSesion(db, sesion, () =>
+      pisoDeLosBeneficiarios(db, { sesion, clienteId, hoy: HOY }),
+    )
+    expect(p.porBeneficiario).toHaveLength(1)
+    expect(p.porBeneficiario[0]?.completo).toBe(false)
+    // Falta la fecha de nacimiento, la nacionalidad y el ix): tres de cuatro.
+    expect(p.porBeneficiario[0]?.datos.filter((d) => !d.presente)).toHaveLength(3)
+
+    const beneficiarioId = p.porBeneficiario[0]?.beneficiarioId ?? ''
+    await completarPisoDelBeneficiario(db, {
+      sesion, beneficiarioId,
+      fechaNacimiento: '1980-01-15', nacionalidad: 'mx', curp: 'PEFI800115HYNRSN01',
+    })
+
+    p = await enTransaccionDeSesion(db, sesion, () =>
+      pisoDeLosBeneficiarios(db, { sesion, clienteId, hoy: HOY }),
+    )
+    expect(p.porBeneficiario[0]?.completo).toBe(true)
+  })
+
+  it('completar el piso NO BORRA lo que ya estaba', async () => {
+    await identificarBeneficiarioControlador(db, {
+      sesion, hoy: HOY,
+      datos: {
+        clienteId, fechaIdentificacion: FECHA,
+        insumos: moral({ tenencias: [{ titularId: 't1', porcentaje: 40 }] }),
+        identidades: { t1: { nombre: 'Con RFC de origen', rfc: 'PEFI800115AB1' } },
+      },
+    })
+    const p0 = await enTransaccionDeSesion(db, sesion, () =>
+      pisoDeLosBeneficiarios(db, { sesion, clienteId, hoy: HOY }),
+    )
+    const beneficiarioId = p0.porBeneficiario[0]?.beneficiarioId ?? ''
+
+    // Se manda solo la nacionalidad: el RFC no puede perderse en el camino.
+    await completarPisoDelBeneficiario(db, { sesion, beneficiarioId, nacionalidad: 'MX' })
+
+    const { rows } = await db.query(
+      `select rfc, nacionalidad from beneficiarios_controladores where id = $1`,
+      [beneficiarioId],
+    )
+    expect((rows[0] as { rfc: string | null }).rfc).toBe('PEFI800115AB1')
+    expect((rows[0] as { nacionalidad: string | null }).nacionalidad).toBe('MX')
+  })
+
+  it('la nacionalidad en prosa se rechaza con un mensaje, no con un check_violation', async () => {
+    await identificarBeneficiarioControlador(db, {
+      sesion, hoy: HOY,
+      datos: {
+        clienteId, fechaIdentificacion: FECHA,
+        insumos: moral({ tenencias: [{ titularId: 't1', porcentaje: 40 }] }),
+        identidades: { t1: { nombre: 'Alguien' } },
+      },
+    })
+    const p = await enTransaccionDeSesion(db, sesion, () =>
+      pisoDeLosBeneficiarios(db, { sesion, clienteId, hoy: HOY }),
+    )
+    await expect(
+      completarPisoDelBeneficiario(db, {
+        sesion,
+        beneficiarioId: p.porBeneficiario[0]?.beneficiarioId ?? '',
+        nacionalidad: 'Mexicana',
+      }),
+    ).rejects.toThrow(/código de país/)
   })
 
   it('a una persona física no se le pide este procedimiento', async () => {

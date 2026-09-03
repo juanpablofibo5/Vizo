@@ -54,6 +54,7 @@ import {
 } from '../../../../src/persistencia/medidas-reforzadas'
 import {
   DatoDeBeneficiarioInvalido,
+  completarPisoDelBeneficiario,
   identificarBeneficiarioControlador,
   registrarExcepcion,
 } from '../../../../src/persistencia/beneficiario-controlador'
@@ -1096,6 +1097,48 @@ export async function accionRegistrarExcepcionBc(
   } catch (e) {
     if (e instanceof DatoDeBeneficiarioInvalido) {
       return { ok: false, mensaje: 'No se registró la excepción.', problemas: e.problemas }
+    }
+    return { ok: false, mensaje: e instanceof Error ? e.message : String(e), problemas: [] }
+  } finally {
+    await db.end()
+  }
+}
+
+/**
+ * Completa el piso de datos del Art. 12 fr. VII ¶2.
+ *
+ * Va aparte de la identificación porque llega después: el orden de prelación
+ * dice QUIÉN es el Beneficiario Controlador, y sus datos se recaban luego. Un
+ * formulario que exigiera los dos a la vez empujaría a no registrar el
+ * procedimiento hasta tener todo, y se perdería lo que más cuesta reconstruir.
+ */
+export async function accionCompletarPisoBc(
+  _previo: EstadoCaptura,
+  datos: FormData,
+): Promise<EstadoCaptura> {
+  const clienteId = String(datos.get('clienteId') ?? '')
+  const sesion = await sesionRequerida()
+  const texto = (k: string): string | undefined => {
+    const v = datos.get(k)
+    return typeof v === 'string' && v.trim() !== '' ? v.trim() : undefined
+  }
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await completarPisoDelBeneficiario(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      beneficiarioId: String(datos.get('beneficiarioId') ?? ''),
+      ...(texto('fechaNacimiento') === undefined ? {} : { fechaNacimiento: texto('fechaNacimiento') }),
+      ...(texto('nacionalidad') === undefined ? {} : { nacionalidad: texto('nacionalidad') }),
+      ...(texto('rfcBc') === undefined ? {} : { rfc: texto('rfcBc') }),
+      ...(texto('curpBc') === undefined ? {} : { curp: texto('curpBc') }),
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return { ok: true, mensaje: 'Datos recabados.', problemas: [] }
+  } catch (e) {
+    if (e instanceof DatoDeBeneficiarioInvalido) {
+      return { ok: false, mensaje: 'No se guardaron los datos.', problemas: e.problemas }
     }
     return { ok: false, mensaje: e instanceof Error ? e.message : String(e), problemas: [] }
   } finally {

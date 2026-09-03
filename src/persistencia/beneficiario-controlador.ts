@@ -1,6 +1,10 @@
 import type { EjecutorSql } from '../catalogo/cargador'
 import { enTransaccionDeSesion, exigirSesionActiva, type ContextoSesion } from './transaccion'
 import {
+  pisoDelBeneficiario,
+  type PisoDelBeneficiario,
+} from '../dominio/piso-beneficiario'
+import {
   determinarBeneficiarioControlador,
   ExcepcionSinContrastar,
   InsumoIncoherente,
@@ -154,6 +158,11 @@ export interface EstadoBeneficiarioControlador {
   readonly descensos: readonly IdentificacionAsentada[]
   readonly historial: readonly IdentificacionAsentada[]
   readonly umbral: UmbralDeControl
+  /** Art. 12 fr. VII ¶2: identificar no basta, hay que recabar sus datos. */
+  readonly piso: {
+    readonly exigido: PisoExigido
+    readonly porBeneficiario: readonly PisoDelBeneficiario[]
+  }
 }
 
 interface FilaIdent {
@@ -215,6 +224,11 @@ export async function estadoDelBeneficiario(
     descensos: armadas.filter((i) => i.desciendeDeHallazgoId !== null),
     historial: raices.filter((i) => i.estado === 'sustituida'),
     umbral,
+    piso: await pisoDeLosBeneficiarios(db, {
+      sesion: p.sesion,
+      clienteId: p.clienteId,
+      hoy: p.hoy,
+    }),
   }
 }
 
@@ -609,4 +623,166 @@ async function identidadDe(
     ],
   )
   return (rows[0] as { id: string }).id
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Art. 12 fr. VII ¶2 · El piso de datos
+// ─────────────────────────────────────────────────────────────────────────
+
+export class PisoDelBeneficiarioAusente extends Error {
+  constructor(detalle: string) {
+    super(
+      `No se puede decir qué datos exige el Art. 12 fr. VII del Beneficiario Controlador: ` +
+        `${detalle}. Se detiene en vez de suponer un piso — dar por cumplido lo que no se sabe ` +
+        'evaluar es peor que no evaluarlo.',
+    )
+    this.name = 'PisoDelBeneficiarioAusente'
+  }
+}
+
+export interface PisoExigido {
+  readonly numerales: readonly string[]
+  /** Qué dice cada numeral, según `campos_expediente`, no según este módulo. */
+  readonly etiquetas: Readonly<Record<string, string>>
+  readonly exigibleDesde: string
+  readonly anticipado: boolean
+}
+
+/**
+ * Cuáles numerales del Anexo 3 exige el artículo, y qué dice cada uno.
+ *
+ * Los numerales salen de `parametros_motor` —el párrafo que los enumera está
+ * verbatim en el DOF— y lo que dicen sale de `campos_expediente`, que los
+ * transcribió del RCG histórico con su propio pendiente de contraste. Dos
+ * catálogos y no uno, a propósito: repetir aquí el texto de los numerales
+ * crearía una segunda verdad sobre el mismo Anexo.
+ */
+export async function pisoExigido(db: EjecutorSql, hoy: string): Promise<PisoExigido> {
+  const { rows } = await db.query(
+    `select valor, vigente_desde::text as desde
+       from parametros_motor
+      where clave = 'beneficiario_piso_anexo3' and actividad_id is null
+      order by vigente_desde desc limit 1`,
+  )
+  const f = rows[0] as { valor: unknown; desde: string } | undefined
+  if (f === undefined) throw new PisoDelBeneficiarioAusente('el catálogo no lo tiene sembrado')
+
+  const numerales = f.valor as string[]
+  const etiquetas: Record<string, string> = {}
+  for (const n of numerales) {
+    const e = await db.query(
+      `select string_agg(distinct etiqueta, ' · ') as etiqueta
+         from campos_expediente
+        where vigente_hasta is null and fuente like $1`,
+      [`Anexo 3 a) ${n})%`],
+    )
+    const etiqueta = (e.rows[0] as { etiqueta: string | null } | undefined)?.etiqueta
+    if (etiqueta === null || etiqueta === undefined) {
+      throw new PisoDelBeneficiarioAusente(
+        `ningún campo del expediente dice qué es el numeral ${n}) del inciso a) del Anexo 3`,
+      )
+    }
+    etiquetas[n] = etiqueta
+  }
+
+  return { numerales, etiquetas, exigibleDesde: f.desde, anticipado: hoy < f.desde }
+}
+
+interface FilaIdentidadBc {
+  id: string
+  nombre: string
+  rfc: string | null
+  curp: string | null
+  fecha_nacimiento: string | null
+  nacionalidad: string | null
+}
+
+/**
+ * El piso, beneficiario por beneficiario, del cliente dado.
+ *
+ * Solo aplica a clientes persona moral y fideicomiso: el ¶2 dice «en todos los
+ * casos» de ellos, mientras que el ¶1 —para clientes persona física— condiciona
+ * a que el cliente «cuente con dicha información», y eso no se puede exigir sin
+ * preguntarle. Los del Cap. III Quinquies son morales y fideicomisos, así que
+ * es el régimen que toca.
+ */
+export async function pisoDeLosBeneficiarios(
+  db: EjecutorSql,
+  p: { sesion: ContextoSesion; clienteId: string; hoy: string },
+): Promise<{ exigido: PisoExigido; porBeneficiario: readonly PisoDelBeneficiario[] }> {
+  const exigido = await pisoExigido(db, p.hoy)
+
+  const { rows } = await db.query(
+    `select b.id::text, b.nombre, b.rfc, b.curp,
+            b.fecha_nacimiento::text, b.nacionalidad
+       from beneficiarios_controladores b
+      where b.tenant_id = $1 and b.cliente_id = $2 and b.es_declaracion = false
+      order by b.created_at`,
+    [p.sesion.tenantId, p.clienteId],
+  )
+
+  return {
+    exigido,
+    porBeneficiario: (rows as FilaIdentidadBc[]).map((f) =>
+      pisoDelBeneficiario({
+        identidad: {
+          id: f.id,
+          nombre: f.nombre,
+          rfc: f.rfc,
+          curp: f.curp,
+          fechaNacimiento: f.fecha_nacimiento,
+          nacionalidad: f.nacionalidad,
+        },
+        numerales: exigido.numerales,
+        etiquetas: exigido.etiquetas,
+      }),
+    ),
+  }
+}
+
+/** Completa los datos del piso de una persona ya identificada. */
+export async function completarPisoDelBeneficiario(
+  db: EjecutorTransaccional,
+  p: {
+    sesion: ContextoSesion
+    beneficiarioId: string
+    fechaNacimiento?: string | undefined
+    nacionalidad?: string | undefined
+    rfc?: string | undefined
+    curp?: string | undefined
+  },
+): Promise<void> {
+  return enTransaccionDeSesion(db, p.sesion, async () => {
+    const nacionalidad = (p.nacionalidad ?? '').trim().toUpperCase()
+    if (nacionalidad !== '' && !/^[A-Z]{2}$/.test(nacionalidad)) {
+      throw new DatoDeBeneficiarioInvalido([
+        'La nacionalidad va como código de país de dos letras (MX, US, ES), que es como la pide ' +
+          'el formato del aviso.',
+      ])
+    }
+    // `coalesce` y no asignación directa: completar el piso no puede borrar lo
+    // que ya estaba por venir un campo vacío en el formulario.
+    const { rows } = await db.query(
+      `update beneficiarios_controladores
+          set fecha_nacimiento = coalesce($3::date, fecha_nacimiento),
+              nacionalidad     = coalesce($4, nacionalidad),
+              rfc              = coalesce($5, rfc),
+              curp             = coalesce($6, curp)
+        where tenant_id = $1 and id = $2
+      returning id::text`,
+      [
+        p.sesion.tenantId,
+        p.beneficiarioId,
+        p.fechaNacimiento === undefined || p.fechaNacimiento === '' ? null : p.fechaNacimiento,
+        nacionalidad === '' ? null : nacionalidad,
+        (p.rfc ?? '').trim() === '' ? null : (p.rfc ?? '').trim(),
+        (p.curp ?? '').trim() === '' ? null : (p.curp ?? '').trim(),
+      ],
+    )
+    if (rows.length === 0) {
+      throw new DatoDeBeneficiarioInvalido([
+        'Ese Beneficiario Controlador no existe en este obligado.',
+      ])
+    }
+  })
 }

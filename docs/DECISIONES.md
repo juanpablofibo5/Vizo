@@ -572,6 +572,38 @@ Dos celdas de esa cobertura concentran el riesgo de acreditar de más, y las dos
 
 **Fijado con:** las 6 aserciones de `20260902160100`, `tests/persistencia/alertas-art41.test.ts` (9 casos) y 4 de vocabulario. Los tipos del enum van en una migración aparte (`20260902160000`) porque Postgres no deja usar un valor de enum en la misma transacción que lo crea.
 
+## ADR-34 · El Art. 39 Bis 2: se acredita la declaración, no la honorabilidad — 2026-09-03
+
+**Contexto.** El Cap. XII quedó al 90% el 31-ago: faltaba su segundo artículo, con fecha propia (Transitorio Sexto: nuevas contrataciones desde el 1-mar-2027). Contrastado contra el DOF el 3-sep (líneas 439–443 y 748).
+
+**El artículo pide tres cosas y solo una es de VIZO.** El ¶1 manda *establecer procedimientos de selección* que garanticen calidad técnica, experiencia y honorabilidad; el ¶3 manda tener *medidas* para cuando alguien deje de tenerlas, y las manda al Manual. Las dos son del obligado — VIZO no juzga honorabilidad. Lo único acreditable con un dato es el ¶2: que exista la **declaración firmada**, con fecha, diciendo lo que el texto manda que diga.
+
+**Decisión.** Cuatro piezas:
+
+1. **La declaración se guarda tal como se firmó, incluso en falso.** Las tres negativas de la fr. II van en columnas separadas y **ninguna tiene CHECK que la obligue a ser verdadera**. Es la excepción razonada a «hacer el error imposible»: quien declara con verdad que sí fue sentenciado produce un hecho real que el obligado necesita para aplicar las medidas de su ¶3. Rechazar esa fila empujaría a no registrarla, o a mentir en el formulario. La cobertura la reporta aparte, como declaración que no satisface la fracción.
+2. **Hizo falta una fecha nueva: `fecha_contratacion`.** No sirve `ingreso_al_area` —la que el Art. 39 Bis 1 ¶3 ata a la capacitación—: alguien contratado en 2020 puede entrar a atención al público en 2027 sin ser una contratación nueva. Son dos hechos distintos.
+3. **Sin esa fecha la respuesta es «no se sabe», no «no aplica».** Lógica de tres valores, y `acreditado` exige que no queden indeterminadas: con una sola persona sin fecha, decir «cubierto» afirmaría algo sobre gente de la que no se sabe si entra.
+4. **Comparte la plantilla del Cap. XII.** Son la misma gente vista por dos artículos, y dos padrones darían dos respuestas a «quién trabaja aquí».
+
+**Lo que se rechazó:** un CHECK que rechace la manifestación en falso (ver 1); un padrón propio de personal; y derivar la exigibilidad de `ingreso_al_area`, que habría contado como nueva contratación a quien solo cambió de área.
+
+**Fijado con:** las 9 aserciones de la migración `20260903100000`, `tests/clientes/seleccion-personal.test.ts` (13 casos de dominio) y `tests/persistencia/seleccion-personal.test.ts` (11 contra la base real).
+
+## ADR-35 · El piso del Art. 12 fr. VII: dos catálogos, y ninguno repite al otro — 2026-09-03
+
+**Contexto.** Identificar al Beneficiario Controlador (Cap. III Quinquies, ADR-32) no cierra la obligación: el Art. 12 fr. VII manda además **recabar sus datos**. El barrido del mapa lo había dado por desbloqueado diciendo que el Anexo 3 estaba transcrito; al ir a construirlo resultó falso — el encabezado está, el inciso a) viene elidido, y de los cuatro numerales que el artículo cita solo el i) tiene texto.
+
+**Decisión.** Cuatro piezas:
+
+1. **Dos catálogos, y ninguno repite al otro.** Cuáles numerales se exigen sale de `parametros_motor` —ese párrafo sí está verbatim en el DOF, línea 163, con su «en todos los casos»—. Qué dice cada numeral **no se siembra**: ya vive en `campos_expediente` desde el 30-ago, transcrito del RCG histórico y con su propio `PENDIENTE: contraste directo contra el DOF`. Repetirlo habría creado una segunda verdad sobre el mismo Anexo, que es exactamente cómo se desincronizan dos catálogos.
+2. **El mapeo numeral → columna vive en código, y se dice por qué.** Qué significa el numeral ii) lo dice el catálogo; en qué columna guardamos nosotros esa respuesta es presentación, no regulación. Y un numeral que el módulo no sepa leer **se detiene** en vez de darse por cubierto o por faltante: las dos respuestas serían inventadas.
+3. **El ix) se cumple con CURP *o* con RFC.** El numeral los nombra juntos y condicionados —«cuando cuente con ellas»—, así que exigir los dos sería inventar un requisito que el texto no pone.
+4. **El piso se reporta, no se impone.** Las columnas nuevas son nulables y la fila de identidad se guarda sin ellas. Bloquearla empujaría a no registrar el hallazgo del Art. 23 Quinquies mientras se consiguen los datos, y se perdería el procedimiento entero — que es lo que más cuesta reconstruir dos años después.
+
+**Los dos regímenes del artículo, que no son el mismo:** el ¶1 pide los datos del Beneficiario Controlador de un cliente **persona física** «en caso de que […] cuente con dicha información»; el ¶2 los pide de un cliente **persona moral o fideicomiso** «en todos los casos». Este piso evalúa el segundo, que es el incondicional y el que alcanza a los clientes del Cap. III Quinquies.
+
+**Fijado con:** las 6 aserciones de la migración `20260903140000`, `tests/clientes/piso-beneficiario.test.ts` (6 casos) y cuatro casos nuevos en las pruebas de persistencia del capítulo.
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde

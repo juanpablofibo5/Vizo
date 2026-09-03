@@ -6,6 +6,7 @@ import type {
   IdentificacionAsentada,
 } from '../../../../src/persistencia/beneficiario-controlador'
 import {
+  accionCompletarPisoBc,
   accionIdentificarBeneficiario,
   accionRegistrarExcepcionBc,
   type EstadoCaptura,
@@ -432,6 +433,113 @@ function FormularioExcepcion({
   )
 }
 
+/**
+ * El piso del Art. 12 fr. VII ¶2.
+ *
+ * Va DESPUÉS del camino y no dentro del formulario de identificación, porque
+ * los datos llegan después: el orden de prelación dice quién es, y sus datos
+ * se recaban luego. Pedir las dos cosas a la vez empujaría a no registrar el
+ * procedimiento hasta tenerlo todo, y el procedimiento es lo que más cuesta
+ * reconstruir dos años después.
+ */
+function PisoDelBeneficiario({
+  clienteId,
+  piso,
+  puede,
+}: {
+  clienteId: string
+  piso: EstadoBeneficiarioControlador['piso']
+  puede: boolean
+}) {
+  const [estado, accion, guardando] = useActionState<EstadoCaptura, FormData>(
+    accionCompletarPisoBc,
+    INICIAL,
+  )
+  const [abierto, setAbierto] = useState<string | null>(null)
+
+  if (piso.porBeneficiario.length === 0) return null
+
+  return (
+    <div style={{ borderTop: '1px solid var(--linea)', paddingTop: '1rem', display: 'grid', gap: '.8rem' }}>
+      <div>
+        <strong className="pequeno">Datos que hay que recabar de cada uno</strong>
+        <p className="pequeno tenue" style={{ margin: '.3rem 0 0', maxWidth: '44rem' }}>
+          El Art. 12 fr. VII ¶2 los pide <strong>en todos los casos</strong> cuando el cliente es
+          persona moral o fideicomiso — no condicionados a que el cliente los tenga, como sí lo
+          están los del ¶1 para clientes persona física.
+        </p>
+      </div>
+
+      <Problemas estado={estado} />
+
+      {piso.porBeneficiario.map((b) => (
+        <div key={b.beneficiarioId} style={{ display: 'grid', gap: '.4rem' }}>
+          <div className="pequeno">
+            <strong>{b.nombre}</strong>{' '}
+            <span className={b.completo ? 'estado ok' : 'estado aviso'}>
+              {b.completo ? 'con sus datos' : `faltan ${String(b.datos.filter((d) => !d.presente).length)}`}
+            </span>
+          </div>
+          {!b.completo && (
+            <ul style={{ margin: 0, paddingLeft: '1.05rem' }}>
+              {b.datos
+                .filter((d) => !d.presente)
+                .map((d) => (
+                  <li key={d.numeral} className="pequeno tenue">
+                    {d.etiqueta} <span className="mono">· Anexo 3 a) {d.numeral})</span>
+                  </li>
+                ))}
+            </ul>
+          )}
+
+          {puede && !b.completo && (
+            abierto === b.beneficiarioId ? (
+              <form action={accion} style={{ display: 'grid', gap: '.5rem', maxWidth: '32rem' }}>
+                <input type="hidden" name="clienteId" value={clienteId} />
+                <input type="hidden" name="beneficiarioId" value={b.beneficiarioId} />
+                <div className="rejilla" style={{ gap: '.6rem' }}>
+                  <label style={{ margin: 0 }}>
+                    <span className="pequeno">Fecha de nacimiento</span>
+                    <input type="date" name="fechaNacimiento" />
+                  </label>
+                  <label style={{ margin: 0 }}>
+                    <span className="pequeno">
+                      Nacionalidad <span className="pista">código de país</span>
+                    </span>
+                    <input type="text" name="nacionalidad" className="mono" maxLength={2} />
+                  </label>
+                  <label style={{ margin: 0 }}>
+                    <span className="pequeno">RFC</span>
+                    <input type="text" name="rfcBc" className="mono" maxLength={13} />
+                  </label>
+                  <label style={{ margin: 0 }}>
+                    <span className="pequeno">CURP</span>
+                    <input type="text" name="curpBc" className="mono" maxLength={18} />
+                  </label>
+                </div>
+                <p className="pequeno tenue" style={{ margin: 0 }}>
+                  Lo que dejes en blanco no se borra: se queda como estaba.
+                </p>
+                <button type="submit" className="secundario pequeno" disabled={guardando}>
+                  {guardando ? 'Guardando…' : 'Guardar sus datos'}
+                </button>
+              </form>
+            ) : (
+              <button
+                type="button"
+                className="secundario pequeno"
+                onClick={() => { setAbierto(b.beneficiarioId) }}
+              >
+                Recabar sus datos
+              </button>
+            )
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function SeccionBeneficiario({
   clienteId,
   estado,
@@ -474,6 +582,10 @@ export function SeccionBeneficiario({
         </div>
       ) : (
         <Camino identificacion={estado.vigente} descensos={estado.descensos} />
+      )}
+
+      {estado.vigente !== null && estado.vigente.excepcion === null && (
+        <PisoDelBeneficiario clienteId={clienteId} piso={estado.piso} puede={puede} />
       )}
 
       {puede && (

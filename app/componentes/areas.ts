@@ -127,6 +127,7 @@ export const NAVEGACION: Grupo[] = [
           { ruta: '/capacitacion', ancla: 'pendientes', nombre: 'Evaluaciones pendientes' },
           { ruta: '/capacitacion', ancla: 'sesiones', nombre: 'Sesiones del periodo' },
           { ruta: '/capacitacion', ancla: 'plantilla', nombre: 'Plantilla' },
+          { ruta: '/capacitacion', ancla: 'seleccion', nombre: 'Selección de personal' },
         ],
       },
       { estado: 'lista', ruta: '/mer', nombre: 'MER', icono: 'mer' },

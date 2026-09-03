@@ -11,6 +11,12 @@ import {
   registrarSesion,
 } from '../../src/persistencia/capacitacion'
 import type { RolCapacitacion, TemaCapacitacion } from '../../src/dominio/capacitacion'
+import {
+  AlcanceDeSeleccionAusente,
+  DatoDeSeleccionInvalido,
+  recabarDeclaracion,
+  registrarFechaDeContratacion,
+} from '../../src/persistencia/seleccion-personal'
 import { hoyEnMexico } from '../../src/dominio/fechas'
 
 /**
@@ -180,5 +186,84 @@ export async function accionDarDeBaja(_previo: Resultado, datos: FormData): Prom
     }
   } catch (e) {
     return traducir(e, capturado(datos))
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Art. 39 Bis 2 · Selección de personal
+// ─────────────────────────────────────────────────────────────────────────
+
+function traducirSeleccion(e: unknown, valores: Record<string, string | string[]>): Resultado {
+  if (e instanceof DatoDeSeleccionInvalido || e instanceof AlcanceDeSeleccionAusente) {
+    return { ok: false, mensaje: e.message, valores }
+  }
+  const bruto = e instanceof Error ? e.message : String(e)
+  if (/contratacion_no_posterior_al_ingreso/.test(bruto)) {
+    return {
+      ok: false,
+      valores,
+      mensaje:
+        'La fecha de contratación no puede ser posterior a la de ingreso al área: nadie entra a ' +
+        'un área antes de ser contratado.',
+    }
+  }
+  throw e
+}
+
+export async function accionRegistrarContratacion(
+  _previo: Resultado,
+  datos: FormData,
+): Promise<Resultado> {
+  try {
+    await conBase(({ db, sesion }) =>
+      registrarFechaDeContratacion(db, {
+        sesion,
+        personaId: String(datos.get('personaId') ?? ''),
+        fecha: String(datos.get('fechaContratacion') ?? ''),
+      }),
+    )
+    refrescar()
+    return {
+      ok: true,
+      mensaje:
+        'Fecha de contratación registrada. Con ella ya se puede decir si le alcanza el Art. 39 ' +
+        'Bis 2, que el Transitorio Sexto acota a las nuevas contrataciones.',
+    }
+  } catch (e) {
+    return traducirSeleccion(e, capturado(datos))
+  }
+}
+
+export async function accionRecabarDeclaracion(
+  _previo: Resultado,
+  datos: FormData,
+): Promise<Resultado> {
+  const hash = String(datos.get('firmaHash') ?? '').trim()
+  const archivo = String(datos.get('firmaArchivo') ?? '').trim()
+  const sectores = String(datos.get('sectoresPrevios') ?? '').trim()
+
+  try {
+    await conBase(({ db, sesion }) =>
+      recabarDeclaracion(db, {
+        sesion,
+        datos: {
+          personaId: String(datos.get('personaId') ?? ''),
+          fechaDeclaracion: String(datos.get('fechaDeclaracion') ?? ''),
+          laboroEnSectorObligado: datos.get('laboroEnSectorObligado') === 'si',
+          ...(sectores === '' ? {} : { sectoresPrevios: sectores }),
+          // Las tres del texto vienen como casillas MARCADAS por omisión no:
+          // que la persona afirme cada una es un acto, no un valor por defecto.
+          sinSentenciaPatrimonial: datos.get('sinSentenciaPatrimonial') === 'si',
+          sinInhabilitacionComercio: datos.get('sinInhabilitacionComercio') === 'si',
+          sinInhabilitacionServicioOFinanciero:
+            datos.get('sinInhabilitacionServicioOFinanciero') === 'si',
+          ...(hash === '' ? {} : { firma: { hash, archivo } }),
+        },
+      }),
+    )
+    refrescar()
+    return { ok: true, mensaje: 'Declaración asentada tal como se firmó.' }
+  } catch (e) {
+    return traducirSeleccion(e, capturado(datos))
   }
 }

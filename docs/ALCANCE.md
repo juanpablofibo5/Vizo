@@ -65,19 +65,19 @@ Modelo comercial reflejado en software: **unidad de cobro = RFC obligado**; impl
 | Ruta | Estado | Alcance F1 |
 |---|---|---|
 | `/login` | ● existe | Sin cambios |
-| `/` Inicio | ◐ rediseño | Semáforo: periodo corriente (presentado / vence en N días / vencido), "requiere tu atención" con enlaces a la acción, el mes en números |
-| `/clientes` + `/nuevo` + `/[id]/expediente` | ● existe | Completitud visible en la lista; huella explicada ("sin cambios desde que se subió"). + **Listas de control** (30-ago, ADR-30): va **antes** de la puerta del ADR-24, porque consultar listas es lo que se hace antes de decidir si se abre relación — las siete secciones de conocimiento sí siguen condicionadas al expediente |
+| `/` Inicio | ✅ construida | *Estaba `◐ rediseño` el 2-sep y ya era el semáforo:*  Semáforo: periodo corriente (presentado / vence en N días / vencido), "requiere tu atención" con enlaces a la acción, el mes en números |
+| `/clientes` + `/nuevo` + `/[id]/expediente` | ● existe | Completitud visible en la lista; huella explicada ("sin cambios desde que se subió"). + **Listas de control** (30-ago, ADR-30): va **antes** de la puerta del ADR-24, porque consultar listas es lo que se hace antes de decidir si se abre relación — las **ocho** secciones de conocimiento sí siguen condicionadas al expediente *(eran siete hasta el 2-sep, cuando entró la 08 del Beneficiario Controlador)* |
 | `/operaciones` + `/nueva` | ● existe | + **Veredicto explicable** por operación |
 | `/alertas` | ● existe | + veredicto explicable y enlaces a operación/cliente |
-| `/avisos` | ○ nueva | Lista por periodo con estado del pipeline y plazo; los meses sin generar aparecen (el informe en cero es obligación, no ausencia) |
-| `/avisos/[id]` | ○ nueva | Stepper de estados con quién/cuándo · lotes descargables con hash y tamaño · **Aprobar** (solo admin) · zona de acuse (subirlo mueve a `presentado`) · texto de frontera: "VIZO no presenta" |
+| `/avisos` | ✅ construida | *Estaba `○ nueva` el 2-sep.*  Lista por periodo con estado del pipeline y plazo; los meses sin generar aparecen (el informe en cero es obligación, no ausencia) |
+| `/avisos/[id]` | ✅ construida | *Estaba `○ nueva` el 2-sep.*  Stepper de estados con quién/cuándo · lotes descargables con hash y tamaño · **Aprobar** (solo admin) · zona de acuse (subirlo mueve a `presentado`) · texto de frontera: "VIZO no presenta" |
 | `/entidad` | ✅ **construida el 30-ago** | El riesgo del propio obligado (ADR-28). La consecuencia de los Arts. 44/45 se lee antes que el número: auditor externo certificado ante la UIF, o área interna. Inherente y residual siempre juntos —la mitigación no es un descuento—, escala de efectividad con su evidencia exigible, y el hueco con nombre cuando falta configuración |
 | `/mer` | ✅ **construida el 30-ago** | Las emisiones del MER con su huella, y el botón que emite (ADR-29). Dice de quién es el documento antes que nada; sin modelo vigente no ofrece emitir |
 | `/clientes/[id]/expediente` §08 | ✅ **construida el 2-sep** | El Beneficiario Controlador (ADR-32). Corre el orden de prelación del Art. 23 Quinquies y asienta el camino completo, incluidas las fracciones que no dieron resultado. Sin selector de fracción a propósito: elegirla a mano sería poder saltarse el orden |
 | `/capacitacion` | ✅ **construida el 31-ago** | El Cap. XII (ADR-31). Contesta «quién me falta» cualquier día del periodo: los cinco temas, persona por persona con su motivo, y el instructor que no acredita la fr. III. El ¶3 —ingreso al área— va aparte por ser obligación distinta. VIZO no imparte: la fr. III pide una persona con cinco años acreditados |
-| `/evidencia` | ○ nueva | Tres pestañas: manifiestos (generar/verificar/historial), cadena de bitácora (verificar → "íntegra" o dónde se rompió), reconstrucción histórica (expediente + fecha → estado a ese corte) |
-| `/calendario` | ○ nueva | Plazos por periodo con estados de `plazoDePresentacion`. Muestra "desde cuándo debo" solo cuando exista la fecha de alta (#16, entra en F1) |
-| `/configuracion` | ○ nueva | Pestañas: Obligado (RFC, razón social, **fecha de alta ante la autoridad** #16, actividades contratadas) · Usuarios (listar/rol/desactivar) · Sucursales (CRUD) · Desarrollos (CRUD) · Plan (informativo) |
+| `/evidencia` | ✅ construida | *Estaba `○ nueva` el 2-sep.*  Tres pestañas: manifiestos (generar/verificar/historial), cadena de bitácora (verificar → "íntegra" o dónde se rompió), reconstrucción histórica (expediente + fecha → estado a ese corte) |
+| `/calendario` | ✅ construida | *Estaba `○ nueva` el 2-sep.*  Plazos por periodo con estados de `plazoDePresentacion`. Muestra "desde cuándo debo" solo cuando exista la fecha de alta (#16, entra en F1) |
+| `/configuracion` | ✅ construida | *Estaba `○ nueva` el 2-sep.*  Pestañas: Obligado (RFC, razón social, **fecha de alta ante la autoridad** #16, actividades contratadas) · Usuarios (listar/rol/desactivar) · Sucursales (CRUD) · Desarrollos (CRUD) · Plan (informativo) |
 
 **Componentes compartidos F1:** `VeredictoExplicable` (la representación del motor: resultado + desglose con UMA/vigencia, umbral, base, ventana, id de evaluación y versión de catálogo), `EstadoAviso` (stepper/pill), `PlazoBadge` (holgado/por vencer/vence hoy/vencido), shell con navegación y rol visible.
 
@@ -89,7 +89,7 @@ Modelo comercial reflejado en software: **unidad de cobro = RFC obligado**; impl
 | ~~Rol REC como figura propia + aceptación de designación~~ | ✅ **construido el 15-ago** | Issue #12 cerrado. La designación es un estado con su tabla, sus transiciones y su paso de arranque. El REC sigue sin ser un rol de la app —es una figura con exposición personal— y eso no cambia |
 | Aviso modificatorio y aviso 24h | F2 / bloqueado | El 24h espera Resolución de formatos (Transitorio Quinto) |
 | ~~Grado de riesgo~~ · ~~perfil transaccional~~ · ~~aprobación de directivo~~ · ~~cuestionarios~~ | ✅ **construidos el 20, 21, 22 y 23-ago** | ADR-21, ADR-22, ADR-23, ADR-25 y ADR-26. **El Cap. III Ter queda completo.** Detalle en `ROADMAP-2027.md` |
-| Manual de Políticas Internas | F2, **con frontera decidida** | ADR-20: VIZO acredita los 7 apartados que puede demostrar y deja el hueco en los otros 7. No redacta política |
+| Manual de Políticas Internas | F2, **con frontera decidida** | ADR-20: VIZO acredita lo que puede demostrar y deja el hueco en lo demás. No redacta política. *Contrastado el 2-sep: el ADR-20 hablaba de 7 y 7; construyendo se movió a **5 acreditados, 3 parciales y 6 del obligado**. El índice existe en `apartados_manual` y sale en la Constancia; el documento del Manual, no* |
 | Parser CFDI | F2 | Recortable desde el plan original; captura manual completa existe |
 | Notificaciones por correo | F2 | El semáforo cubre la necesidad en F1 |
 | Multi-RFC / grupos | F3 | Issue #13; toca la decisión más delicada del esquema (aislamiento) |
@@ -144,6 +144,11 @@ Cualquier resultado responde la pregunta original del proyecto. Por eso F1 se co
 ---
 
 ## 4. Presupuesto de F1 (≈10 días hábiles)
+
+> **Histórico desde el 2-sep-2026.** Contrastado en el barrido: las once rutas
+> de F1 existen, así que esta tabla ya no estima trabajo por hacer — describe
+> lo que costó. Se conserva porque el contraste entre lo estimado y lo que de
+> verdad tomó cada bloque es el único dato que hay para estimar lo que sigue.
 
 | Bloque | Días |
 |---|---|

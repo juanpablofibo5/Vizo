@@ -20,13 +20,15 @@
 | **30 may 2027** *(calc.)* | Fr. XVI (activos virtuales): actualizar la información del Art. 10 Bis. Seis meses desde la vigencia | Transitorio **Décimo Segundo** |
 | **1 jun 2027** | **Cap. XIII** — los mecanismos automatizados del Art. 41. El texto acota: *«deberá contener la información de los actos u operaciones realizados A PARTIR DE ESA FECHA»* | Transitorio **Noveno** |
 | **30 jul 2027** *(calc.)* | Sistema de notificaciones electrónicas de la SHCP. Ocho meses desde la vigencia — **a cargo de la autoridad**, no del obligado | Transitorio **Décimo Primero** |
-| **30 ago 2027** *(calc.)* | La aplicación **Consulta PEP 2.0** queda disponible. Nueve meses desde la vigencia | Transitorio **Décimo** |
+| **30 ago 2027** *(calc.)* | Los obligados **podrán realizar** la consulta del Art. 23 Quáter 1 (Consulta PEP 2.0). Nueve meses desde la vigencia | Transitorio **Décimo** |
 | **1 ene 2028** | Arranca el primer periodo de revisión de auditoría (**Cap. XIV**), hasta el 31 de diciembre | Transitorio **Octavo** |
 | **Indeterminada** | Avisos de 24 h (Arts. 26 Bis, 26 Bis 1, 26 Bis 2 y 27 ¶2): seis meses **después** de que se publique la Resolución de formatos, que aún no existe | Transitorio **Quinto** |
 
 ### El hueco de nueve meses que nadie va a resolver por ti
 
-El **Cap. III Quáter (PEP) es exigible el 30 de noviembre de 2026** y la **aplicación oficial de consulta no existe hasta el 30 de agosto de 2027**. Son nueve meses en los que la obligación corre y la herramienta de la autoridad no está.
+El **Cap. III Quáter (PEP) es exigible el 30 de noviembre de 2026** y la consulta oficial del Art. 23 Quáter 1 **no se puede realizar hasta el 30 de agosto de 2027**. Son nueve meses en los que hay que identificar PEP sin la herramienta de la autoridad.
+
+*Precisión del 2-sep-2026, en el barrido.* Esto decía que «la aplicación oficial de consulta **no existe** hasta el 30 de agosto de 2027», y el texto no dice eso. El Transitorio Décimo (línea 752 del `.txt`) dice que los obligados «**podrán realizar la consulta** a que se refiere el artículo 23 Quáter 1 […] nueve meses después de que entre en vigor el presente Acuerdo». Difiere la consulta, no afirma nada sobre si la aplicación existe. El hueco sigue siendo real y el argumento se sostiene —lo que corre en esos nueve meses es la **identificación** del Art. 23 Quáter, que no depende de la consulta— pero la frase anterior le atribuía al DOF algo que no dice, y de esas frases vive la mitad de los errores de este proyecto.
 
 No es un detalle: es el argumento de venta más limpio del calendario, y a la vez la trampa más fácil. Lo que VIZO puede hacer ahí es **flujo asistido con captura de evidencia** —qué se preguntó, qué contestó el cliente, quién lo revisó y cuándo— nunca una API de terceros que «resuelva» si alguien es PEP. La regla dura 5 no admite excepción operativa: VIZO no descarta una coincidencia de screening.
 
@@ -46,7 +48,9 @@ Art. 23 Quáter define quién es PEP y **asimila** —literal— «el cónyuge, 
 
 **Lo que eso significa para el formulario:** no es una casilla «¿es usted PEP?». Es una red de hasta segundo grado más los socios patrimoniales, y esa red la tiene que declarar el cliente. El diseño de la captura es el trabajo, no la consulta.
 
-**En VIZO (issue #19, 17-ago-2026):** la declaración con su red y evidencia — captura tipificada con el vocabulario del ¶3 (vínculo, grado, cargo, ámbito, fechas), coherencia declaración↔vínculos garantizada por la base, revisión de admin que congela, y la vigencia derivada con los dos relojes desde el catálogo. Pendiente: el seguimiento reforzado (Manual Fr. IV) y el riesgo alto por defecto de extranjeras (23 Bis 4, 1-mar-2027). `consultas_screening` sigue vacía a propósito: la consulta oficial es Consulta PEP 2.0, del obligado con su e.firma.
+**En VIZO (issue #19, 17-ago-2026):** la declaración con su red y evidencia — captura tipificada con el vocabulario del ¶3 (vínculo, grado, cargo, ámbito, fechas), coherencia declaración↔vínculos garantizada por la base, revisión de admin que congela, y la vigencia derivada con los dos relojes desde el catálogo. *Corregido el 2-sep-2026 en el barrido: dos frases de esta línea habían caducado.* (1) Decía que quedaba pendiente **el seguimiento reforzado (Manual Fr. IV)**; lo que ese apartado nombra —los Arts. 23 Ter 3 y 23 Ter 4— se construyó el 23-ago (ADR-25 y ADR-26). Lo que sigue sin actualizarse es la fila del propio Manual, que aún dice que no está construido: anotado como hueco en `VERIFICACION-DEL-MAPA.md`. (2) Decía que **`consultas_screening` sigue vacía a propósito**; desde el 29-ago la escribe el screening de las listas del Art. 38 (ADR-30). Lo que sigue siendo cierto es la razón de fondo: la consulta **PEP** no se automatiza, porque la oficial es Consulta PEP 2.0 y la hace el obligado con su e.firma.
+
+**Sí sigue pendiente:** el riesgo alto por defecto de las PEP extranjeras (Art. 23 Bis 4, exigible 1-mar-2027). Verificado el 2-sep: no hay nada en `src/dominio/riesgo.ts` ni en el modelo que lo derive.
 
 ### Cap. II Quáter · Enfoque basado en Riesgos — **1 mar 2027**
 Art. 10 Septies 1 pide **tres** cosas de la metodología, y dentro de la primera, **cuatro elementos mínimos** de exposición: *actos u operaciones · tipo de personas Clientes o Usuarias · países y áreas geográficas · transacciones y canales*. Más un método de medición que asigne valores, y la identificación de los Mitigantes ya implementados.
@@ -89,21 +93,29 @@ Art. 23 Quinquies 1 para fideicomisos: quien ejerza el control efectivo, y si so
 
 **En VIZO (2-sep-2026): construido.** *La versión anterior de esta línea decía «falta el árbol», y era falsa a medias: el árbol estaba desde el 20-ago-2026 en `src/dominio/beneficiario-controlador.ts` con sus pruebas — lo que faltaba era que algo lo importara.* Hoy la sección 08 del expediente corre el orden de prelación con el umbral del catálogo y asienta el camino completo: cada fracción evaluada con su resultado y, cuando no encontró a nadie, con el motivo. El orden lo impone la base, no el procedimiento escrito: un trigger rechaza la fr. II sin una fr. I sin resultado. Reidentificar sustituye sin borrar, y la excepción del Art. 23 Quinquies 2 se registra con la clave de pizarra que el texto exige. Ver **ADR-32**.
 
-**Lo que sigue sin cubrir:** el piso documental del Art. 12 fr. VII (los numerales del Anexo 3 para el Beneficiario Controlador identificado), el vínculo a `documentos` para la evidencia que sustenta el camino, y las nueve preguntas de `docs/BENEFICIARIO-CONTROLADOR.md` §6 — entre ellas si la actualización «durante la vigencia de la Relación de negocios» corre con la revisión anual del Art. 21 o tiene disparador propio.
+**El piso del Art. 12 fr. VII quedó construido el 3-sep-2026 (ADR-35):** identificar no basta, hay que recabar sus datos, y la sección 08 dice numeral por numeral cuáles faltan. Los numerales exigidos salen del Acuerdo; qué dice cada uno sale de `campos_expediente`, sin repetirlo.
+
+**Lo que sigue sin cubrir:** el vínculo a `documentos` para la evidencia que sustenta el camino, y las nueve preguntas de `docs/BENEFICIARIO-CONTROLADOR.md` §6 — entre ellas si la actualización «durante la vigencia de la Relación de negocios» corre con la revisión anual del Art. 21 o tiene disparador propio.
 
 ### Cap. X · Manual de Políticas Internas — **1 mar 2027**
 Art. 37 Bis: **catorce** apartados (fracciones I a XIV). Art. 37: dentro de los **90 días naturales** siguientes al alta. Art. 37 Bis 1 para grupos empresariales; Art. 37 Bis 2 exime de los supuestos que no se realizan **si se hace constar**.
 
 **El puente honesto:** la fracción VIII exige *«los mecanismos para dar seguimiento y acumular actos u operaciones»* — que es exactamente lo que VIZO ya hace y puede enseñar funcionando. Ver `docs/DEMO.md`.
 
-**Antes de construirlo hay que decidir una frontera:** generar el Manual desde la configuración real del obligado es producto; generar texto que interpreta la norma es asesoría legal (`ALCANCE.md §0`).
+**En VIZO (contrastado el 2-sep-2026): la frontera YA está decidida, y el índice construido.** *Esta línea decía «antes de construirlo hay que decidir una frontera», y llevaba diecisiete días caduca: la decidió el ADR-20 el 16-ago.* VIZO acredita los apartados que puede demostrar con un dato del sistema y **deja el hueco** —con su artículo citado y sus preguntas para el obligado— en los que ocurren fuera. Eso vive en `apartados_manual`, lo lee `src/persistencia/constancia.ts` y sale en la Constancia de mecanismos.
+
+El reparto se movió desde el ADR-20, que hablaba de siete y siete: hoy son **5 acreditados, 3 acreditados parcialmente y 6 del obligado**. Se movió construyendo, que es como tenía que moverse.
+
+**Lo que falta:** el documento del Manual en sí. Hoy existe su índice con el origen y el hueco de cada apartado; no hay una ruta que lo genere ni lo entregue.
 
 ### Cap. XII · Capacitación y selección de personal — **1 ene 2027**
 Art. 39 Bis: cursos **al menos una vez al año** para consejo, administrador, directivos, el REC y el personal de atención al público, identificación, envío de avisos o auditoría. Contenido mínimo en cuatro incisos, y los temas deben ser **coherentes con los resultados de la metodología** del Cap. II Quáter. Fracción III: quien imparta la capacitación debe **acreditar experiencia de por lo menos cinco años**.
 
 **En VIZO (31-ago-2026): construido.** Sigue sin ser motor y el requisito del capacitador lo mantiene como **canal de distribución**, no línea de producto — pero el seguimiento sí es producto, y es lo que decide si el obligado llega al 31 de diciembre cumplido: pantalla `/capacitacion` con la plantilla de los nueve papeles del ¶1, las sesiones con sus cinco temas, la evaluación que expide la constancia y la cobertura del periodo diciendo tema por tema y persona por persona qué falta. El ¶3 —capacitación previa o simultánea al ingreso— se reporta aparte por ser obligación distinta. Cuatro tablas con retención de diez años por trigger, los tres plazos en catálogo con su fuente, y el primer periodo (2027) impuesto por la base. Ver **ADR-31**.
 
-**Lo que sigue sin cubrir del capítulo:** el Art. 39 Bis 2 —los procedimientos de selección de personal, con fecha propia el 1 de marzo de 2027 y solo para nuevas contrataciones (Transitorio Sexto)—, y la coherencia entre los temas impartidos y los resultados de la metodología del Cap. II Quáter, que hoy no se contrasta.
+**El Art. 39 Bis 2 quedó construido el 3-sep-2026 (ADR-34).** De sus tres exigencias, VIZO acredita la única que se puede acreditar con un dato: la declaración firmada del ¶2, con sus dos fracciones y su huella. Los procedimientos del ¶1 y las medidas del ¶3 son del obligado y van al Manual. Se guarda tal como se firmó —incluso cuando una manifestación viene en falso, porque eso es evidencia y no un error de captura— y el Transitorio Sexto se respeta con una fecha de contratación nueva, distinta de la de ingreso al área; sin ella la respuesta no es «no aplica», es que no se sabe.
+
+**Lo que sigue sin cubrir del capítulo:** la coherencia entre los temas impartidos y los resultados de la metodología del Cap. II Quáter, que hoy no se contrasta.
 
 ### Cap. XIII · Mecanismos automatizados — **1 jun 2027**
 Art. 41, **seis** funciones mínimas. Es una especificación de producto ya escrita:
@@ -126,7 +138,7 @@ Art. 48: cada obligación evaluada se cataloga en **cinco** niveles — *Cumple 
 
 **Lo que implica para el producto:** exportación de un paquete de evidencia **por obligación**, no un volcado. La bitácora encadenada y el manifiesto ya son la mitad de eso.
 
-**Contrastado el 27-ago-2026 (Arts. 42–51 leídos íntegros, líneas 456–488 del `.txt`):** el tipo de dictamen lo decide el **grado de riesgo del propio obligado** según la metodología del Cap. II Quáter — interna permitida en bajo/medio (Art. 44), externa independiente **con certificación vigente de la UIF** obligatoria en alto (Art. 45). Ese grado de entidad no existe en el modelo: **issue #30** (Ley Art. 18 fr. VII y XI, hallazgo de la revisión externa ARQ-01). Además: el primer año de operaciones extiende el periodo auditado (Art. 43), el dictamen se entrega a más tardar el último día hábil de marzo (Art. 50) y se conserva ≥5 años con su soporte (Art. 51).
+**Contrastado el 27-ago-2026 (Arts. 42–51 leídos íntegros, líneas 456–488 del `.txt`):** el tipo de dictamen lo decide el **grado de riesgo del propio obligado** según la metodología del Cap. II Quáter — interna permitida en bajo/medio (Art. 44), externa independiente **con certificación vigente de la UIF** obligatoria en alto (Art. 45). *Corregido el 2-sep-2026 en el barrido: esta frase decía «ese grado de entidad **no existe en el modelo**: issue #30», y es falsa desde el 30-ago.* Existe `evaluaciones_entidad` con su `es_alto`, y la pantalla `/entidad` ya deriva de él cuál de los dos artículos aplica —interna o externa certificada— y lo enseña antes que el número (ADR-28). Era el hallazgo ARQ-01 de la revisión externa y quedó cerrado. Además: el primer año de operaciones extiende el periodo auditado (Art. 43), el dictamen se entrega a más tardar el último día hábil de marzo (Art. 50) y se conserva ≥5 años con su soporte (Art. 51).
 
 ---
 
@@ -154,7 +166,17 @@ Y en la misma frase entrega el argumento contrario: *«siempre que sus funciones
 
 ## 5. Lo que sigue sin verificar
 
-- **⚠️ Los Anexos** citados por el Cap. III Quinquies para las excepciones de Beneficiario Controlador (bolsa reconocida y similares). El Acuerdo trae sus anexos al final; solo se transcribieron el 2 Bis y el 2 Ter.
-- **⚠️ El Anexo 10** que menciona el Art. 23 Quáter 2.
+*Corregido el 2-sep-2026 en el barrido: esta lista era más pesimista que la realidad y bloqueaba trabajo que ya se podía hacer.* Decía que «solo se transcribieron el 2 Bis y el 2 Ter» y marcaba el Anexo 10 como ausente. **El `.txt` trae los Anexos 1 al 10 completos** (líneas 490 a 739), incluidos el 3, el 4 Bis, el 6 Bis y el 10.
+
+Lo que de verdad falta son **dos**, y la distinción importa porque es fácil confundirlos con los que sí están:
+
+- **⚠️ El Anexo 7-A y el Anexo 7 Bis-A.** No son los Anexos 7 y 7 Bis. El **7** dice qué *datos y documentos* se piden de las personas morales, dependencias y entidades «referidas en el Anexo 7-A»; el **7-A** es la *lista* de esas entidades, y esa lista no está transcrita. Igual con el 7 Bis y el 7 Bis-A. El Art. 23 Quinquies 2 fr. II (línea 265) exime a los clientes «previstos en los Anexos 4 Bis, 6 Bis, **7-A y 7 Bis A**», así que de esos cuatro solo dos tienen texto verificable — y por eso la migración del Cap. III Quinquies modela los cuatro tipos pero **ninguna regla llena** los dos últimos (ADR-32).
+- También los cita el Art. 12 fr. V (líneas 160–161) para las medidas simplificadas.
+
+**Lo que esto desbloquea, y hasta dónde.** *Esta línea decía que el Anexo 3 «sí está, así que el piso documental del Art. 12 fr. VII se puede construir contra texto verificado». Es falsa en la parte que importa, y la escribí yo el 2-sep en este mismo barrido — media hora antes de tropezar con ella.*
+
+El encabezado del Anexo 3 está (línea 611), pero **su inciso a) viene elidido en la transcripción**: el `.txt` trae los numerales i) y v), y colapsa el resto en «ii) a iv) …» y «vi) a x) …». El Art. 12 fr. VII ¶2 —que sí está verbatim, línea 163— exige los numerales **i), ii), iv) y ix)**, y de esos cuatro solo el i) tiene texto en este archivo.
+
+Lo que los otros tres dicen vive hoy en `campos_expediente`, transcrito de `regulatorio/dof/rcg-historico/rcg-compilado-reforma-2014-shcp.txt` el 30-ago, y **cada una de esas filas lleva escrito `PENDIENTE: contraste directo contra el DOF`**. Así que el piso se puede construir apoyándose en el catálogo —sin inventar campos nuevos ni citar el DOF de más— pero hereda ese pendiente, y la lección es la de siempre: que el encabezado de un anexo esté no quiere decir que esté el numeral que se necesita.
 
 Nada de esto se siembra en el catálogo hasta contrastarlo. Un umbral con fuente equivocada es peor que uno faltante: el faltante revienta, el equivocado calcula.

@@ -183,6 +183,7 @@ describe('Historial para acumulación', () => {
           montoTotal: pesos(400_000),
           formaPago: '03',
           esEfectivo: false,
+        instrumentoMonetario: null,
         },
         cliente: { id: clienteId, resolucionIdentidad: 'rfc' },
         historial,

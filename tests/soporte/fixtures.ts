@@ -36,6 +36,8 @@ export interface OpcionesOperacion {
   isai?: number
   accesorios?: number
   efectivo?: boolean
+  /** Código del catálogo `instrumento_monetario`: '13' es oro o platino. */
+  instrumento?: string
   clienteId?: string
   sucursalId?: string
   actividadId?: string
@@ -60,6 +62,7 @@ export function operacion(o: OpcionesOperacion): Operacion {
     montoTotal: total,
     // '03' = transferencia, '01' = efectivo (catálogo c_FormaPago del SAT)
     formaPago: o.efectivo ? '01' : '03',
+    instrumentoMonetario: o.instrumento ?? null,
     esEfectivo: o.efectivo ?? false,
   }
 }

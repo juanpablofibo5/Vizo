@@ -67,6 +67,7 @@ export async function registrarEvaluacion(
        umbrales_aplicados, parametros_aplicados, catalogo_version,
        monto_base_considerado, monto_total_considerado,
        requiere_identificacion, resultado_aviso, efectivo_restringido,
+       instrumento_restringido,
        alerta_proximidad, suma_ventana, operaciones_acumuladas,
        requiere_revision_identidad, motivo
      ) values (
@@ -75,6 +76,7 @@ export async function registrarEvaluacion(
        $7::jsonb, $8::jsonb, $9,
        $10::numeric, $11::numeric,
        $12, $13::resultado_aviso, $14,
+       $20,
        $15, $16::numeric, $17::uuid[],
        $18, $19
      ) returning id`,
@@ -111,6 +113,11 @@ export async function registrarEvaluacion(
       ev.operacionesAcumuladas,
       ev.requiereRevisionIdentidad,
       ev.motivo,
+      // $20. Va al final de la lista y no junto a su columna porque los
+      // números de parámetro ya están escritos arriba; renumerarlos por
+      // estética es la clase de cambio que mueve un monto de columna sin que
+      // nadie lo note.
+      ev.instrumentoRestringido,
     ],
   )
 

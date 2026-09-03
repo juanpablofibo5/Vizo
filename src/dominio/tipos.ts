@@ -54,6 +54,14 @@ export interface ConfigActividad {
   readonly ventanaMeses: number
   /** % del umbral de aviso a partir del cual se alerta. Decisión de producto. */
   readonly proximidadPct: number
+  /**
+   * Códigos de `instrumento_monetario` cuyo uso prohíbe el Art. 32.
+   *
+   * Llegan del catálogo (`art32_instrumentos_restringidos`) con la cita del
+   * Art. 32 ¶1 y de la definición del Art. 3 fr. IX que hace el mapeo. No se
+   * escriben aquí: cuáles metales son «Metales Preciosos» lo dice la Ley.
+   */
+  readonly instrumentosRestringidos: readonly string[]
   /** Huella del catálogo con el que se evaluó. Sin esto no hay cómo defender el cálculo. */
   readonly catalogoVersion: string
 }
@@ -106,6 +114,15 @@ export interface Operacion {
   readonly montoTotal: Centavos
   readonly formaPago: string
   readonly esEfectivo: boolean
+  /**
+   * Código del catálogo `instrumento_monetario` del SPPLD, cuando se capturó.
+   *
+   * Existe además de `esEfectivo` porque son dos declaraciones distintas del
+   * mismo pago y solo ésta puede decir «oro» — el Art. 32 prohíbe el efectivo
+   * Y los Metales Preciosos, y `formaPago` no tiene cómo expresar los
+   * segundos. `null` cuando no se capturó.
+   */
+  readonly instrumentoMonetario: string | null
 }
 
 /**
@@ -145,6 +162,15 @@ export interface Evaluacion {
   readonly requiereIdentificacion: boolean
   readonly resultadoAviso: ResultadoAviso
   readonly efectivoRestringido: boolean
+  /**
+   * Qué instrumento disparó la restricción del Art. 32.
+   *
+   * `null` cuando la disparó la forma de pago —efectivo— y no un código de
+   * instrumento. El booleano de arriba conserva su nombre porque hay evidencia
+   * histórica apuntándole; esto es lo que evita que sea un cajón único ahora
+   * que también se prende con oro, plata y platino.
+   */
+  readonly instrumentoRestringido: string | null
   readonly alertaProximidad: boolean
   readonly requiereRevisionIdentidad: boolean
   /** Suma de la ventana incluyendo esta operación. `null` si no se evaluó acumulación. */

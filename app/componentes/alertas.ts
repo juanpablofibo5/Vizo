@@ -103,6 +103,7 @@ const ETIQUETA: Record<string, string> = {
   grado_vencido: 'El grado estaba vencido',
   coincidencias: 'Coincidencias detectadas',
   listas: 'Listas con coincidencia',
+  instrumento_restringido: 'Instrumento del pago',
   fundamento: 'Fundamento',
   grado: 'Grado de Riesgo',
   puntaje: 'Puntaje',

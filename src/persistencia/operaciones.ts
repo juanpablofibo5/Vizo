@@ -286,6 +286,11 @@ export async function registrarOperacion(
           montoTotal,
           formaPago: d.formaPago,
           esEfectivo: d.formaPago === FORMA_PAGO_EFECTIVO,
+          // El instrumento sí llegaba a la base y NO llegaba al motor: se
+          // capturaba en el formulario, se guardaba en la fila, y la
+          // prohibición del Art. 32 se calculaba sin mirarlo. Un pago en oro
+          // entraba como operación normal.
+          instrumentoMonetario: d.instrumentoMonetario ?? null,
         },
         cliente: { id: d.clienteId, resolucionIdentidad: resolucion },
         historial,
@@ -450,13 +455,49 @@ async function crearAlertas(
   }
 
   if (ev.efectivoRestringido) {
+    // El título nombra el metal cuando fue un metal. Decir «efectivo» sobre un
+    // pago en oro obligaría a abrir el desglose para entender de qué habla la
+    // alerta más grave del portal — y el Art. 32 prohíbe las dos cosas por
+    // igual: «monedas y billetes […] y Metales Preciosos».
+    const enMetal = ev.instrumentoRestringido !== null && ev.instrumentoRestringido !== '1'
+    // La descripción se CONGELA en la alerta, no se guarda solo el código. La
+    // alerta más grave del portal diciendo «13» obligaría a ir al catálogo
+    // para entenderla, y el catálogo puede cambiar de descripción — igual que
+    // el screening congela qué versión de cada lista usó.
+    const comoSeLlama = ev.instrumentoRestringido === null
+      ? null
+      : ((
+          await db.query(
+            `select descripcion from catalogos_sat
+              where catalogo = 'instrumento_monetario' and codigo = $1
+                and (vigente_hasta is null or vigente_hasta >= current_date)
+              order by vigente_desde desc limit 1`,
+            [ev.instrumentoRestringido],
+          )
+        ).rows[0] as { descripcion: string } | undefined)?.descripcion ?? null
     pendientes.push({
       tipo: 'aviso_requerido',
-      titulo: 'Efectivo por encima del límite del Art. 32',
+      titulo: enMetal
+        ? 'Metales Preciosos por encima del límite del Art. 32'
+        : 'Efectivo por encima del límite del Art. 32',
       detalle: {
+        // El `por` NO cambia: es el canal con el que la pantalla elige el
+        // tono granate, y ya hay evidencia histórica con este valor. Lo que
+        // cambia es el título y el instrumento que va en el desglose.
         por: 'efectivo_restringido',
-        motivo: 'Recibir este monto en efectivo está prohibido, no solo sujeto a aviso.',
+        motivo: enMetal
+          ? 'Liquidar este monto con Metales Preciosos está prohibido, no solo sujeto a aviso. ' +
+            'El Art. 32 alcanza el oro, la plata y el platino (Art. 3 fr. IX), no solo el efectivo.'
+          : 'Recibir este monto en efectivo está prohibido, no solo sujeto a aviso.',
         monto_total: centavosAPesosTexto(ev.insumos.montoTotalConsiderado),
+        ...(ev.instrumentoRestringido === null
+          ? {}
+          : {
+              instrumento_restringido:
+                comoSeLlama === null
+                  ? ev.instrumentoRestringido
+                  : `${comoSeLlama} (${ev.instrumentoRestringido})`,
+            }),
       },
     })
   }

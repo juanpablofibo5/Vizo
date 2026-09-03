@@ -604,6 +604,30 @@ Dos celdas de esa cobertura concentran el riesgo de acreditar de más, y las dos
 
 **Fijado con:** las 6 aserciones de la migración `20260903140000`, `tests/clientes/piso-beneficiario.test.ts` (6 casos) y cuatro casos nuevos en las pruebas de persistencia del capítulo.
 
+## ADR-36 · El Art. 32 no es solo de efectivo: también de Metales Preciosos — 2026-09-03
+
+**Contexto.** Al contrastar el Cap. XIII contra el código, la fr. VI del Art. 41 —«Monitoreo de uso de efectivo y **metales preciosos**»— aparecía como «parcial: el umbral existe». Lo que estaba parcial no era el monitoreo: era la prohibición.
+
+**El hallazgo.** El motor derivaba la restricción de `forma_pago = '01'` y nada más. El texto dice otra cosa:
+
+> «Queda prohibido […] liquidar o pagar […] mediante el uso de **monedas y billetes**, en moneda nacional o divisas **y Metales Preciosos** […]» (Art. 32 ¶1 de la LFPIORPI)
+
+y el **Art. 3 fr. IX** de la misma Ley define «Metales Preciosos, al **oro, la plata y el platino**». Un pago de dos millones en oro pasaba como operación normal, sin la alerta granate que sí levantaba el mismo monto en billetes. El dato entraba —el formulario captura `instrumento_monetario` y la fila lo guardaba— y el motor no lo miraba. No reventaba: calculaba de menos.
+
+**Decisión.** Cinco piezas:
+
+1. **Los códigos restringidos van al catálogo, no al código.** `art32_instrumentos_restringidos` = `["1","13","14","15"]`, con una fuente que cita las **dos** normas: el Art. 32 ¶1 que prohíbe, y el Art. 3 fr. IX que define qué es un Metal Precioso. Con esas dos, el mapeo contra el catálogo del SPPLD no interpreta nada.
+2. **Basta con que UNA de las dos declaraciones lo diga.** `forma_pago` e `instrumento_monetario` son dos respuestas del capturista sobre el mismo pago. Exigir que coincidan dejaría de detectar el efectivo declarado solo por forma de pago; mirar solo el instrumento perdería todo lo capturado antes. Ante una **prohibición**, detectar de más y que lo mire un humano es el error barato — el mismo criterio del screening (ADR-30).
+3. **El booleano conserva su nombre y gana un acompañante.** `evaluaciones_umbral.efectivo_restringido` es append-only y hay evidencia histórica apuntándole; renombrarlo reescribiría el pasado. Lo que se agrega es `instrumento_restringido`, para que un booleano llamado «efectivo» que ahora también se prende con oro no sea el cajón único que el ADR-32 criticó. En filas anteriores viene NULL, y eso significa efectivo: era el único disparador posible.
+4. **La alerta se llama por lo que pasó.** «Metales Preciosos por encima del límite del Art. 32» cuando fue metal. El `por` no cambia —es el canal del tono granate y ya tiene historia—, pero el título y el desglose sí.
+5. **La descripción se congela en la alerta.** No solo el código: la alerta más grave del portal diciendo «13» obligaría a ir al catálogo para entenderla, y el catálogo puede cambiar de descripción. Mismo principio que el snapshot de listas del screening.
+
+**Y sin la lista, el motor se detiene.** `cargarConfigActividad` lanza si el catálogo no la tiene. Devolver una lista vacía habría dejado al motor calculando media prohibición sin que nada avisara — que es exactamente el estado del que venimos.
+
+**Una prueba que envenenaba a las demás.** La primera versión del caso «sin la lista» hacía `delete` sobre `parametros_motor` dentro de una transacción. Es catálogo global y esa tabla tiene una exclusion constraint, así que cualquier otro archivo de la suite que escribiera ahí en paralelo se quedaba esperando el rollback. Costó una falla intermitente que aparecía en `tests/xsd/informe.test.ts` —un `afterAll` colgado, sin relación con esto— antes de encontrarla. Ahora se prueba con un ejecutor que miente sobre esa consulta. Una prueba que envenena a las demás es peor que una faltante: la falla aparece lejos de su causa.
+
+**Fijado con:** las 5 aserciones de la migración `20260903170000`, `tests/umbrales/art32-metales.test.ts` (8 casos, con los dos lados del OR saboteados) y `tests/persistencia/art32-alerta.test.ts` (5 contra la base real).
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde

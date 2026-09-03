@@ -69,20 +69,20 @@ alcance.
 
 | Fila | Estado | Qué se encontró |
 |---|---|---|
-| `/login` | ⬜ por verificar | |
-| `/` Inicio | ⬜ por verificar | Dice `◐ rediseño`: comprobar si ya ocurrió |
-| `/clientes` + `/nuevo` + `/[id]/expediente` | ⬜ por verificar | **Sabemos que tiene un error**: dice «las siete secciones de conocimiento» y desde el 2-sep son ocho |
-| `/operaciones` + `/nueva` | ⬜ por verificar | |
-| `/alertas` | ⬜ por verificar | Comprobar que mencione los tipos del Art. 41 fr. V |
-| `/avisos` y `/avisos/[id]` | ⬜ por verificar | Dicen `○ nueva` |
-| `/entidad` | ⬜ por verificar | |
-| `/mer` | ⬜ por verificar | |
+| `/login` | ✅ 2-sep-2026 | **Exacta** |
+| `/` Inicio | ✅ 2-sep-2026 | Decía `◐ rediseño`; el semáforo está construido (379 líneas, con sus estados de plazo). Corregida a `✅` |
+| `/clientes` + `/nuevo` + `/[id]/expediente` | ✅ 2-sep-2026 | Decía «las siete secciones de conocimiento»; son ocho desde que entró la 08. Corregida |
+| `/operaciones` + `/nueva` | ✅ 2-sep-2026 | **Exacta** |
+| `/alertas` | ✅ 2-sep-2026 | **Exacta.** Su alcance F1 no enumera tipos de alerta, así que los del Art. 41 fr. V no la caducan |
+| `/avisos` y `/avisos/[id]` | ✅ 2-sep-2026 | Decían `○ nueva`; las dos existen. Corregidas |
+| `/entidad` | ✅ 2-sep-2026 | **Exacta** |
+| `/mer` | ✅ 2-sep-2026 | **Exacta** |
 | `/clientes/[id]/expediente` §08 | ✅ 2-sep-2026 | Fila nueva |
 | `/capacitacion` | ✅ 31-ago-2026 | Fila nueva |
-| `/evidencia` | ⬜ por verificar | Dice `○ nueva` |
-| `/calendario` | ⬜ por verificar | Dice `○ nueva` |
-| `/configuracion` | ⬜ por verificar | Enumera pestañas: comprobar que estén todas y que no falte ninguna |
-| Tabla de estimación (~151) | ⬜ por verificar | Si las rutas ya existen, la estimación sobra o cambia |
+| `/evidencia` | ✅ 2-sep-2026 | Decía `○ nueva`; existe. Corregida |
+| `/calendario` | ✅ 2-sep-2026 | Decía `○ nueva`; existe. Corregida |
+| `/configuracion` | ✅ 2-sep-2026 | Decía `○ nueva`; existe con sus siete anclas. Corregida |
+| Tabla de estimación (~151) | ✅ 2-sep-2026 | Las once rutas existen: ya no estima, describe. Marcada como histórico y conservada, porque el contraste estimado-vs-real es el único dato para estimar lo que sigue |
 
 ## Huecos reales encontrados durante el barrido
 

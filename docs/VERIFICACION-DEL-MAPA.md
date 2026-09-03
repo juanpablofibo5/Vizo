@@ -136,5 +136,13 @@ Se anotan aquí y **no se construyen** en este trabajo.
   Manual es lo que el obligado presenta ante la autoridad. Se corrige con una
   migración nueva —las aplicadas no se editan— y el `origen` se queda en
   `acreditado_parcial`, porque el hueco de «quién autoriza» sigue abierto.
+- **El inciso a) del Anexo 3 está elidido en el `.txt`.** Trae los numerales
+  i) y v) y colapsa el resto («ii) a iv) …», «vi) a x) …»). El Art. 12 fr. VII
+  ¶2 exige i), ii), iv) y ix). Lo que dicen los otros tres vive en
+  `campos_expediente`, transcrito del RCG histórico, y esas filas ya llevan
+  escrito `PENDIENTE: contraste directo contra el DOF`. **Lo escribí mal yo en
+  este barrido**: dije que el Anexo 3 estaba y que eso desbloqueaba construir
+  contra texto verificado, y me duró cuatro commits. Que el encabezado de un
+  anexo esté no quiere decir que esté el numeral que se necesita.
 - **El riesgo alto por defecto de las PEP extranjeras** (Art. 23 Bis 4,
   exigible 1-mar-2027) no está construido. Verificado el 2-sep.

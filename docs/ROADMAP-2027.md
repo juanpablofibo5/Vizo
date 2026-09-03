@@ -171,6 +171,10 @@ Lo que de verdad falta son **dos**, y la distinción importa porque es fácil co
 - **⚠️ El Anexo 7-A y el Anexo 7 Bis-A.** No son los Anexos 7 y 7 Bis. El **7** dice qué *datos y documentos* se piden de las personas morales, dependencias y entidades «referidas en el Anexo 7-A»; el **7-A** es la *lista* de esas entidades, y esa lista no está transcrita. Igual con el 7 Bis y el 7 Bis-A. El Art. 23 Quinquies 2 fr. II (línea 265) exime a los clientes «previstos en los Anexos 4 Bis, 6 Bis, **7-A y 7 Bis A**», así que de esos cuatro solo dos tienen texto verificable — y por eso la migración del Cap. III Quinquies modela los cuatro tipos pero **ninguna regla llena** los dos últimos (ADR-32).
 - También los cita el Art. 12 fr. V (líneas 160–161) para las medidas simplificadas.
 
-**Lo que esto desbloquea:** el Anexo 3 sí está (línea 611), así que el piso documental del Art. 12 fr. VII para el Beneficiario Controlador identificado se puede construir contra texto verificado.
+**Lo que esto desbloquea, y hasta dónde.** *Esta línea decía que el Anexo 3 «sí está, así que el piso documental del Art. 12 fr. VII se puede construir contra texto verificado». Es falsa en la parte que importa, y la escribí yo el 2-sep en este mismo barrido — media hora antes de tropezar con ella.*
+
+El encabezado del Anexo 3 está (línea 611), pero **su inciso a) viene elidido en la transcripción**: el `.txt` trae los numerales i) y v), y colapsa el resto en «ii) a iv) …» y «vi) a x) …». El Art. 12 fr. VII ¶2 —que sí está verbatim, línea 163— exige los numerales **i), ii), iv) y ix)**, y de esos cuatro solo el i) tiene texto en este archivo.
+
+Lo que los otros tres dicen vive hoy en `campos_expediente`, transcrito de `regulatorio/dof/rcg-historico/rcg-compilado-reforma-2014-shcp.txt` el 30-ago, y **cada una de esas filas lleva escrito `PENDIENTE: contraste directo contra el DOF`**. Así que el piso se puede construir apoyándose en el catálogo —sin inventar campos nuevos ni citar el DOF de más— pero hereda ese pendiente, y la lección es la de siempre: que el encabezado de un anexo esté no quiere decir que esté el numeral que se necesita.
 
 Nada de esto se siembra en el catálogo hasta contrastarlo. Un umbral con fuente equivocada es peor que uno faltante: el faltante revienta, el equivocado calcula.

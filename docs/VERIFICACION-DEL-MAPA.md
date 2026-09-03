@@ -39,19 +39,19 @@ producción. Si al verificar aparece un hueco real, se anota aquí y se sigue.
 
 | Afirmación | Estado | Qué se encontró |
 |---|---|---|
-| Cap. II Ter · Fideicomisos (línea ~42) | ⬜ por verificar | |
-| Cap. III Quáter · PEP (~49) | ⬜ por verificar | |
+| Cap. II Ter · Fideicomisos (línea ~42) | ✅ 2-sep-2026 | **Exacta.** `estructura_del_obligado` + `integrantes_estructura` con los campos del Anexo por naturaleza impuestos por CHECK (`campos_de_fisica`, `campos_de_fideicomiso`), el ciclo `capturado→enviado→baja` con `corrige_a`, y el anidado acotado a fideicomitente/fideicomisario. La usa `app/configuracion` |
+| Cap. III Quáter · PEP (~49) | ✅ 2-sep-2026 | Lo construido es exacto (dos relojes en catálogo, coherencia y congelado por trigger). **Dos frases caducadas, corregidas**: el «seguimiento reforzado pendiente» se construyó el 23-ago, y `consultas_screening` ya no está vacía. El riesgo alto por defecto de PEP extranjeras (23 Bis 4) sí sigue pendiente |
 | Cap. II Quáter · Enfoque basado en Riesgos (~54) | ✅ 24-ago-2026 | Decía «nada construido»; la fr. I estaba desde el ADR-21 y la fr. II a medias |
 | Cap. III Bis · Grado de riesgo (~66) | ✅ 2-sep-2026 | Decía «tablas vacías desde la migración 001»; están el modelo, la escala, las evaluaciones append-only y la pantalla que clasifica |
-| Cap. III Ter · Perfil transaccional (~71) | ⬜ por verificar | |
-| Cap. III Ter · Aprobación del Art. 23 Ter 5 (~73) | ⬜ por verificar | |
-| Cap. III Ter · Cuestionario del Art. 23 Ter 3 (~75) | ⬜ por verificar | |
-| Cap. III Ter · Medidas reforzadas del Art. 23 Ter 4 (~77) | ⬜ por verificar | |
+| Cap. III Ter · Perfil transaccional (~71) | ✅ 2-sep-2026 | **Exacta.** Tablas, vista de vigente, los dos «seis meses» en catálogo, persistencia, pantalla y pruebas |
+| Cap. III Ter · Aprobación del Art. 23 Ter 5 (~73) | ✅ 2-sep-2026 | **Exacta.** `aprobaciones_directivo` y `operaciones_consentidas`, con pantalla y pruebas |
+| Cap. III Ter · Cuestionario del Art. 23 Ter 3 (~75) | ✅ 2-sep-2026 | **Exacta.** `cuestionarios_riesgo_alto`, con pantalla y pruebas |
+| Cap. III Ter · Medidas reforzadas del Art. 23 Ter 4 (~77) | ✅ 2-sep-2026 | **Exacta.** `medidas_reforzadas`, con pantalla y pruebas |
 | Cap. III Quinquies · Beneficiario Controlador (~90) | ✅ 2-sep-2026 | Decía «falta el árbol»; el árbol estaba desde el 20-ago sin que nadie lo importara |
 | Cap. X · Manual (~94) | ⬜ por verificar | No afirma nada de VIZO, pero dice que falta una decisión de alcance: comprobar que siga abierta |
 | Cap. XII · Capacitación (~104) | ✅ 31-ago y 2-sep-2026 | |
 | Cap. XIII · Mecanismos automatizados, tabla de seis funciones (~108) | ✅ 2-sep-2026 | Tres filas daban «no» sobre cosas construidas; la fr. V quedó parcial de verdad |
-| Cap. XIV · Auditoría (~124) | ⬜ por verificar | Dice que la bitácora encadenada y el manifiesto «ya son la mitad»: comprobar qué hay del paquete de evidencia por obligación |
+| Cap. XIV · Auditoría (~124) | ✅ 2-sep-2026 | **Tenía la peor de todas**: decía que el grado de riesgo de la ENTIDAD «no existe en el modelo» (issue #30). Existe desde el 30-ago y de él cuelga qué auditor aplica. Corregida. Lo del paquete de evidencia por obligación sigue siendo cierto: hay `manifiestos` y bitácora encadenada, no exportación por obligación |
 
 ## `docs/ROADMAP-2027.md`, otras secciones
 
@@ -96,3 +96,13 @@ Se anotan aquí y **no se construyen** en este trabajo.
   fuentes que no tenemos contrastadas y un dato que el modelo no guarda.
 - **La plantilla del Cap. XII no bloquea `DELETE`** como sí lo hacen las tres
   tablas de evidencia (ADR-31, «asimetría conocida»).
+- **El Apartado IV del Manual afirma algo que ya no es cierto.** La fila que
+  sirve `apartados_manual` dice que «el seguimiento reforzado de los Arts. 23
+  Ter 3 y 23 Ter 4 […] todavía no está construido», y los dos se construyeron
+  el 23-ago (ADR-25 y ADR-26). Sus tres `preguntas` para el obligado incluyen
+  una que el sistema ya contesta. **Pesa más que una línea de documento**: el
+  Manual es lo que el obligado presenta ante la autoridad. Se corrige con una
+  migración nueva —las aplicadas no se editan— y el `origen` se queda en
+  `acreditado_parcial`, porque el hueco de «quién autoriza» sigue abierto.
+- **El riesgo alto por defecto de las PEP extranjeras** (Art. 23 Bis 4,
+  exigible 1-mar-2027) no está construido. Verificado el 2-sep.

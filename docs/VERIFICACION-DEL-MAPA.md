@@ -118,7 +118,12 @@ Se anotan aquí y **no se construyen** en este trabajo.
   fuentes que no tenemos contrastadas y un dato que el modelo no guarda.
 - **La plantilla del Cap. XII no bloquea `DELETE`** como sí lo hacen las tres
   tablas de evidencia (ADR-31, «asimetría conocida»).
-- **El Apartado IV del Manual afirma algo que ya no es cierto.** La fila que
+- ~~**El Apartado IV del Manual afirma algo que ya no es cierto.**~~ **Corregido
+  el 3-sep-2026** con la migración `20260903090000`. Lo que sigue abierto es la
+  mejora, no la corrección: que la Constancia recolecte además los hechos del
+  cuestionario y de las medidas reforzadas pide un recolector nuevo y cambia lo
+  que el documento afirma. El texto original del hallazgo:
+- **(histórico) El Apartado IV del Manual afirmaba algo que ya no era cierto.** La fila que
   sirve `apartados_manual` dice que «el seguimiento reforzado de los Arts. 23
   Ter 3 y 23 Ter 4 […] todavía no está construido», y los dos se construyeron
   el 23-ago (ADR-25 y ADR-26). Sus tres `preguntas` para el obligado incluyen

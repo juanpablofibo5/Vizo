@@ -20,13 +20,15 @@
 | **30 may 2027** *(calc.)* | Fr. XVI (activos virtuales): actualizar la información del Art. 10 Bis. Seis meses desde la vigencia | Transitorio **Décimo Segundo** |
 | **1 jun 2027** | **Cap. XIII** — los mecanismos automatizados del Art. 41. El texto acota: *«deberá contener la información de los actos u operaciones realizados A PARTIR DE ESA FECHA»* | Transitorio **Noveno** |
 | **30 jul 2027** *(calc.)* | Sistema de notificaciones electrónicas de la SHCP. Ocho meses desde la vigencia — **a cargo de la autoridad**, no del obligado | Transitorio **Décimo Primero** |
-| **30 ago 2027** *(calc.)* | La aplicación **Consulta PEP 2.0** queda disponible. Nueve meses desde la vigencia | Transitorio **Décimo** |
+| **30 ago 2027** *(calc.)* | Los obligados **podrán realizar** la consulta del Art. 23 Quáter 1 (Consulta PEP 2.0). Nueve meses desde la vigencia | Transitorio **Décimo** |
 | **1 ene 2028** | Arranca el primer periodo de revisión de auditoría (**Cap. XIV**), hasta el 31 de diciembre | Transitorio **Octavo** |
 | **Indeterminada** | Avisos de 24 h (Arts. 26 Bis, 26 Bis 1, 26 Bis 2 y 27 ¶2): seis meses **después** de que se publique la Resolución de formatos, que aún no existe | Transitorio **Quinto** |
 
 ### El hueco de nueve meses que nadie va a resolver por ti
 
-El **Cap. III Quáter (PEP) es exigible el 30 de noviembre de 2026** y la **aplicación oficial de consulta no existe hasta el 30 de agosto de 2027**. Son nueve meses en los que la obligación corre y la herramienta de la autoridad no está.
+El **Cap. III Quáter (PEP) es exigible el 30 de noviembre de 2026** y la consulta oficial del Art. 23 Quáter 1 **no se puede realizar hasta el 30 de agosto de 2027**. Son nueve meses en los que hay que identificar PEP sin la herramienta de la autoridad.
+
+*Precisión del 2-sep-2026, en el barrido.* Esto decía que «la aplicación oficial de consulta **no existe** hasta el 30 de agosto de 2027», y el texto no dice eso. El Transitorio Décimo (línea 752 del `.txt`) dice que los obligados «**podrán realizar la consulta** a que se refiere el artículo 23 Quáter 1 […] nueve meses después de que entre en vigor el presente Acuerdo». Difiere la consulta, no afirma nada sobre si la aplicación existe. El hueco sigue siendo real y el argumento se sostiene —lo que corre en esos nueve meses es la **identificación** del Art. 23 Quáter, que no depende de la consulta— pero la frase anterior le atribuía al DOF algo que no dice, y de esas frases vive la mitad de los errores de este proyecto.
 
 No es un detalle: es el argumento de venta más limpio del calendario, y a la vez la trampa más fácil. Lo que VIZO puede hacer ahí es **flujo asistido con captura de evidencia** —qué se preguntó, qué contestó el cliente, quién lo revisó y cuándo— nunca una API de terceros que «resuelva» si alguien es PEP. La regla dura 5 no admite excepción operativa: VIZO no descarta una coincidencia de screening.
 

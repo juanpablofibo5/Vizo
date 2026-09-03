@@ -57,7 +57,7 @@ producción. Si al verificar aparece un hueco real, se anota aquí y se sigue.
 
 | Sección | Estado | Qué se encontró |
 |---|---|---|
-| §1 · La tabla de fechas y sus transitorios | ⬜ por verificar | Contrastar cada renglón contra el `.txt` del DOF otra vez: es la base de todo lo demás |
+| §1 · La tabla de fechas y sus transitorios | ✅ 2-sep-2026 | Trece renglones contra los Transitorios Primero a Décimo Segundo (líneas 741–754). Las tres fechas calculadas cuadran (30-nov-2026 + 6, 8 y 9 meses). **Una imprecisión corregida**: el renglón del Décimo decía que la aplicación Consulta PEP 2.0 «queda disponible»; el texto difiere la CONSULTA, no dice nada de la aplicación. De ahí colgaba un argumento de venta entero |
 | §3 · Lo que el contraste corrigió del análisis original | ⬜ por verificar | |
 | §5 · Lo que sigue sin verificar | ⬜ por verificar | La lista de pendientes puede tener cosas ya resueltas |
 

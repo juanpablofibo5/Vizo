@@ -622,6 +622,16 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
             <SeccionBeneficiario
               clienteId={clienteId}
               estado={beneficiario}
+              /* Los mismos documentos que la zona de abajo, con su etiqueta
+                 del catálogo: el sustento se elige de lo que ya está subido,
+                 no se sube aparte. Se excluyen los reemplazados — vincular una
+                 versión vieja como prueba sería conservar el documento
+                 equivocado. */
+              documentos={(
+                docs.rows as Array<{ id: string; campo: string; reemplazado: boolean }>
+              )
+                .filter((d) => !d.reemplazado)
+                .map((d) => ({ id: d.id, etiqueta: etiquetas.get(d.campo) ?? d.campo }))}
               puede={sesion.rol === 'admin'}
             />
           ),

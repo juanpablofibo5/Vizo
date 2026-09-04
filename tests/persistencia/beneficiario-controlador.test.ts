@@ -11,6 +11,8 @@ import {
   completarPisoDelBeneficiario,
   pisoDeLosBeneficiarios,
   pisoExigido,
+  sustentosDeLaIdentificacion,
+  vincularSustento,
 } from '../../src/persistencia/beneficiario-controlador'
 import type { InsumosBeneficiarioControlador } from '../../src/dominio/beneficiario-controlador'
 
@@ -27,6 +29,7 @@ describe('El procedimiento del Art. 23 Quinquies', () => {
   let db: Client
   let sesion: ContextoSesion
   let clienteId: string
+  let marca: string
 
   const HOY = '2027-06-15'
   const FECHA = '2027-06-10'
@@ -35,7 +38,7 @@ describe('El procedimiento del Art. 23 Quinquies', () => {
   afterAll(async () => { await db.end() })
 
   beforeEach(async () => {
-    const marca = String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 900) + 100)
+    marca = String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 900) + 100)
     sesion = await crearTenantConUsuario(db, marca, 'admin')
     const { rows } = await db.query(
       `insert into clientes_finales (tenant_id, tipo_persona, nombre_o_razon_social, rfc,
@@ -404,6 +407,137 @@ describe('El procedimiento del Art. 23 Quinquies', () => {
         nacionalidad: 'Mexicana',
       }),
     ).rejects.toThrow(/código de país/)
+  })
+
+  describe('La documentación que sustenta el procedimiento (Art. 23 Quinquies)', () => {
+    /** Sube un documento al expediente del cliente, como lo haría el portal. */
+    const documentoDe = async (cliente: string, ruta: string, hash: string) => {
+      const act = await db.query(`select id from actividades_vulnerables where fraccion='V_BIS'`)
+      const e = await db.query(
+        `insert into expedientes (tenant_id, cliente_id, actividad_id, version)
+         values ($1,$2,$3,1)
+         on conflict (tenant_id, cliente_id, actividad_id, version) do update set version = 1
+         returning id::text`,
+        [sesion.tenantId, cliente, (act.rows[0] as { id: string }).id],
+      )
+      const d = await db.query(
+        `insert into documentos (tenant_id, expediente_id, campo, storage_path, hash_sha256,
+                                 tamano_bytes, mime, subido_por)
+         values ($1,$2,'acta_constitutiva',$3,$4,1024,'application/pdf',$5)
+         returning id::text`,
+        [sesion.tenantId, (e.rows[0] as { id: string }).id, ruta, hash, sesion.usuarioId],
+      )
+      return (d.rows[0] as { id: string }).id
+    }
+
+    const identificar = async () => {
+      await identificarBeneficiarioControlador(db, {
+        sesion, hoy: HOY,
+        datos: {
+          clienteId, fechaIdentificacion: FECHA,
+          insumos: moral({
+            tenencias: [{ titularId: 't1', porcentaje: 12 }],
+            funcionarios: [{ titularId: 't9', cargo: 'Director General', rango: 1 }],
+          }),
+          identidades: { t9: { nombre: 'Director General' } },
+        },
+      })
+      const e = await estado()
+      return e.vigente
+    }
+
+    it('un documento del cliente se cuelga del paso que respalda', async () => {
+      const ident = await identificar()
+      const documentoId = await documentoDe(clienteId, `bc/${marca}/libro.pdf`, 'a'.repeat(64))
+      const pasoI = ident?.pasos.find((x) => x.fraccion === 'I')
+
+      await vincularSustento(db, {
+        sesion,
+        identificacionId: ident?.id ?? '',
+        documentoId,
+        pasoId: pasoI?.id,
+        nota: 'Libro de accionistas: la mayor tenencia es 12%',
+      })
+
+      const s = await enTransaccionDeSesion(db, sesion, () =>
+        sustentosDeLaIdentificacion(db, { sesion, identificacionId: ident?.id ?? '' }),
+      )
+      expect(s).toHaveLength(1)
+      expect(s[0]?.pasoId).toBe(pasoI?.id)
+      expect(s[0]?.nombreArchivo).toBe('libro.pdf')
+      expect(s[0]?.nota).toMatch(/12%/)
+    })
+
+    it('EL DOCUMENTO DE OTRO CLIENTE NO SE PUEDE COLGAR, y lo dice en español', async () => {
+      const ident = await identificar()
+      const otro = await db.query(
+        `insert into clientes_finales (tenant_id, tipo_persona, nombre_o_razon_social, rfc,
+                                       requiere_revision_identidad, domicilio)
+         values ($1,'moral','Otro cliente',$2,false,
+                 '{"calle":"60","numero":"1","codigo_postal":"97000","colonia":"Centro",
+                   "municipio":"31","entidad":"31","pais":"MX"}'::jsonb)
+         returning id::text`,
+        [sesion.tenantId, `OTR${marca.slice(0, 6)}XY9`],
+      )
+      const ajeno = await documentoDe(
+        (otro.rows[0] as { id: string }).id, `bc/${marca}/ajeno.pdf`, 'b'.repeat(64),
+      )
+
+      await expect(
+        vincularSustento(db, {
+          sesion, identificacionId: ident?.id ?? '', documentoId: ajeno,
+          nota: 'Del expediente equivocado',
+        }),
+      ).rejects.toThrow(/expediente de otro cliente/)
+    })
+
+    it('sin decir qué prueba, no se vincula', async () => {
+      const ident = await identificar()
+      const documentoId = await documentoDe(clienteId, `bc/${marca}/sinnota.pdf`, 'c'.repeat(64))
+      await expect(
+        vincularSustento(db, {
+          sesion, identificacionId: ident?.id ?? '', documentoId, nota: '   ',
+        }),
+      ).rejects.toThrow(/qué prueba este documento/)
+    })
+
+    it('el mismo documento SÍ puede sustentar dos partes distintas del camino', async () => {
+      // Un acta puede probar la tenencia y nombrar al funcionario a la vez.
+      const ident = await identificar()
+      const documentoId = await documentoDe(clienteId, `bc/${marca}/acta.pdf`, 'd'.repeat(64))
+      const pasoI = ident?.pasos.find((x) => x.fraccion === 'I')
+      const hallazgo = ident?.hallazgos[0]
+
+      await vincularSustento(db, {
+        sesion, identificacionId: ident?.id ?? '', documentoId, pasoId: pasoI?.id,
+        nota: 'Prueba la tenencia',
+      })
+      await vincularSustento(db, {
+        sesion, identificacionId: ident?.id ?? '', documentoId, hallazgoId: hallazgo?.id,
+        nota: 'Y nombra al funcionario',
+      })
+
+      const s = await enTransaccionDeSesion(db, sesion, () =>
+        sustentosDeLaIdentificacion(db, { sesion, identificacionId: ident?.id ?? '' }),
+      )
+      expect(s).toHaveLength(2)
+    })
+
+    it('PERO NO DOS VECES DEL MISMO LUGAR — y ahí los NULL engañan', async () => {
+      // Sin `nulls not distinct`, dos vínculos al procedimiento entero —ambos
+      // con paso y hallazgo nulos— pasarían como filas distintas.
+      const ident = await identificar()
+      const documentoId = await documentoDe(clienteId, `bc/${marca}/dup.pdf`, 'e'.repeat(64))
+
+      await vincularSustento(db, {
+        sesion, identificacionId: ident?.id ?? '', documentoId, nota: 'Sustenta el procedimiento',
+      })
+      await expect(
+        vincularSustento(db, {
+          sesion, identificacionId: ident?.id ?? '', documentoId, nota: 'Otra vez',
+        }),
+      ).rejects.toThrow(/ya está vinculado/)
+    })
   })
 
   it('a una persona física no se le pide este procedimiento', async () => {

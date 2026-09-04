@@ -7,6 +7,7 @@ import type {
 } from '../../../../src/persistencia/beneficiario-controlador'
 import {
   accionCompletarPisoBc,
+  accionVincularSustentoBc,
   accionIdentificarBeneficiario,
   accionRegistrarExcepcionBc,
   type EstadoCaptura,
@@ -434,6 +435,151 @@ function FormularioExcepcion({
 }
 
 /**
+ * La documentación que sustenta el procedimiento (Art. 23 Quinquies).
+ *
+ * El artículo pide cuatro cosas y ésta es la segunda: «conservar la
+ * información, DOCUMENTACIÓN y registros que la sustenten». El documento no se
+ * sube aquí — entra por la zona de documentos del expediente, con su huella— y
+ * esto lo ata al paso o al hallazgo que respalda.
+ *
+ * El lugar va en UN SOLO campo con prefijo, no en dos selectores: dos
+ * permitirían mandar paso y hallazgo a la vez, y la base lo rechazaría con
+ * razón. Mejor que no se pueda ni decir.
+ */
+function Sustentos({
+  clienteId,
+  identificacion,
+  sustentos,
+  documentos,
+  puede,
+}: {
+  clienteId: string
+  identificacion: IdentificacionAsentada
+  sustentos: EstadoBeneficiarioControlador['sustentos']
+  documentos: readonly { id: string; etiqueta: string }[]
+  puede: boolean
+}) {
+  const [estado, accion, guardando] = useActionState<EstadoCaptura, FormData>(
+    accionVincularSustentoBc,
+    INICIAL,
+  )
+  const [abierto, setAbierto] = useState(false)
+
+  const nombreDelLugar = (s: EstadoBeneficiarioControlador['sustentos'][number]): string => {
+    if (s.pasoId !== null) {
+      const paso = identificacion.pasos.find((p) => p.id === s.pasoId)
+      return paso === undefined ? 'una fracción' : `la fracción ${paso.fraccion}`
+    }
+    if (s.hallazgoId !== null) {
+      const h = identificacion.hallazgos.find((x) => x.id === s.hallazgoId)
+      return h === undefined ? 'un hallazgo' : h.nombre
+    }
+    return 'el procedimiento entero'
+  }
+
+  return (
+    <div style={{ borderTop: '1px solid var(--linea)', paddingTop: '1rem', display: 'grid', gap: '.7rem' }}>
+      <div>
+        <strong className="pequeno">Documentación que lo sustenta</strong>
+        <p className="pequeno tenue" style={{ margin: '.3rem 0 0', maxWidth: '44rem' }}>
+          El párrafo de cierre del Art. 23 Quinquies pide conservar «la información, documentación
+          y registros que la sustenten». El archivo se sube en la zona de documentos del
+          expediente; aquí se dice qué parte del camino respalda.
+        </p>
+      </div>
+
+      <Problemas estado={estado} />
+
+      {sustentos.length === 0 ? (
+        <p className="pequeno tenue" style={{ margin: 0 }}>
+          Ningún documento vinculado todavía. El procedimiento está escrito; lo que le falta es lo
+          que lo prueba.
+        </p>
+      ) : (
+        <ul style={{ margin: 0, paddingLeft: '1.05rem' }}>
+          {sustentos.map((s) => (
+            <li key={s.id} className="pequeno" style={{ marginBottom: '.35rem' }}>
+              <span className="mono">{s.nombreArchivo}</span> · sustenta {nombreDelLugar(s)}
+              <br />
+              <span className="tenue">{s.nota}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {puede &&
+        (abierto ? (
+          <form action={accion} style={{ display: 'grid', gap: '.5rem', maxWidth: '32rem' }}>
+            <input type="hidden" name="clienteId" value={clienteId} />
+            <input type="hidden" name="identificacionId" value={identificacion.id} />
+
+            <label style={{ margin: 0 }}>
+              <span className="pequeno">Documento del expediente</span>
+              <select name="documentoId" required>
+                <option value="">Selecciona…</option>
+                {documentos.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.etiqueta}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label style={{ margin: 0 }}>
+              <span className="pequeno">Qué parte del camino respalda</span>
+              <select name="lugar" defaultValue="">
+                <option value="">El procedimiento entero</option>
+                {identificacion.pasos.map((p) => (
+                  <option key={p.id} value={`paso:${p.id}`}>
+                    La fracción {p.fraccion}
+                  </option>
+                ))}
+                {identificacion.hallazgos.map((h) => (
+                  <option key={h.id} value={`hallazgo:${h.id}`}>
+                    {h.nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label style={{ margin: 0 }}>
+              <span className="pequeno">
+                Qué prueba <span className="pista">se conserva diez años; que se entienda sin abrirlo</span>
+              </span>
+              <input type="text" name="nota" required />
+            </label>
+
+            <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
+              <button type="submit" className="secundario pequeno" disabled={guardando}>
+                {guardando ? 'Vinculando…' : 'Vincular'}
+              </button>
+              <button
+                type="button"
+                className="secundario pequeno"
+                onClick={() => { setAbierto(false) }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        ) : documentos.length === 0 ? (
+          <p className="pequeno tenue" style={{ margin: 0 }}>
+            Este expediente todavía no tiene documentos que vincular. Súbelos abajo y vuelve.
+          </p>
+        ) : (
+          <button
+            type="button"
+            className="secundario pequeno"
+            onClick={() => { setAbierto(true) }}
+          >
+            Vincular un documento
+          </button>
+        ))}
+    </div>
+  )
+}
+
+/**
  * El piso del Art. 12 fr. VII ¶2.
  *
  * Va DESPUÉS del camino y no dentro del formulario de identificación, porque
@@ -543,10 +689,12 @@ function PisoDelBeneficiario({
 export function SeccionBeneficiario({
   clienteId,
   estado,
+  documentos,
   puede,
 }: {
   clienteId: string
   estado: EstadoBeneficiarioControlador
+  documentos: readonly { id: string; etiqueta: string }[]
   puede: boolean
 }) {
   const [abierto, setAbierto] = useState<'ninguno' | 'identificar' | 'excepcion'>('ninguno')
@@ -585,7 +733,16 @@ export function SeccionBeneficiario({
       )}
 
       {estado.vigente !== null && estado.vigente.excepcion === null && (
-        <PisoDelBeneficiario clienteId={clienteId} piso={estado.piso} puede={puede} />
+        <>
+          <PisoDelBeneficiario clienteId={clienteId} piso={estado.piso} puede={puede} />
+          <Sustentos
+            clienteId={clienteId}
+            identificacion={estado.vigente}
+            sustentos={estado.sustentos}
+            documentos={documentos}
+            puede={puede}
+          />
+        </>
       )}
 
       {puede && (

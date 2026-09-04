@@ -158,6 +158,13 @@ export interface EstadoBeneficiarioControlador {
   readonly descensos: readonly IdentificacionAsentada[]
   readonly historial: readonly IdentificacionAsentada[]
   readonly umbral: UmbralDeControl
+  /**
+   * La documentación que sustenta la identificación VIGENTE.
+   *
+   * Solo la vigente: el historial se puede abrir y leer, pero lo que hay que
+   * completar es lo de ahora.
+   */
+  readonly sustentos: readonly SustentoAsentado[]
   /** Art. 12 fr. VII ¶2: identificar no basta, hay que recabar sus datos. */
   readonly piso: {
     readonly exigido: PisoExigido
@@ -213,6 +220,7 @@ export async function estadoDelBeneficiario(
   const armadas = await Promise.all(filas.map((f) => armar(db, p.sesion, f)))
 
   const raices = armadas.filter((i) => i.desciendeDeHallazgoId === null)
+  const vigenteRaiz = raices.find((i) => i.estado === 'vigente')
 
   return {
     clienteId: p.clienteId,
@@ -220,10 +228,17 @@ export async function estadoDelBeneficiario(
     // A una persona física se le pregunta otra cosa (si actúa por cuenta de
     // otro), y eso no es este procedimiento.
     requiere: tipo === 'moral' || tipo === 'fideicomiso',
-    vigente: raices.find((i) => i.estado === 'vigente') ?? null,
+    vigente: vigenteRaiz ?? null,
     descensos: armadas.filter((i) => i.desciendeDeHallazgoId !== null),
     historial: raices.filter((i) => i.estado === 'sustituida'),
     umbral,
+    sustentos:
+      vigenteRaiz === undefined
+        ? []
+        : await sustentosDeLaIdentificacion(db, {
+            sesion: p.sesion,
+            identificacionId: vigenteRaiz.id,
+          }),
     piso: await pisoDeLosBeneficiarios(db, {
       sesion: p.sesion,
       clienteId: p.clienteId,
@@ -783,6 +798,143 @@ export async function completarPisoDelBeneficiario(
       throw new DatoDeBeneficiarioInvalido([
         'Ese Beneficiario Controlador no existe en este obligado.',
       ])
+    }
+  })
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Art. 23 Quinquies · La documentación que sustenta el procedimiento
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface SustentoAsentado {
+  readonly id: string
+  readonly documentoId: string
+  readonly campo: string
+  readonly nombreArchivo: string
+  readonly hash: string
+  readonly nota: string
+  /** A qué parte del camino respalda. Los dos nulos: al procedimiento entero. */
+  readonly pasoId: string | null
+  readonly hallazgoId: string | null
+  readonly registradoEn: string
+}
+
+/**
+ * Los documentos que sustentan un procedimiento.
+ *
+ * No traen el archivo: traen su huella y dónde vive. El documento sigue siendo
+ * del expediente —una sola copia, con su SHA-256— y esto es solo el vínculo
+ * que dice qué parte del camino respalda.
+ */
+export async function sustentosDeLaIdentificacion(
+  db: EjecutorSql,
+  p: { sesion: ContextoSesion; identificacionId: string },
+): Promise<readonly SustentoAsentado[]> {
+  const { rows } = await db.query(
+    `select s.id::text, s.documento_id::text, d.campo, d.storage_path, d.hash_sha256,
+            s.nota, s.paso_id::text, s.hallazgo_id::text, s.created_at::text
+       from sustentos_bc s
+       join documentos d on d.id = s.documento_id
+      where s.tenant_id = $1 and s.identificacion_id = $2
+      order by s.created_at`,
+    [p.sesion.tenantId, p.identificacionId],
+  )
+  return (
+    rows as Array<{
+      id: string
+      documento_id: string
+      campo: string
+      storage_path: string
+      hash_sha256: string
+      nota: string
+      paso_id: string | null
+      hallazgo_id: string | null
+      created_at: string
+    }>
+  ).map((f) => ({
+    id: f.id,
+    documentoId: f.documento_id,
+    campo: f.campo,
+    // El nombre que se enseña sale de la ruta, no se guarda aparte: dos
+    // lugares para el mismo nombre es un lugar donde pueden discrepar.
+    nombreArchivo: f.storage_path.split('/').at(-1) ?? f.storage_path,
+    hash: f.hash_sha256,
+    nota: f.nota,
+    pasoId: f.paso_id,
+    hallazgoId: f.hallazgo_id,
+    registradoEn: f.created_at,
+  }))
+}
+
+/**
+ * Vincula un documento ya subido al paso o al hallazgo que respalda.
+ *
+ * No sube nada: el documento entra por el expediente, como todos. Esto ata lo
+ * que ya existe al lugar del camino que sustenta — y la base impide atar un
+ * documento de otro cliente, o un paso de otra identificación.
+ */
+export async function vincularSustento(
+  db: EjecutorTransaccional,
+  p: {
+    sesion: ContextoSesion
+    identificacionId: string
+    documentoId: string
+    nota: string
+    pasoId?: string | undefined
+    hallazgoId?: string | undefined
+  },
+): Promise<{ sustentoId: string }> {
+  return enTransaccionDeSesion(db, p.sesion, async () => {
+    if (p.nota.trim() === '') {
+      throw new DatoDeBeneficiarioInvalido([
+        'Falta decir qué prueba este documento. Un archivo colgado sin eso obliga a abrirlo para ' +
+          'saber por qué está ahí, y el procedimiento se conserva diez años.',
+      ])
+    }
+    if (p.pasoId !== undefined && p.hallazgoId !== undefined) {
+      throw new DatoDeBeneficiarioInvalido([
+        'Un documento sustenta una fracción evaluada o a una persona hallada, no las dos: son ' +
+          'cosas distintas del camino.',
+      ])
+    }
+
+    try {
+      const { rows } = await db.query(
+        `insert into sustentos_bc
+           (tenant_id, documento_id, identificacion_id, paso_id, hallazgo_id, nota, registrado_por)
+         values ($1,$2,$3,$4,$5,$6,$7) returning id::text`,
+        [
+          p.sesion.tenantId,
+          p.documentoId,
+          p.identificacionId,
+          p.pasoId ?? null,
+          p.hallazgoId ?? null,
+          p.nota.trim(),
+          p.sesion.usuarioId,
+        ],
+      )
+      return { sustentoId: (rows[0] as { id: string }).id }
+    } catch (e) {
+      // Las tres guardas de la base, dichas en palabras del artículo. Dejarlas
+      // subir como `foreign_key_violation` obligaría al usuario a adivinar.
+      const bruto = e instanceof Error ? e.message : String(e)
+      if (/expediente de otro cliente/.test(bruto)) {
+        throw new DatoDeBeneficiarioInvalido([
+          'Ese documento es del expediente de otro cliente. La documentación que sustenta el ' +
+            'procedimiento tiene que ser del mismo Cliente o Usuaria.',
+        ])
+      }
+      if (/sustento_del_(paso|hallazgo)_de_esa_identificacion/.test(bruto)) {
+        throw new DatoDeBeneficiarioInvalido([
+          'Ese paso o ese hallazgo son de otra identificación, no de ésta.',
+        ])
+      }
+      if (/un_sustento_por_lugar/.test(bruto)) {
+        throw new DatoDeBeneficiarioInvalido([
+          'Ese documento ya está vinculado a esa parte del procedimiento.',
+        ])
+      }
+      throw e
     }
   })
 }

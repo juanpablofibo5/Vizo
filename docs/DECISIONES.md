@@ -648,6 +648,23 @@ El supuesto (1) depende de una lista que el propio ¶3 pone a cargo de la UIF �
 
 **Fijado con:** las 5 aserciones de la migración `20260903190000` —incluida una que verifica que **no** se sembró nada del supuesto que depende de la UIF—, `tests/clientes/piso-pep-extranjera.test.ts` (8 casos) y `tests/persistencia/piso-pep-extranjera.test.ts` (6 contra la base real).
 
+## ADR-38 · La documentación del Cap. III Quinquies se vincula, no se duplica — 2026-09-04
+
+**Contexto.** El párrafo de cierre del Art. 23 Quinquies pide cuatro cosas y VIZO cumplía tres: documentar el procedimiento (ADR-32), mantenerlo actualizado (sustitución) y resguardarlo diez años (append-only). Faltaba la segunda: «**conservar la información, documentación y registros que la sustenten**» — el acta que prueba el 40% de tenencia, el poder que acredita el control por otros medios.
+
+**Decisión.** Cuatro piezas:
+
+1. **No se crea un almacén paralelo.** `documentos` ya existe con su huella SHA-256, su ruta única y su retención. Lo que se agrega es el **vínculo** entre un documento del expediente y el paso o el hallazgo que respalda. Un segundo lugar donde guardar archivos del mismo cliente sería la trampa que el ADR-32 evitó con la identidad: dos respuestas posibles a la misma pregunta.
+2. **La nota es obligatoria.** Un archivo colgado sin decir qué demuestra obliga a abrirlo para saber por qué está ahí, y el procedimiento se conserva diez años.
+3. **El paso y el hallazgo tienen que ser de ESA identificación**, y eso es inexpresable: llaves de tres columnas `(tenant_id, identificacion_id, id)`. No depende de que nadie valide.
+4. **Que el documento sea del mismo cliente es un TRIGGER, no una llave**, y vale decir por qué: `documentos` no lleva `cliente_id` —lleva `expediente_id`— y volverlo inexpresable exigiría denormalizar una columna en una tabla que usa todo el producto para servir a un capítulo. Es el nivel 3 de la regla dura 6, y aquí es el precio correcto.
+
+**Lo que encontró una aserción propia:** el índice único `(tenant_id, documento_id, identificacion_id, paso_id, hallazgo_id)` **no impedía el duplicado**. En Postgres dos `NULL` son distintos entre sí en un índice único, así que dos vínculos al mismo paso —ambos con `hallazgo_id` nulo— entraban como filas diferentes. Se corrigió con `unique nulls not distinct`, y el sabotaje confirma que sin eso la aserción 6 muere.
+
+**Un límite que conviene saber:** `documentos.campo` está acotado al catálogo del expediente de la actividad. Hoy eso cubre `acta_constitutiva`, `poder_representante`, `declaracion_beneficiario` y `constancia_conocimiento_bc`, entre otros. Si el obligado necesita adjuntar algo que el catálogo no nombra —un libro de accionistas, por ejemplo— no hay campo donde ponerlo, y **agregarlo no se hace aquí**: los campos del expediente son catálogo con fuente, y el Anexo 3 está elidido en la transcripción del Acuerdo (ver el barrido del 2-sep). Queda anotado.
+
+**Fijado con:** las 8 aserciones de la migración `20260904120000` y cinco casos nuevos en `tests/persistencia/beneficiario-controlador.test.ts`.
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde

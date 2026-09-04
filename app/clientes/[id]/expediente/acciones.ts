@@ -57,6 +57,7 @@ import {
   completarPisoDelBeneficiario,
   identificarBeneficiarioControlador,
   registrarExcepcion,
+  vincularSustento,
 } from '../../../../src/persistencia/beneficiario-controlador'
 import type {
   EvidenciaDeConsulta,
@@ -1139,6 +1140,47 @@ export async function accionCompletarPisoBc(
   } catch (e) {
     if (e instanceof DatoDeBeneficiarioInvalido) {
       return { ok: false, mensaje: 'No se guardaron los datos.', problemas: e.problemas }
+    }
+    return { ok: false, mensaje: e instanceof Error ? e.message : String(e), problemas: [] }
+  } finally {
+    await db.end()
+  }
+}
+
+/**
+ * Vincula un documento del expediente al paso o hallazgo que sustenta.
+ *
+ * No sube nada: el archivo entra por la zona de documentos del expediente,
+ * como todos. Esto solo ata lo que ya existe al lugar del camino que respalda
+ * — «conservar la información, documentación y registros que la sustenten».
+ */
+export async function accionVincularSustentoBc(
+  _previo: EstadoCaptura,
+  datos: FormData,
+): Promise<EstadoCaptura> {
+  const clienteId = String(datos.get('clienteId') ?? '')
+  const sesion = await sesionRequerida()
+  const lugar = String(datos.get('lugar') ?? '')
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await vincularSustento(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      identificacionId: String(datos.get('identificacionId') ?? ''),
+      documentoId: String(datos.get('documentoId') ?? ''),
+      nota: String(datos.get('nota') ?? ''),
+      // El formulario manda un solo campo con prefijo: «paso:uuid» o
+      // «hallazgo:uuid». Dos selectores independientes permitirían mandar los
+      // dos, y la base lo rechazaría con razón — mejor que no se pueda decir.
+      ...(lugar.startsWith('paso:') ? { pasoId: lugar.slice(5) } : {}),
+      ...(lugar.startsWith('hallazgo:') ? { hallazgoId: lugar.slice(9) } : {}),
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return { ok: true, mensaje: 'Documento vinculado al procedimiento.', problemas: [] }
+  } catch (e) {
+    if (e instanceof DatoDeBeneficiarioInvalido) {
+      return { ok: false, mensaje: 'No se vinculó el documento.', problemas: e.problemas }
     }
     return { ok: false, mensaje: e instanceof Error ? e.message : String(e), problemas: [] }
   } finally {

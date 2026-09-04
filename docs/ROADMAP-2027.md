@@ -95,7 +95,9 @@ Art. 23 Quinquies 1 para fideicomisos: quien ejerza el control efectivo, y si so
 
 **El piso del Art. 12 fr. VII quedó construido el 3-sep-2026 (ADR-35):** identificar no basta, hay que recabar sus datos, y la sección 08 dice numeral por numeral cuáles faltan. Los numerales exigidos salen del Acuerdo; qué dice cada uno sale de `campos_expediente`, sin repetirlo.
 
-**Lo que sigue sin cubrir:** el vínculo a `documentos` para la evidencia que sustenta el camino, y las nueve preguntas de `docs/BENEFICIARIO-CONTROLADOR.md` §6 — entre ellas si la actualización «durante la vigencia de la Relación de negocios» corre con la revisión anual del Art. 21 o tiene disparador propio.
+**La documentación que sustenta el camino quedó vinculada el 4-sep-2026 (ADR-38):** el documento no se duplica —vive en `documentos`, con su huella— y se ata al paso o al hallazgo que respalda, con una nota que dice qué prueba. Con esto el párrafo de cierre del artículo queda cubierto en sus cuatro verbos.
+
+**Lo que sigue sin cubrir:** las nueve preguntas de `docs/BENEFICIARIO-CONTROLADOR.md` §6 — entre ellas si la actualización «durante la vigencia de la Relación de negocios» corre con la revisión anual del Art. 21 o tiene disparador propio.
 
 ### Cap. X · Manual de Políticas Internas — **1 mar 2027**
 Art. 37 Bis: **catorce** apartados (fracciones I a XIV). Art. 37: dentro de los **90 días naturales** siguientes al alta. Art. 37 Bis 1 para grupos empresariales; Art. 37 Bis 2 exime de los supuestos que no se realizan **si se hace constar**.

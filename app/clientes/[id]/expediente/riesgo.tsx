@@ -41,6 +41,20 @@ function Ficha({
         </span>
       </p>
 
+      {/* Sin esto la ficha se contradice: grado alto con un puntaje que la
+          escala del obligado clasificaría bajo, y nada que lo explique. El
+          grado no salió del cálculo — salió del artículo. */}
+      {e.pisoPepExtranjera && (
+        <p className="pequeno" style={{ margin: 0, maxWidth: '44rem' }}>
+          <strong>El grado no lo produjo el puntaje: lo impone el Art. 23 Bis 4.</strong>{' '}
+          <span className="tenue">
+            El artículo manda considerar de Grado de Riesgo alto —«al menos»— a las Personas
+            Políticamente Expuestas extranjeras. El puntaje de {e.puntaje} es el que la
+            metodología del obligado calculó, y se conserva tal cual: lo que subió es el grado.
+          </span>
+        </p>
+      )}
+
       <p className="pequeno" style={{ margin: 0 }}>
         {e.vencida ? (
           <span className="error">

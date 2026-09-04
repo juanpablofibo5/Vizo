@@ -628,6 +628,26 @@ y el **Art. 3 fr. IX** de la misma Ley define «Metales Preciosos, al **oro, la 
 
 **Fijado con:** las 5 aserciones de la migración `20260903170000`, `tests/umbrales/art32-metales.test.ts` (8 casos, con los dos lados del OR saboteados) y `tests/persistencia/art32-alerta.test.ts` (5 contra la base real).
 
+## ADR-37 · El piso del Art. 23 Bis 4: «al menos» es un piso, no una asignación — 2026-09-04
+
+**Contexto.** El roadmap daba por pendiente «el riesgo alto por defecto de extranjeras (23 Bis 4)». Al leer el artículo resultó que tiene **dos supuestos independientes**, y el documento los mezclaba:
+
+> «[…] deberán considerar como personas Clientes o Usuarias de Grado de Riesgo alto, **al menos** a aquéllas **(1) no residentes** en territorio mexicano y que […] estén vinculados […] a los países o jurisdicciones que […]; **así como (2) a las Personas Políticamente Expuestas extranjeras**.»
+
+El supuesto (1) depende de una lista que el propio ¶3 pone a cargo de la UIF —«la UIF pondrá a disposición […] la lista de los países y jurisdicciones»— y que no existe. Es la **misma** que bloquea el cuarto supuesto del Art. 41 fr. V. El supuesto (2) no depende de nada externo.
+
+**Decisión.** Cinco piezas:
+
+1. **«Al menos» es lo que decide el diseño.** No dice «será alto»: dice que hay que considerarlo alto *al menos*. Es un **piso**, no una asignación. Sube al que quedó por debajo y no toca al que ya estaba alto — y cuando sube, lo hace al **menor** de los grados altos, no al más severo de la escala.
+2. **El puntaje NO se altera.** Es lo que la metodología del obligado produjo, y reescribirlo sería falsificar su propio cálculo. Lo que cambia es el grado, y la fila guarda que cambió por el artículo.
+3. **Sin declaración del Cap. III Quáter la respuesta es «no se sabe».** No `false`. Resolverlo como «no le toca» daría un grado que quizá debía subir sin que nadie se entere — la respuesta cómoda es justo la que no se da.
+4. **Decide el ámbito del VÍNCULO, no la nacionalidad del cliente.** El Art. 23 Quáter hace PEP a alguien por la función pública que ejerce o por su relación con quien la ejerce, y el vínculo es donde vive ese ámbito. Un mexicano con cargo en el extranjero es PEP extranjera; un extranjero sin función pública no es PEP en absoluto.
+5. **Una escala sin ningún grado marcado como alto DETIENE.** No se elige el más severo por cuenta propia: cuál grado es «alto» lo declara el obligado en su metodología, y sin esa declaración el artículo no se puede cumplir.
+
+**La pantalla habría mentido sin el punto 2.** Una ficha con grado alto y puntaje 10, contra una escala que empieza el alto en 70, se lee como un error de cálculo. Por eso la evaluación guarda `piso_pep_extranjera` y la ficha lo dice con todas sus letras: el grado no lo produjo el puntaje, lo impone el artículo.
+
+**Fijado con:** las 5 aserciones de la migración `20260903190000` —incluida una que verifica que **no** se sembró nada del supuesto que depende de la UIF—, `tests/clientes/piso-pep-extranjera.test.ts` (8 casos) y `tests/persistencia/piso-pep-extranjera.test.ts` (6 contra la base real).
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde

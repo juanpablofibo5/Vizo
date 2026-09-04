@@ -582,8 +582,12 @@ export async function evaluarClienteYRegistrar(
     }
 
     const resultado = evaluarRiesgo(
-      { clienteId: p.clienteId, factoresPresentes: p.factoresPresentes },
-      configuracion,
+      {
+        clienteId: p.clienteId,
+        factoresPresentes: p.factoresPresentes,
+        esPepExtranjera: await esPepExtranjera(db, p.sesion.tenantId, p.clienteId),
+      },
+      { ...configuracion, pisoPepExtranjeraExigible: await pisoExigible(db, p.hoy) },
     )
     if (resultado.estado !== 'evaluado') {
       return { resultado, evaluacionId: null }
@@ -604,8 +608,9 @@ export async function evaluarClienteYRegistrar(
     const { rows } = await db.query(
       `insert into evaluaciones_riesgo
          (tenant_id, cliente_id, modelo_id, grado_id, puntaje, factores_aplicados,
-          evaluado_por, vence)
-       values ($1,$2,$3,$4,$5,$6::jsonb,$7, (current_date + ($8 || ' months')::interval)::date)
+          evaluado_por, vence, piso_pep_extranjera)
+       values ($1,$2,$3,$4,$5,$6::jsonb,$7,
+               (current_date + ($8 || ' months')::interval)::date, $9)
        returning id::text`,
       [
         p.sesion.tenantId,
@@ -616,6 +621,7 @@ export async function evaluarClienteYRegistrar(
         JSON.stringify(resultado.aplicados),
         p.sesion.usuarioId,
         String(m),
+        resultado.pisoPepExtranjera === 'aplicado',
       ],
     )
     const evaluacionId = (rows[0] as { id: string }).id
@@ -632,6 +638,9 @@ export async function evaluarClienteYRegistrar(
         es_alto: resultado.esAlto,
         puntaje: resultado.puntaje,
         factores: resultado.aplicados.length,
+        // Que el grado subió por el Art. 23 Bis 4 y no por el puntaje va a la
+        // bitácora: leyendo solo grado y puntaje, la fila parecería incoherente.
+        piso_pep_extranjera: resultado.pisoPepExtranjera,
       }),
       p.sesion.usuarioId,
     ])
@@ -655,6 +664,14 @@ export interface EvaluacionDeCliente {
   vencida: boolean
   aplicados: { factor: string; elemento: string; peso: number }[]
   modeloVersion: number
+  /**
+   * El grado NO salió del puntaje sino del piso del Art. 23 Bis 4.
+   *
+   * La pantalla lo necesita para no contradecirse: sin esto, una evaluación
+   * con grado alto y puntaje 10 contra una escala que empieza el alto en 70
+   * se lee como un error de cálculo.
+   */
+  pisoPepExtranjera: boolean
 }
 
 export interface RiesgoDelCliente {
@@ -679,6 +696,7 @@ interface FilaEvaluacion {
   vence: string
   vencida: boolean
   factores_aplicados: { factor: string; elemento: string; peso: number }[]
+  piso_pep_extranjera: boolean
   version: number
 }
 
@@ -693,6 +711,7 @@ const aEvaluacion = (f: FilaEvaluacion): EvaluacionDeCliente => ({
   vencida: f.vencida,
   aplicados: f.factores_aplicados,
   modeloVersion: f.version,
+  pisoPepExtranjera: f.piso_pep_extranjera,
 })
 
 export async function riesgoDelCliente(
@@ -705,7 +724,7 @@ export async function riesgoDelCliente(
     `select e.id::text, g.clave as grado, g.nombre as grado_nombre, g.es_alto,
             e.puntaje::text, e.evaluado_en::text as evaluado_en, e.vence::text as vence,
             (e.vence < (now() at time zone 'America/Mexico_City')::date) as vencida,
-            e.factores_aplicados, m.version
+            e.factores_aplicados, e.piso_pep_extranjera, m.version
        from evaluaciones_riesgo e
        join grados_riesgo g on g.id = e.grado_id
        join modelos_riesgo m on m.id = e.modelo_id
@@ -723,4 +742,57 @@ export async function riesgoDelCliente(
     historico: evaluaciones.slice(1),
     reevaluacionMeses: await plazoDeReevaluacionVigente(db),
   }
+}
+
+/**
+ * ¿Es el cliente una Persona Políticamente Expuesta extranjera?
+ *
+ * Tres valores. `null` —sin declaración del Cap. III Quáter— NO es `false`:
+ * es que no se sabe, y el motor lo dice en vez de resolverlo como «no le
+ * toca». Que un cliente sin declaración quede en grado bajo puede ser correcto
+ * o puede ser un hueco; lo que no puede es parecer lo primero cuando es lo
+ * segundo.
+ *
+ * Se mira el ÁMBITO DEL VÍNCULO, no la nacionalidad del cliente. El Art. 23
+ * Quáter hace PEP a alguien por la función pública que ejerce o por su
+ * relación con quien la ejerce, y el vínculo es donde vive ese ámbito. Un
+ * mexicano con un cargo en el extranjero es PEP extranjera; un extranjero sin
+ * función pública no es PEP en absoluto.
+ */
+async function esPepExtranjera(
+  db: EjecutorSql,
+  tenantId: string,
+  clienteId: string,
+): Promise<boolean | null> {
+  const { rows } = await db.query(
+    `select d.resultado::text as resultado,
+            exists (
+              select 1 from vinculos_pep v
+               where v.declaracion_id = d.id and v.ambito = 'extranjero'
+            ) as tiene_vinculo_extranjero
+       from declaraciones_pep d
+      where d.tenant_id = $1 and d.cliente_id = $2
+      order by d.fecha_declaracion desc, d.created_at desc
+      limit 1`,
+    [tenantId, clienteId],
+  )
+  const d = rows[0] as { resultado: string; tiene_vinculo_extranjero: boolean } | undefined
+  if (d === undefined) return null
+  if (d.resultado === 'niega') return false
+  return d.tiene_vinculo_extranjero
+}
+
+/** Si el piso del Art. 23 Bis 4 ya es exigible a la fecha que se evalúa. */
+async function pisoExigible(db: EjecutorSql, hoy: string): Promise<boolean> {
+  const { rows } = await db.query(
+    `select (valor #>> '{}') = 'true' as activo, vigente_desde::text as desde
+       from parametros_motor
+      where clave = 'riesgo_piso_pep_extranjera' and actividad_id is null
+      order by vigente_desde desc limit 1`,
+  )
+  const f = rows[0] as { activo: boolean; desde: string } | undefined
+  // Sin la fila NO se aplica el piso, y eso es correcto: el catálogo es lo que
+  // dice desde cuándo obliga un artículo. Lo que no se hace es suponer que sí.
+  if (f === undefined) return false
+  return f.activo && hoy >= f.desde
 }

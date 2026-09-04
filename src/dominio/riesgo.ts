@@ -72,6 +72,13 @@ export interface GradoConfigurado {
 }
 
 export interface ConfiguracionRiesgo {
+  /**
+   * Si el piso del Art. 23 Bis 4 es exigible a la fecha que se evalúa.
+   *
+   * Llega del catálogo con su vigencia (1-mar-2027, Transitorio Cuarto), no
+   * escrito aquí: la fecha desde la que un artículo obliga es dato con fuente.
+   */
+  readonly pisoPepExtranjeraExigible?: boolean | undefined
   readonly modeloId: string
   /** Tal como lo declaró el obligado. Puede ser uno que este motor no conozca. */
   readonly metodoMedicion: string
@@ -85,6 +92,14 @@ export interface ConfiguracionRiesgo {
 export interface InsumosRiesgo {
   readonly clienteId: string
   readonly factoresPresentes: readonly string[]
+  /**
+   * Si el cliente es una Persona Políticamente Expuesta EXTRANJERA.
+   *
+   * Tres valores, y el tercero importa: `null` es «no se sabe» —no hay
+   * declaración del Cap. III Quáter— y NO es lo mismo que `false`. Leerlo como
+   * «no lo es» daría un grado que quizá debía subir, sin que nadie se entere.
+   */
+  readonly esPepExtranjera?: boolean | null | undefined
 }
 
 export interface PasoDelPuntaje {
@@ -115,7 +130,35 @@ export type ResultadoRiesgo =
       readonly esAlto: boolean
       readonly aplicados: readonly PasoDelPuntaje[]
       readonly corteAplicado: number
+      /**
+       * Qué pasó con el piso del Art. 23 Bis 4.
+       *
+       * `aplicado` — el grado subió por el artículo, no por el puntaje.
+       * `ya_era_alto` — el modelo del obligado ya lo clasificaba alto.
+       * `no_aplica` — el cliente no es PEP extranjera.
+       * `no_exigible` — el piso todavía no está vigente para esta fecha.
+       * `no_se_sabe` — falta la declaración del Cap. III Quáter, así que no
+       *   se puede afirmar que el grado calculado sea el que corresponde.
+       */
+      readonly pisoPepExtranjera:
+        | 'aplicado'
+        | 'ya_era_alto'
+        | 'no_aplica'
+        | 'no_exigible'
+        | 'no_se_sabe'
     }
+
+export class EscalaSinGradoAlto extends Error {
+  constructor() {
+    super(
+      'El Art. 23 Bis 4 manda considerar a la Persona Políticamente Expuesta extranjera de Grado ' +
+        'de Riesgo alto, y la escala de este obligado no tiene ningún grado marcado como alto. No ' +
+        'se elige el más severo por su cuenta: cuál grado es «alto» lo declara el obligado en su ' +
+        'metodología, y sin esa declaración el artículo no se puede cumplir.',
+    )
+    this.name = 'EscalaSinGradoAlto'
+  }
+}
 
 export class PesoDeElementoAusente extends Error {
   constructor(elemento: string) {
@@ -237,6 +280,33 @@ export function evaluarRiesgo(
     )
   }
 
+  // ── El piso del Art. 23 Bis 4 ──────────────────────────────────────────
+  // «deberán considerar como […] de Grado de Riesgo alto, AL MENOS a […] las
+  // Personas Políticamente Expuestas extranjeras».
+  //
+  // «Al menos» es lo que lo vuelve un PISO y no una asignación: sube al que
+  // quedó por debajo y no toca al que ya estaba alto. Y el PUNTAJE no se
+  // altera — es lo que la metodología del obligado produjo, y reescribirlo
+  // sería falsificar su propio cálculo. Lo que cambia es el grado, y queda
+  // dicho que cambió por el artículo.
+  const piso = pisoDelArticulo23Bis4(insumos, configuracion, grado)
+  if (piso === 'aplicado') {
+    const alto = [...configuracion.escala]
+      .filter((g) => g.esAlto)
+      .sort((a, b) => a.puntajeMinimo - b.puntajeMinimo)[0]
+    if (alto === undefined) throw new EscalaSinGradoAlto()
+    return {
+      estado: 'evaluado',
+      puntaje,
+      gradoId: alto.id,
+      gradoClave: alto.clave,
+      esAlto: true,
+      aplicados,
+      corteAplicado: alto.puntajeMinimo,
+      pisoPepExtranjera: 'aplicado',
+    }
+  }
+
   return {
     estado: 'evaluado',
     puntaje,
@@ -245,5 +315,22 @@ export function evaluarRiesgo(
     esAlto: grado.esAlto,
     aplicados,
     corteAplicado: grado.puntajeMinimo,
+    pisoPepExtranjera: piso,
   }
+}
+
+/** Qué pasó con el piso, sin tocar todavía el resultado. */
+function pisoDelArticulo23Bis4(
+  insumos: InsumosRiesgo,
+  configuracion: ConfiguracionRiesgo,
+  grado: { readonly esAlto: boolean },
+): 'aplicado' | 'ya_era_alto' | 'no_aplica' | 'no_exigible' | 'no_se_sabe' {
+  if (configuracion.pisoPepExtranjeraExigible !== true) return 'no_exigible'
+  // Sin declaración del Cap. III Quáter no se sabe si le toca. Se dice, en vez
+  // de resolverlo como «no le toca» — que es la respuesta cómoda.
+  if (insumos.esPepExtranjera === null || insumos.esPepExtranjera === undefined) {
+    return 'no_se_sabe'
+  }
+  if (!insumos.esPepExtranjera) return 'no_aplica'
+  return grado.esAlto ? 'ya_era_alto' : 'aplicado'
 }

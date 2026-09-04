@@ -47,6 +47,7 @@ const evaluacion = (v: { esAlto: boolean; vencida: boolean }) => ({
   vencida: v.vencida,
   aplicados: [],
   modeloVersion: 1,
+  pisoPepExtranjera: false,
 })
 
 const aprobacionBase = (v: Partial<EstadoAprobacion>): EstadoAprobacion =>

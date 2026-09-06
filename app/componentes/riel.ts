@@ -407,6 +407,8 @@ export interface BeneficiarioParaRiel {
       }
   readonly anticipado: boolean
   readonly exigibleDesde: string
+  /** Eventos estructurales sin atender: la identificación quedó vieja. */
+  readonly eventosSinAtender?: number | undefined
 }
 
 /**
@@ -440,6 +442,16 @@ export function rielBeneficiario(b: BeneficiarioParaRiel): EstadoDeRiel {
       reloj: b.anticipado
         ? `Exigible desde el ${b.exigibleDesde}.`
         : 'La identificación va antes del acto o al establecer la Relación de negocios (Art. 23 Quinquies 1).',
+    }
+  }
+  // El envejecimiento del ADR-25, aplicado aquí: la identificación existe,
+  // pero la estructura sobre la que se corrió ya cambió. No dice «vencida» —
+  // el artículo no da plazo— dice sobre qué se hizo.
+  if ((b.eventosSinAtender ?? 0) > 0) {
+    return {
+      estado: 'Estructura cambió',
+      tono: 'aviso',
+      reloj: 'Hay un cambio estructural sin reevaluar: la identificación es de una estructura anterior.',
     }
   }
   if (b.vigente.via === 'excepcion') {

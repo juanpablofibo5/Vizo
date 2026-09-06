@@ -53,6 +53,10 @@ import {
   asentarMedidasReforzadas,
 } from '../../../../src/persistencia/medidas-reforzadas'
 import {
+  DatoDeEventoInvalido,
+  registrarEvento,
+} from '../../../../src/persistencia/eventos-estructurales'
+import {
   DatoDeDeterminacionInvalido,
   proponerControl,
   resolverControl,
@@ -1416,6 +1420,53 @@ export async function accionResolverControl(
   } catch (e) {
     if (e instanceof DatoDeDeterminacionInvalido) {
       return { ok: false, mensaje: 'No se resolvió.', problemas: e.problemas }
+    }
+    return { ok: false, mensaje: e instanceof Error ? e.message : String(e), problemas: [] }
+  } finally {
+    await db.end()
+  }
+}
+
+/**
+ * Registra un evento estructural — Fase 3 (ADR-41).
+ *
+ * Dispara los cuatro efectos en una transacción: cierra las vigencias que el
+ * capturista señale, encola la reevaluación, arranca el plazo del catálogo y
+ * levanta la alerta que nombra al evento.
+ */
+export async function accionRegistrarEvento(
+  _previo: EstadoCaptura,
+  datos: FormData,
+): Promise<EstadoCaptura> {
+  const clienteId = String(datos.get('clienteId') ?? '')
+  const sesion = await sesionRequerida()
+  const cierra = datos.getAll('cierraParticipacion').map(String).filter((x) => x !== '')
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    const { fechaLimite } = await registrarEvento(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+      tipo: String(datos.get('tipoEvento') ?? 'otro') as
+        | 'cambio_accionario' | 'fusion' | 'cesion_derechos_fideicomisarios'
+        | 'cambio_administrador' | 'otro',
+      descripcion: String(datos.get('descripcionEvento') ?? ''),
+      fechaEvento: String(datos.get('fechaEvento') ?? ''),
+      ...(cierra.length === 0 ? {} : { cierraParticipaciones: cierra }),
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    revalidatePath('/alertas')
+    return {
+      ok: true,
+      mensaje:
+        `Evento registrado y alerta levantada. La identificación hay que actualizarla a más ` +
+        `tardar el ${fechaLimite}: actualiza la estructura y vuelve a correr el orden.`,
+      problemas: [],
+    }
+  } catch (e) {
+    if (e instanceof DatoDeEventoInvalido || e instanceof DatoDelGrafoInvalido) {
+      return { ok: false, mensaje: 'No se registró el evento.', problemas: e.problemas }
     }
     return { ok: false, mensaje: e instanceof Error ? e.message : String(e), problemas: [] }
   } finally {

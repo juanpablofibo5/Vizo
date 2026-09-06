@@ -7,6 +7,7 @@ import type {
 } from '../../../../src/persistencia/beneficiario-controlador'
 import { EstructuraSocietaria } from './estructura-societaria'
 import { ControlEfectivo } from './control-efectivo'
+import { EventosEstructurales } from './eventos'
 import type {
   DeterminacionDeControl,
   ReglaDeCriterio,
@@ -748,13 +749,21 @@ export function SeccionBeneficiario({
       <EstructuraSocietaria clienteId={clienteId} estructura={estructura} puede={puede} />
 
       {estructura.partes.length > 0 && (
-        <ControlEfectivo
-          clienteId={clienteId}
-          determinaciones={determinaciones}
-          reglas={reglas}
-          estructura={estructura}
-          puede={puede}
-        />
+        <>
+          <ControlEfectivo
+            clienteId={clienteId}
+            determinaciones={determinaciones}
+            reglas={reglas}
+            estructura={estructura}
+            puede={puede}
+          />
+          <EventosEstructurales
+            clienteId={clienteId}
+            eventos={estado.eventos}
+            estructura={estructura}
+            puede={puede}
+          />
+        </>
       )}
 
       {estado.vigente !== null && estado.vigente.excepcion === null && (

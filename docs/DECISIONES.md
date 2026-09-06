@@ -704,6 +704,24 @@ El supuesto (1) depende de una lista que el propio ¶3 pone a cargo de la UIF �
 
 **Fijado con:** las 9 aserciones de la migración `20260906100000` (bloqueo saboteado y muerto), `tests/persistencia/determinacion-control.test.ts` (8 casos de punta a punta, incluidos los dos bloqueos y la regla con sus casos) y verificación en navegador del ciclo completo.
 
+## ADR-41 · Los eventos estructurales: el alta pasa una vez, esto corre para siempre — 2026-09-06
+
+**Contexto.** Fase 3 del plano, la última — y su razón de negocio más fuerte: la suscripción vive en el ciclo, no en el alta. Un cambio accionario, una fusión o un cambio de administrador vuelven vieja la identificación del Beneficiario Controlador, y hasta hoy nada lo decía.
+
+**Decisión.** Cinco piezas:
+
+1. **Registrar el evento dispara los cuatro efectos del plano en UNA transacción**: cierra las vigencias que el capturista señale, deja la reevaluación encolada (el evento pendiente ES la cola), arranca el plazo, y levanta la alerta que nombra al evento (patrón ADR-33, con su CHECK).
+2. **El plazo no tiene fuente normativa, y se dice.** El Art. 23 Quinquies manda mantener actualizado «durante la vigencia de la Relación de negocios» (DOF, líneas 259 y 262) **sin fijar días**. Los 30 días son parámetro OPERATIVO declarado como tal, congelado en el evento al nacer — si el parámetro cambia mañana, el evento de hoy conserva su reloj.
+3. **La máquina no adivina qué cerró el evento.** Quién vendió y quién entró lo dice el capturista; las participaciones a cerrar se señalan explícitamente. Adivinar sería inventar hechos societarios (regla dura 6).
+4. **La siguiente identificación ATIENDE lo pendiente — pero solo lo que ya ocurrió.** El gancho vive dentro de la transacción de la identificación: si entra, los eventos quedan atendidos; si revienta, ni una ni los otros. Y un evento con fecha posterior a la identificación queda pendiente: reevaluar ayer no atiende el cambio de mañana (saboteado y muerto).
+5. **La identificación envejece con honestidad**: el riel dice «Estructura cambió» —no «vencida», el artículo no da plazo— con el mismo criterio del ADR-25: se dice sobre qué se hizo.
+
+**El tropiezo del camino, y es reincidencia:** llamé `cerrarParticipacion` —que abre su propia transacción— dentro de la transacción del evento. Es EXACTAMENTE el bug que el ADR-39 documenta («enTransaccionDeSesion no anida»), reintroducido dos días después por el mismo autor. Se corrigió con el patrón de la casa (`cerrarParticipacionYaEnSesion`) antes de que ninguna prueba corriera, pero la lección es que el patrón atrae al error: cualquier función de persistencia que otra llame necesita su variante YaEnSesion desde el día uno.
+
+**Con esto, el plano queda completo:** grafo (ADR-39) · determinación humana (ADR-40) · eventos (ADR-41). Lo que el plano difería sigue diferido: OCR, visualizador, sugerencia de reglas, CFF 32-B Ter, grafo compartido.
+
+**Fijado con:** las 7 aserciones de las migraciones `20260906150000/150100`, `tests/persistencia/eventos-estructurales.test.ts` (6 de punta a punta), 3 de riel, y el ciclo completo verificado en navegador: identificado → evento → «Estructura cambió» → reevaluación → atendido.
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde

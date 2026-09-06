@@ -37,10 +37,11 @@ const ORDEN: Record<string, number> = {
   // hay que hacer con ese acto, así que se ven antes que la identidad.
   cliente_riesgo_alto: 3,
   cliente_pep: 4,
-  revision_identidad: 5,
-  desviacion_perfil: 6,
-  perfil_ausente: 7,
-  proximidad: 8,
+  cambio_estructural: 5,
+  revision_identidad: 6,
+  desviacion_perfil: 7,
+  perfil_ausente: 8,
+  proximidad: 9,
 }
 
 export default async function Alertas() {

@@ -684,6 +684,26 @@ El supuesto (1) depende de una lista que el propio ¶3 pone a cargo de la UIF �
 
 **Fijado con:** las 10 aserciones de la migración `20260904160000`, `tests/clientes/grafo-societario.test.ts` (15 casos: los tres obligatorios del plano, el par float hostil, tope y regla desde fuera) y `tests/persistencia/grafo-societario.test.ts` (9 contra la base real, incluida la vigencia a la fecha del acto y la inmutabilidad del snapshot).
 
+## ADR-40 · La determinación de control: el motor propone, un humano resuelve, y lo abierto bloquea — 2026-09-06
+
+**Contexto.** Fase 2 del plano (punto 4, más el esqueleto del punto 5). El «cuello de botella» que el diagrama ORVEX·Vizo pinta en naranja: decidir si un voto de calidad o un convenio parasocial constituyen control efectivo **no es automatizable**, y hasta hoy la captura y la determinación eran un solo acto sin fundamento registrado.
+
+**Decisión.** Cinco piezas:
+
+1. **Dos actos: proponer y resolver.** `determinaciones_control` con estados `propuesta → confirmada/rechazada`, transición única impuesta por trigger. La propuesta señala una **parte física de la estructura** —la identidad vive en el nodo, no se teclea dos veces— y una sola propuesta abierta por persona.
+2. **El fundamento es obligatorio en ambos sentidos.** Por qué sí constituye control, o por qué no: el rechazo también es evidencia de la diligencia, y un «no» sin razones no defiende nada. Lo impone un CHECK, no la pantalla.
+3. **Lo abierto BLOQUEA, por dos caminos.** La corrida desde la estructura se niega nombrando a quién falta resolver, y la **aprobación del expediente la detiene un trigger sobre `expedientes`** — no dentro de `app.expediente_aprobar`, a propósito: detiene a cualquier camino que apruebe, incluido psql. Es el caso 3 del plano, entero.
+4. **La fracción II solo come confirmadas.** El parámetro `control` de la corrida desapareció: declarar control inline era exactamente el acto único que esta fase parte en dos.
+5. **El criterio se guarda como regla** (`reglas_de_criterio`: patrón + conclusión + fundamento, inmutable, versionada por sustitución). Los «casos donde se aplicó» son las determinaciones que la citan. El motor que SUGIERE reglas es explícitamente después — primero acumularlas a mano, como el plano manda.
+
+**Quién resuelve queda abierto a propósito:** hoy el admin del obligado; en el modelo del plano, el despacho (ORVEX). Es la decisión de producto pendiente — la máquina de estados es la misma con cualquiera de los dos, y el rol se le asigna cuando se decida.
+
+**El tropiezo del camino:** el trigger del bloqueo consultaba `determinaciones_control` sin calificar el esquema, y dentro de `app.expediente_aprobar` —SECURITY DEFINER con search_path restringido— la tabla «no existía» justo en el camino que más importa. Es la lección del search_path de la semana 5, otra vez, y quedó comentada en el propio trigger.
+
+**Corte deliberado:** la fracción III sigue sin máquina de propuesta/confirmación. Declarar al funcionario de mayor grado ya es un acto humano con cargo y rango; si el rol despacho llega, ambas fracciones pueden pasar por la misma máquina.
+
+**Fijado con:** las 9 aserciones de la migración `20260906100000` (bloqueo saboteado y muerto), `tests/persistencia/determinacion-control.test.ts` (8 casos de punta a punta, incluidos los dos bloqueos y la regla con sus casos) y verificación en navegador del ciclo completo.
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde

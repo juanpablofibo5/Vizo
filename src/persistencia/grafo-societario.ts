@@ -229,20 +229,31 @@ export async function cerrarParticipacion(
   db: EjecutorTransaccional,
   p: { sesion: ContextoSesion; participacionId: string; hasta: string },
 ): Promise<void> {
-  return enTransaccionDeSesion(db, p.sesion, async () => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(p.hasta)) {
-      throw new DatoDelGrafoInvalido(['Falta hasta cuándo fue cierta la participación.'])
-    }
-    const { rows } = await db.query(
-      `update participaciones_societarias set vigente_hasta = $3::date
-        where tenant_id = $1 and id = $2
-      returning id::text`,
-      [p.sesion.tenantId, p.participacionId, p.hasta],
-    )
-    if (rows.length === 0) {
-      throw new DatoDelGrafoInvalido(['Esa participación no existe en este obligado.'])
-    }
-  })
+  return enTransaccionDeSesion(db, p.sesion, () => cerrarParticipacionYaEnSesion(db, p))
+}
+
+/**
+ * El cierre, para quien YA está dentro de una transacción de sesión — el
+ * evento estructural cierra vigencias en SU transacción, y `enTransaccionDeSesion`
+ * no anida (ADR-39: el commit interno cerraría la externa a media faena).
+ */
+export async function cerrarParticipacionYaEnSesion(
+  db: EjecutorSql,
+  p: { sesion: ContextoSesion; participacionId: string; hasta: string },
+): Promise<void> {
+  await exigirSesionActiva(db, p.sesion)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(p.hasta)) {
+    throw new DatoDelGrafoInvalido(['Falta hasta cuándo fue cierta la participación.'])
+  }
+  const { rows } = await db.query(
+    `update participaciones_societarias set vigente_hasta = $3::date
+      where tenant_id = $1 and id = $2
+    returning id::text`,
+    [p.sesion.tenantId, p.participacionId, p.hasta],
+  )
+  if (rows.length === 0) {
+    throw new DatoDelGrafoInvalido(['Esa participación no existe en este obligado.'])
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────

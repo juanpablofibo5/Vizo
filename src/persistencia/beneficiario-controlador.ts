@@ -165,6 +165,15 @@ export interface EstadoBeneficiarioControlador {
    * completar es lo de ahora.
    */
   readonly sustentos: readonly SustentoAsentado[]
+  /** Eventos estructurales del cliente, pendientes primero. */
+  readonly eventos: readonly {
+    readonly id: string
+    readonly tipo: string
+    readonly descripcion: string
+    readonly fechaEvento: string
+    readonly fechaLimite: string
+    readonly atendido: boolean
+  }[]
   /** Art. 12 fr. VII ¶2: identificar no basta, hay que recabar sus datos. */
   readonly piso: {
     readonly exigido: PisoExigido
@@ -232,6 +241,26 @@ export async function estadoDelBeneficiario(
     descensos: armadas.filter((i) => i.desciendeDeHallazgoId !== null),
     historial: raices.filter((i) => i.estado === 'sustituida'),
     umbral,
+    eventos: (
+      (await db.query(
+        `select id::text, tipo::text, descripcion, fecha_evento::text, fecha_limite::text,
+                (atendido_con_identificacion_id is not null) as atendido
+           from eventos_estructurales
+          where tenant_id = $1 and cliente_id = $2
+          order by (atendido_con_identificacion_id is null) desc, fecha_evento desc`,
+        [p.sesion.tenantId, p.clienteId],
+      )).rows as Array<{
+        id: string; tipo: string; descripcion: string; fecha_evento: string
+        fecha_limite: string; atendido: boolean
+      }>
+    ).map((f) => ({
+      id: f.id,
+      tipo: f.tipo,
+      descripcion: f.descripcion,
+      fechaEvento: f.fecha_evento,
+      fechaLimite: f.fecha_limite,
+      atendido: f.atendido,
+    })),
     sustentos:
       vigenteRaiz === undefined
         ? []
@@ -438,6 +467,19 @@ export async function identificarYaEnSesion(
         }
       }
     }
+
+    // Fase 3: la identificación nueva ATIENDE los eventos estructurales
+    // pendientes cuyo acto ya ocurrió. Dentro de esta misma transacción: si
+    // la identificación entra, los eventos quedan atendidos; si algo
+    // revienta, ni una ni los otros.
+    await db.query(
+      `update eventos_estructurales
+          set atendido_con_identificacion_id = $3, atendido_en = now()
+        where tenant_id = $1 and cliente_id = $2
+          and atendido_con_identificacion_id is null
+          and fecha_evento <= $4::date`,
+      [p.sesion.tenantId, datos.clienteId, identificacionId, datos.fechaIdentificacion],
+    )
 
     return { identificacionId }
   }

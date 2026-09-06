@@ -542,6 +542,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
             vigente: beneficiario.vigente,
             anticipado: beneficiario.umbral.anticipado,
             exigibleDesde: beneficiario.umbral.exigibleDesde,
+            eventosSinAtender: beneficiario.eventos.filter((e) => !e.atendido).length,
           })
 
     const secciones: SeccionDeConocimiento[] = [

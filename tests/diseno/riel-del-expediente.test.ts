@@ -333,3 +333,30 @@ describe('El Beneficiario Controlador en una palabra', () => {
     expect(r.reloj).not.toMatch(/vence|Vence/)
   })
 })
+
+describe('El Beneficiario Controlador cuando la estructura cambió', () => {
+  const base = {
+    requiere: true,
+    vigente: { via: 'prelacion_persona_moral', fechaIdentificacion: '2027-04-01', hallazgos: [{}] },
+    anticipado: false,
+    exigibleDesde: '2027-03-01',
+  }
+
+  test('UN EVENTO SIN ATENDER envejece la identificación: ámbar, no verde', () => {
+    const r = rielBeneficiario({ ...base, eventosSinAtender: 1 })
+    expect(r.tono).toBe('aviso')
+    expect(r.estado).toBe('Estructura cambió')
+  })
+
+  test('sin eventos pendientes, la identificación vigente sigue verde', () => {
+    const r = rielBeneficiario({ ...base, eventosSinAtender: 0 })
+    expect(r.tono).toBe('ok')
+    expect(r.estado).toBe('Identificado')
+  })
+
+  test('y la palabra NO dice «vencida»: el artículo no da plazo, dice sobre qué se hizo', () => {
+    const r = rielBeneficiario({ ...base, eventosSinAtender: 2 })
+    expect(r.estado).not.toMatch(/vencid/i)
+    expect(r.reloj).toMatch(/estructura anterior/)
+  })
+})

@@ -48,6 +48,9 @@ export function tonoDeAlerta(tipo: string, por: string | null): TonoDeRiel {
     // corresponda. Ámbar, y no granate, es exactamente eso.
     case 'cliente_riesgo_alto':
     case 'cliente_pep':
+    // El evento estructural arranca un plazo de actualización que corre:
+    // obligación con reloj por delante, el criterio de siempre para el ámbar.
+    case 'cambio_estructural':
       return 'aviso'
     // Nada se cruzó. Es aviso de que la siguiente operación puede cruzarlo.
     case 'proximidad':
@@ -72,6 +75,7 @@ const NOMBRE: Record<string, string> = {
   screening: 'listas de control',
   cliente_riesgo_alto: 'cliente de riesgo alto',
   cliente_pep: 'cliente PEP',
+  cambio_estructural: 'cambio estructural',
 }
 
 export function nombreDeTipo(tipo: string): string {
@@ -112,6 +116,9 @@ const ETIQUETA: Record<string, string> = {
   fecha_operacion: 'Fecha del acto',
   fecha_declaracion: 'Fecha de la declaración',
   declaracion_revisada: 'Declaración revisada por un administrador',
+  tipo_evento: 'Qué cambió',
+  fecha_evento: 'Fecha del cambio',
+  fecha_limite: 'Actualizar a más tardar el',
 }
 
 /**

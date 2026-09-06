@@ -665,6 +665,25 @@ El supuesto (1) depende de una lista que el propio ¶3 pone a cargo de la UIF �
 
 **Fijado con:** las 8 aserciones de la migración `20260904120000` y cinco casos nuevos en `tests/persistencia/beneficiario-controlador.test.ts`.
 
+## ADR-39 · El grafo societario: la cadena la multiplica el motor, con aritmética exacta — 2026-09-04
+
+**Contexto.** Fase 1 del plano de arquitectura del 4-sep (contrastado en el artifact «El plano y lo construido»). El motor del Cap. III Quinquies recibía la cadena YA resuelta por el capturista: el 60% × 50% = 30% se calculaba con calculadora y se tecleaba. El plano tiene razón en que ese cálculo es el que más se equivoca a mano — 30% × 80% = 24% y no alcanza el umbral, aunque los dos números por separado suenen a que sí.
+
+**Decisión.** Seis piezas:
+
+1. **La estructura es dato: `partes_societarias` + `participaciones_societarias`**, con vigencia real («cierta desde la fecha de la asamblea, no la de captura»). Corregir es cerrar la vigencia e insertar — el trigger impide tocar cualquier otra cosa, y una exclusion constraint impide encimar dos participaciones vigentes del mismo par. La pregunta «¿qué estructura era cierta el 14 de marzo?» siempre tiene respuesta.
+2. **La aritmética es exacta, en BigInt de centésimas, no float.** El producto de una cadena se calcula entero y se redondea UNA vez a millonésimas. Encontrar el caso de prueba costó tres intentos: 0.625×0.4 y 0.1×0.3 resultan exactos en IEEE 754 por casualidad, y dos sabotajes sobrevivieron por eso; el par hostil (1.01% × 1.52%) se encontró por fuerza bruta. Y la prueba afirma el valor POR CADENA, no solo la suma — la agregación re-redondea y lava el polvo de un cálculo sucio.
+3. **Un ciclo se NOMBRA, no se resuelve.** La participación cruzada vuelve la efectiva un sistema de ecuaciones que ninguna norma dice cómo resolver. El tope de profundidad es parámetro OPERATIVO del catálogo (10, declarado como no-norma), y la regla de agregación es **POR CONFIRMAR-14**: el producto de la cadena es la práctica estándar pero no tiene artículo citable.
+4. **El snapshot se congela en la identificación** (`resolucion_grafo` jsonb): partes, participaciones vigentes a la fecha, cadenas con su producto, advertencias y parámetros — el punto 9 del plano. El trigger de inmutabilidad se recreó para abarcarlo, con una aserción que verifica que lo menciona: una columna fuera de esa lista se reescribe en silencio.
+5. **Las identidades no se teclean dos veces.** Los nodos traen nombre/RFC/CURP; las fracciones II y III se declaran señalando la parte física de la estructura. Y `enTransaccionDeSesion` NO anida —el commit interno cerraría la externa— así que la lectura del grafo y la escritura de la identificación comparten UNA transacción vía `identificarYaEnSesion`, para que nadie cierre una vigencia entre la lectura y el snapshot.
+6. **Suma >100% detiene; <100% advierte.** Nadie reparte más del 100% de su capital; capturar de menos puede ser el minoritario que falta, y la advertencia viaja en el snapshot.
+
+**Lo que la guarda del ADR-32 enseñó en el camino:** sin candidato de la fr. III, el motor se niega a agotar el orden en nadie — también desde el grafo. Por eso la corrida acepta funcionarios y control como referencias a partes físicas, y el caso «24% no alcanza» termina en la fr. III con la Directora General, no en un procedimiento vacío.
+
+**Lo que NO se construyó** (el propio plano lo acota): compartir el grafo entre obligados (decisión de producto, chocaría con el aislamiento por tenant), OCR, visualizador — una tabla anidada basta.
+
+**Fijado con:** las 10 aserciones de la migración `20260904160000`, `tests/clientes/grafo-societario.test.ts` (15 casos: los tres obligatorios del plano, el par float hostil, tope y regla desde fuera) y `tests/persistencia/grafo-societario.test.ts` (9 contra la base real, incluida la vigencia a la fecha del acto y la inmutabilidad del snapshot).
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde
@@ -732,3 +751,5 @@ Las preguntas 1–3 ya están redactadas en detalle en `02_FASE_0_PROVEEDORES.md
 17. **`aplica_a` tiene tres valores y las RCG tienen nueve tipos de cliente.** El Art. 12 remite a los Anexos 3 (PF nacional o residente), 4 (PM mexicana), 4 Bis (PM de derecho público), 5 (**PF extranjera visitante** — pide pasaporte, no INE), 6 (PM extranjera), 6 Bis (embajadas y organismos internacionales), 7 y 7 Bis (medidas simplificadas) y 8 (fideicomiso). `campos_expediente.aplica_a` solo distingue `persona_fisica`, `persona_moral` y `ambas`, así que **lo sembrado cubre los Anexos 3 y 4 y nada más** — en la Fr. VIII y en la V Bis por igual. Un turista que compra un vehículo se mide hoy contra el Anexo equivocado. No se rellenó por parecido: sembrar el Anexo 3 como si cubriera al extranjero visitante fabricaría evidencia de haber cumplido una regla distinta de la aplicable. Relacionado con el caso **A-05** y con la pregunta **2**.
 
 Las **14 a 17** salieron todas del mismo trabajo: sembrar el expediente de la Fr. VIII (30-ago-2026) obligó a transcribir los Anexos completos por primera vez, y tres de las cuatro resultaron ser hallazgos sobre la **V Bis**, no sobre la fracción nueva.
+
+**14. La regla de agregación de la participación indirecta** *(4-sep-2026, ADR-39)* — El Art. 23 Quinquies fr. I dice «directa o indirectamente» sin definir el método de cómputo. VIZO implementa el **producto de la cadena** (60% de quien tiene 50% = 30%), que es la práctica estándar internacional y la que asume el plano de arquitectura — pero no tiene artículo citable. Está sembrada como dato (`grafo_regla_agregacion`) para que otra respuesta sea un UPDATE más una implementación probada, nunca una aproximación. ¿Confirma el especialista el producto de la cadena, o existe criterio administrativo distinto (p. ej. mirar solo el control de cada eslabón)?

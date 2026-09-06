@@ -5,6 +5,8 @@ import type {
   EstadoBeneficiarioControlador,
   IdentificacionAsentada,
 } from '../../../../src/persistencia/beneficiario-controlador'
+import { EstructuraSocietaria } from './estructura-societaria'
+import type { EstructuraDelCliente } from '../../../../src/persistencia/grafo-societario'
 import {
   accionCompletarPisoBc,
   accionVincularSustentoBc,
@@ -689,11 +691,13 @@ function PisoDelBeneficiario({
 export function SeccionBeneficiario({
   clienteId,
   estado,
+  estructura,
   documentos,
   puede,
 }: {
   clienteId: string
   estado: EstadoBeneficiarioControlador
+  estructura: EstructuraDelCliente
   documentos: readonly { id: string; etiqueta: string }[]
   puede: boolean
 }) {
@@ -731,6 +735,8 @@ export function SeccionBeneficiario({
       ) : (
         <Camino identificacion={estado.vigente} descensos={estado.descensos} />
       )}
+
+      <EstructuraSocietaria clienteId={clienteId} estructura={estructura} puede={puede} />
 
       {estado.vigente !== null && estado.vigente.excepcion === null && (
         <>

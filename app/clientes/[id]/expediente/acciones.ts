@@ -53,6 +53,11 @@ import {
   asentarMedidasReforzadas,
 } from '../../../../src/persistencia/medidas-reforzadas'
 import {
+  DatoDeDeterminacionInvalido,
+  proponerControl,
+  resolverControl,
+} from '../../../../src/persistencia/determinacion-control'
+import {
   DatoDelGrafoInvalido,
   agregarParte,
   agregarParticipacion,
@@ -1331,6 +1336,86 @@ export async function accionIdentificarDesdeEstructura(
   } catch (e) {
     if (e instanceof DatoDelGrafoInvalido || e instanceof DatoDeBeneficiarioInvalido) {
       return { ok: false, mensaje: 'No se corrió la identificación.', problemas: e.problemas }
+    }
+    return { ok: false, mensaje: e instanceof Error ? e.message : String(e), problemas: [] }
+  } finally {
+    await db.end()
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// La determinación de control efectivo (Fase 2, ADR-40)
+// ─────────────────────────────────────────────────────────────────────────
+
+export async function accionProponerControl(
+  _previo: EstadoCaptura,
+  datos: FormData,
+): Promise<EstadoCaptura> {
+  const clienteId = String(datos.get('clienteId') ?? '')
+  const sesion = await sesionRequerida()
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await proponerControl(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+      parteId: String(datos.get('parteControlId') ?? ''),
+      medio: String(datos.get('medioControl') ?? ''),
+      areas: datos.getAll('areasControl').map(String) as (
+        | 'estrategia' | 'toma_de_decisiones' | 'politicas_principales'
+      )[],
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return {
+      ok: true,
+      mensaje:
+        'Propuesta abierta. Hasta que alguien la resuelva con fundamento, ni el orden de ' +
+        'prelación corre ni el expediente se aprueba.',
+      problemas: [],
+    }
+  } catch (e) {
+    if (e instanceof DatoDeDeterminacionInvalido) {
+      return { ok: false, mensaje: 'No se abrió la propuesta.', problemas: e.problemas }
+    }
+    return { ok: false, mensaje: e instanceof Error ? e.message : String(e), problemas: [] }
+  } finally {
+    await db.end()
+  }
+}
+
+export async function accionResolverControl(
+  _previo: EstadoCaptura,
+  datos: FormData,
+): Promise<EstadoCaptura> {
+  const clienteId = String(datos.get('clienteId') ?? '')
+  const sesion = await sesionRequerida()
+  const patron = String(datos.get('patronRegla') ?? '').trim()
+  const reglaId = String(datos.get('reglaExistente') ?? '').trim()
+  const conclusion = datos.get('conclusionControl') === 'confirmada' ? 'confirmada' as const : 'rechazada' as const
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await resolverControl(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      determinacionId: String(datos.get('determinacionId') ?? ''),
+      conclusion,
+      fundamento: String(datos.get('fundamentoControl') ?? ''),
+      ...(reglaId === '' ? {} : { reglaId }),
+      ...(patron === '' ? {} : { guardarComoRegla: { patron } }),
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return {
+      ok: true,
+      mensaje:
+        conclusion === 'confirmada'
+          ? 'Control confirmado: entra a la fracción II en la próxima corrida.'
+          : 'Propuesta rechazada con fundamento. También eso es evidencia de la diligencia.',
+      problemas: [],
+    }
+  } catch (e) {
+    if (e instanceof DatoDeDeterminacionInvalido) {
+      return { ok: false, mensaje: 'No se resolvió.', problemas: e.problemas }
     }
     return { ok: false, mensaje: e instanceof Error ? e.message : String(e), problemas: [] }
   } finally {

@@ -37,6 +37,12 @@ import {
   type EstructuraDelCliente,
 } from '../../../../src/persistencia/grafo-societario'
 import {
+  determinacionesDelCliente,
+  reglasDelObligado,
+  type DeterminacionDeControl,
+  type ReglaDeCriterio,
+} from '../../../../src/persistencia/determinacion-control'
+import {
   estadoDeMedidasReforzadas,
   type EstadoDeMedidas,
 } from '../../../../src/persistencia/medidas-reforzadas'
@@ -425,6 +431,13 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
       clienteId,
     })
+    const determinaciones: readonly DeterminacionDeControl[] = await determinacionesDelCliente(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+    })
+    const reglasDeControl: readonly ReglaDeCriterio[] = await reglasDelObligado(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+    })
 
     let beneficiario: EstadoBeneficiarioControlador | null = null
     let faltaElUmbral: string | null = null
@@ -632,6 +645,8 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
               clienteId={clienteId}
               estado={beneficiario}
               estructura={estructura}
+              determinaciones={determinaciones}
+              reglas={reglasDeControl}
               /* Los mismos documentos que la zona de abajo, con su etiqueta
                  del catálogo: el sustento se elige de lo que ya está subido,
                  no se sube aparte. Se excluyen los reemplazados — vincular una

@@ -6,6 +6,11 @@ import type {
   IdentificacionAsentada,
 } from '../../../../src/persistencia/beneficiario-controlador'
 import { EstructuraSocietaria } from './estructura-societaria'
+import { ControlEfectivo } from './control-efectivo'
+import type {
+  DeterminacionDeControl,
+  ReglaDeCriterio,
+} from '../../../../src/persistencia/determinacion-control'
 import type { EstructuraDelCliente } from '../../../../src/persistencia/grafo-societario'
 import {
   accionCompletarPisoBc,
@@ -692,12 +697,16 @@ export function SeccionBeneficiario({
   clienteId,
   estado,
   estructura,
+  determinaciones,
+  reglas,
   documentos,
   puede,
 }: {
   clienteId: string
   estado: EstadoBeneficiarioControlador
   estructura: EstructuraDelCliente
+  determinaciones: readonly DeterminacionDeControl[]
+  reglas: readonly ReglaDeCriterio[]
   documentos: readonly { id: string; etiqueta: string }[]
   puede: boolean
 }) {
@@ -737,6 +746,16 @@ export function SeccionBeneficiario({
       )}
 
       <EstructuraSocietaria clienteId={clienteId} estructura={estructura} puede={puede} />
+
+      {estructura.partes.length > 0 && (
+        <ControlEfectivo
+          clienteId={clienteId}
+          determinaciones={determinaciones}
+          reglas={reglas}
+          estructura={estructura}
+          puede={puede}
+        />
+      )}
 
       {estado.vigente !== null && estado.vigente.excepcion === null && (
         <>

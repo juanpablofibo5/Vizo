@@ -317,12 +317,11 @@ export async function identificarDesdeLaEstructura(
     fechaIdentificacion: string
     hoy: string
     /**
-     * Las fracciones II y III no viven en porcentajes: el control por otros
-     * medios y el funcionario de mayor grado se declaran señalando la parte
-     * FÍSICA de la estructura que corresponde. La identidad no se teclea dos
-     * veces — sale del nodo.
+     * La fracción III se declara señalando la parte física que corresponde.
+     * La fracción II NO se declara aquí: desde la Fase 2 (ADR-40) el control
+     * efectivo entra solo por determinaciones CONFIRMADAS, y una propuesta
+     * abierta bloquea la corrida — el motor nunca resuelve el nivel 2 solo.
      */
-    control?: readonly ControlDeclarado[] | undefined
     funcionarios?: readonly FuncionarioDeclarado[] | undefined
   },
 ): Promise<{ identificacionId: string }> {
@@ -333,12 +332,6 @@ export async function identificarDesdeLaEstructura(
   // y no la función pública: `enTransaccionDeSesion` NO anida, y el commit
   // interno cerraría esta transacción a media faena.
   return enTransaccionDeSesion(db, p.sesion, () => identificarConSesion(db, p))
-}
-
-export interface ControlDeclarado {
-  readonly parteId: string
-  readonly medio: string
-  readonly areasControladas: readonly ('estrategia' | 'toma_de_decisiones' | 'politicas_principales')[]
 }
 
 export interface FuncionarioDeclarado {
@@ -354,7 +347,6 @@ async function identificarConSesion(
     clienteId: string
     fechaIdentificacion: string
     hoy: string
-    control?: readonly ControlDeclarado[] | undefined
     funcionarios?: readonly FuncionarioDeclarado[] | undefined
   },
 ): Promise<{ identificacionId: string }> {
@@ -390,9 +382,33 @@ async function identificarConSesion(
     }
   }
 
-  // Quien controla o dirige tiene que SER una persona física de la estructura:
+  // La fracción II: SOLO determinaciones confirmadas, y las abiertas detienen.
+  // Es el caso 3 del plano — el control sin resolver marca el caso y bloquea,
+  // en vez de correr un orden de prelación que puede cambiar con la respuesta.
+  const dets = await db.query(
+    `select d.parte_id::text, ps.nombre, d.medio, d.areas::text[] as areas, d.estado::text as estado
+       from determinaciones_control d
+       join partes_societarias ps on ps.id = d.parte_id
+      where d.tenant_id = $1 and d.cliente_id = $2 and d.estado <> 'rechazada'`,
+    [p.sesion.tenantId, p.clienteId],
+  )
+  const filasDet = dets.rows as Array<{
+    parte_id: string; nombre: string; medio: string
+    areas: ('estrategia' | 'toma_de_decisiones' | 'politicas_principales')[]; estado: string
+  }>
+  const abiertas = filasDet.filter((d) => d.estado === 'propuesta')
+  if (abiertas.length > 0) {
+    throw new DatoDelGrafoInvalido([
+      `Hay ${String(abiertas.length)} determinación(es) de control efectivo sin resolver ` +
+        `(${abiertas.map((d) => d.nombre).join(', ')}). El motor no corre el orden con una ` +
+        'pregunta de control abierta: confírmalas o recházalas —con fundamento— primero.',
+    ])
+  }
+  const confirmadas = filasDet.filter((d) => d.estado === 'confirmada')
+
+  // Quien dirige tiene que SER una persona física de la estructura:
   // señalar a una moral, o a alguien de otra estructura, no identifica a nadie.
-  for (const ref of [...(p.control ?? []), ...(p.funcionarios ?? [])]) {
+  for (const ref of [...(p.funcionarios ?? [])]) {
     if (!fisicas.has(ref.parteId)) {
       throw new DatoDelGrafoInvalido([
         `La parte ${ref.parteId} no es una persona física de esta estructura. Las fracciones II ` +
@@ -412,11 +428,11 @@ async function identificarConSesion(
           tipo: 'persona_moral',
           insumos: {
             tenenciasCapital: tenencias,
-            controlPorOtrosMedios: (p.control ?? []).map((c) => ({
-              titularId: c.parteId,
+            controlPorOtrosMedios: confirmadas.map((c) => ({
+              titularId: c.parte_id,
               esGrupo: false,
               medio: c.medio,
-              areasControladas: c.areasControladas,
+              areasControladas: c.areas,
             })),
             funcionariosAltaDireccion: (p.funcionarios ?? []).map((f) => ({
               titularId: f.parteId,

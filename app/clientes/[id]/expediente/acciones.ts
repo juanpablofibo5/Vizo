@@ -53,6 +53,13 @@ import {
   asentarMedidasReforzadas,
 } from '../../../../src/persistencia/medidas-reforzadas'
 import {
+  DatoDelGrafoInvalido,
+  agregarParte,
+  agregarParticipacion,
+  cerrarParticipacion,
+  identificarDesdeLaEstructura,
+} from '../../../../src/persistencia/grafo-societario'
+import {
   DatoDeBeneficiarioInvalido,
   completarPisoDelBeneficiario,
   identificarBeneficiarioControlador,
@@ -1181,6 +1188,149 @@ export async function accionVincularSustentoBc(
   } catch (e) {
     if (e instanceof DatoDeBeneficiarioInvalido) {
       return { ok: false, mensaje: 'No se vinculó el documento.', problemas: e.problemas }
+    }
+    return { ok: false, mensaje: e instanceof Error ? e.message : String(e), problemas: [] }
+  } finally {
+    await db.end()
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// El grafo societario (Fase 1 del plano, ADR-39)
+// ─────────────────────────────────────────────────────────────────────────
+
+export async function accionAgregarParte(
+  _previo: EstadoCaptura,
+  datos: FormData,
+): Promise<EstadoCaptura> {
+  const clienteId = String(datos.get('clienteId') ?? '')
+  const sesion = await sesionRequerida()
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await agregarParte(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+      tipo: String(datos.get('tipoParte') ?? 'moral') as 'fisica' | 'moral' | 'fideicomiso' | 'otra_figura',
+      nombre: String(datos.get('nombreParte') ?? ''),
+      rfc: String(datos.get('rfcParte') ?? '').trim() || undefined,
+      curp: String(datos.get('curpParte') ?? '').trim() || undefined,
+      esLaRaiz: datos.get('esLaRaiz') === 'si',
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return { ok: true, mensaje: 'Parte agregada a la estructura.', problemas: [] }
+  } catch (e) {
+    if (e instanceof DatoDelGrafoInvalido) {
+      return { ok: false, mensaje: 'No se agregó la parte.', problemas: e.problemas }
+    }
+    return { ok: false, mensaje: e instanceof Error ? e.message : String(e), problemas: [] }
+  } finally {
+    await db.end()
+  }
+}
+
+export async function accionAgregarParticipacion(
+  _previo: EstadoCaptura,
+  datos: FormData,
+): Promise<EstadoCaptura> {
+  const clienteId = String(datos.get('clienteId') ?? '')
+  const sesion = await sesionRequerida()
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await agregarParticipacion(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+      duenoId: String(datos.get('duenoId') ?? ''),
+      poseidaId: String(datos.get('poseidaId') ?? ''),
+      porcentaje: Number(String(datos.get('porcentajeParticipacion') ?? '').trim() || NaN),
+      vigenteDesde: String(datos.get('vigenteDesde') ?? ''),
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return { ok: true, mensaje: 'Participación registrada.', problemas: [] }
+  } catch (e) {
+    if (e instanceof DatoDelGrafoInvalido) {
+      return { ok: false, mensaje: 'No se registró la participación.', problemas: e.problemas }
+    }
+    return { ok: false, mensaje: e instanceof Error ? e.message : String(e), problemas: [] }
+  } finally {
+    await db.end()
+  }
+}
+
+export async function accionCerrarParticipacion(
+  _previo: EstadoCaptura,
+  datos: FormData,
+): Promise<EstadoCaptura> {
+  const clienteId = String(datos.get('clienteId') ?? '')
+  const sesion = await sesionRequerida()
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await cerrarParticipacion(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      participacionId: String(datos.get('participacionId') ?? ''),
+      hasta: String(datos.get('vigenteHasta') ?? ''),
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return {
+      ok: true,
+      mensaje: 'Vigencia cerrada. La historia se conserva: corregir es cerrar e insertar.',
+      problemas: [],
+    }
+  } catch (e) {
+    if (e instanceof DatoDelGrafoInvalido) {
+      return { ok: false, mensaje: 'No se cerró la vigencia.', problemas: e.problemas }
+    }
+    return { ok: false, mensaje: e instanceof Error ? e.message : String(e), problemas: [] }
+  } finally {
+    await db.end()
+  }
+}
+
+/**
+ * Corre el orden de prelación alimentando la fracción I desde la estructura.
+ *
+ * Las fracciones II y III llegan como referencias a partes físicas del grafo
+ * («funcionario:<parteId>»), nunca como identidades tecleadas otra vez.
+ */
+export async function accionIdentificarDesdeEstructura(
+  _previo: EstadoCaptura,
+  datos: FormData,
+): Promise<EstadoCaptura> {
+  const clienteId = String(datos.get('clienteId') ?? '')
+  const sesion = await sesionRequerida()
+
+  const funcionarioId = String(datos.get('funcionarioParteId') ?? '').trim()
+  const cargo = String(datos.get('funcionarioCargo') ?? '').trim()
+
+  const db = new Client({ connectionString: cadenaDeConexion() })
+  await db.connect()
+  try {
+    await identificarDesdeLaEstructura(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+      fechaIdentificacion: String(datos.get('fechaIdentificacion') ?? ''),
+      hoy: hoyEnMexico(),
+      ...(funcionarioId === ''
+        ? {}
+        : {
+            funcionarios: [
+              { parteId: funcionarioId, cargo: cargo === '' ? 'Funcionario de mayor grado' : cargo, rango: 1 },
+            ],
+          }),
+    })
+    revalidatePath(`/clientes/${clienteId}/expediente`)
+    return {
+      ok: true,
+      mensaje:
+        'Procedimiento corrido desde la estructura: las cadenas las multiplicó el motor y el ' +
+        'grafo quedó congelado en la identificación.',
+      problemas: [],
+    }
+  } catch (e) {
+    if (e instanceof DatoDelGrafoInvalido || e instanceof DatoDeBeneficiarioInvalido) {
+      return { ok: false, mensaje: 'No se corrió la identificación.', problemas: e.problemas }
     }
     return { ok: false, mensaje: e instanceof Error ? e.message : String(e), problemas: [] }
   } finally {

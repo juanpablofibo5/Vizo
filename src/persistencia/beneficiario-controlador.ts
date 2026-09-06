@@ -337,13 +337,39 @@ export interface DatosIdentificacion {
   readonly fechaIdentificacion: string
   readonly insumos: InsumosBeneficiarioControlador
   readonly identidades: Readonly<Record<string, IdentidadDelTitular>>
+  /**
+   * El snapshot del grafo societario cuando la fracción I vino de la
+   * estructura: partes, participaciones vigentes, cadenas con su producto,
+   * advertencias y parámetros. Se congela en la fila (punto 9 del plano) para
+   * que la corrida se pueda repetir años después. `undefined` = captura manual.
+   */
+  readonly resolucionGrafo?: unknown
 }
 
 export async function identificarBeneficiarioControlador(
   db: EjecutorTransaccional,
   p: { sesion: ContextoSesion; datos: DatosIdentificacion; hoy: string },
 ): Promise<{ identificacionId: string }> {
-  return enTransaccionDeSesion(db, p.sesion, async () => {
+  return enTransaccionDeSesion(db, p.sesion, () => identificarYaEnSesion(db, p))
+}
+
+/**
+ * El cuerpo de la identificación, para quien YA está dentro de una
+ * transacción de sesión.
+ *
+ * Existe porque `enTransaccionDeSesion` NO anida —el commit interno cerraría
+ * la transacción externa a media faena— y la identificación desde la
+ * estructura necesita leer el grafo y escribir la identificación en UNA sola:
+ * separadas, alguien podría cerrar una vigencia entre la lectura y el
+ * snapshot, y el snapshot ya no sería lo que alimentó la corrida.
+ * `exigirSesionActiva` falla al primer intento de llamarla suelta.
+ */
+export async function identificarYaEnSesion(
+  db: EjecutorTransaccional,
+  p: { sesion: ContextoSesion; datos: DatosIdentificacion; hoy: string },
+): Promise<{ identificacionId: string }> {
+  await exigirSesionActiva(db, p.sesion)
+  {
     const { datos } = p
     if (!/^\d{4}-\d{2}-\d{2}$/.test(datos.fechaIdentificacion)) {
       throw new DatoDeBeneficiarioInvalido([
@@ -380,6 +406,7 @@ export async function identificarBeneficiarioControlador(
       umbral,
       sustituyeA,
       desciendeDeHallazgoId: null,
+      resolucionGrafo: datos.resolucionGrafo,
     })
 
     if (determinacion.tipo === 'persona_moral') {
@@ -413,7 +440,7 @@ export async function identificarBeneficiarioControlador(
     }
 
     return { identificacionId }
-  })
+  }
 }
 
 /** Registra la excepción del Art. 23 Quinquies 2 — la vía que el motor no evalúa. */
@@ -495,13 +522,15 @@ async function insertarIdentificacion(
     umbral: UmbralDeControl
     sustituyeA: string | null
     desciendeDeHallazgoId: string | null
+    resolucionGrafo?: unknown
   },
 ): Promise<string> {
   const { rows } = await db.query(
     `insert into identificaciones_bc
        (tenant_id, cliente_id, via, fecha_identificacion, sustituye_a,
-        desciende_de_hallazgo_id, umbral_pct, umbral_inclusivo, determinada_por)
-     values ($1,$2,$3::via_identificacion_bc,$4::date,$5,$6,$7,$8,$9)
+        desciende_de_hallazgo_id, umbral_pct, umbral_inclusivo, determinada_por,
+        resolucion_grafo)
+     values ($1,$2,$3::via_identificacion_bc,$4::date,$5,$6,$7,$8,$9,$10::jsonb)
      returning id::text`,
     [
       sesion.tenantId,
@@ -513,6 +542,7 @@ async function insertarIdentificacion(
       d.umbral.umbralControlPct,
       d.umbral.umbralControlInclusivo,
       sesion.usuarioId,
+      d.resolucionGrafo === undefined ? null : JSON.stringify(d.resolucionGrafo),
     ],
   )
   return (rows[0] as { id: string }).id

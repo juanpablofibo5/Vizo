@@ -33,6 +33,10 @@ import {
   type EstadoBeneficiarioControlador,
 } from '../../../../src/persistencia/beneficiario-controlador'
 import {
+  estructuraDelCliente,
+  type EstructuraDelCliente,
+} from '../../../../src/persistencia/grafo-societario'
+import {
   estadoDeMedidasReforzadas,
   type EstadoDeMedidas,
 } from '../../../../src/persistencia/medidas-reforzadas'
@@ -417,6 +421,11 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
       Así que el error se atrapa aquí y se convierte en el estado de UNA
       sección, que dice en voz alta qué falta. Sigue sin calcularse nada.
     */
+    const estructura: EstructuraDelCliente = await estructuraDelCliente(db, {
+      sesion: { usuarioId: sesion.usuarioId, tenantId: sesion.tenantId, rol: sesion.rol },
+      clienteId,
+    })
+
     let beneficiario: EstadoBeneficiarioControlador | null = null
     let faltaElUmbral: string | null = null
     try {
@@ -622,6 +631,7 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
             <SeccionBeneficiario
               clienteId={clienteId}
               estado={beneficiario}
+              estructura={estructura}
               /* Los mismos documentos que la zona de abajo, con su etiqueta
                  del catálogo: el sustento se elige de lo que ya está subido,
                  no se sube aparte. Se excluyen los reemplazados — vincular una

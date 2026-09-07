@@ -4,7 +4,11 @@ import {
   plazosDeCapacitacion,
   type EstadoDeCapacitacion,
 } from '../../src/persistencia/capacitacion'
-import { NOMBRE_DEL_ROL, NOMBRE_DEL_TEMA } from '../../src/dominio/capacitacion'
+import {
+  FUNDAMENTO_DE_LA_COHERENCIA,
+  NOMBRE_DEL_ROL,
+  NOMBRE_DEL_TEMA,
+} from '../../src/dominio/capacitacion'
 import { hoyEnMexico } from '../../src/dominio/fechas'
 import { Marco } from '../componentes/marco'
 import {
@@ -15,6 +19,7 @@ import {
   FormularioBaja,
   FormularioContratacion,
   FormularioDeclaracion,
+  FormularioDeclararCoherencia,
   FormularioEvaluar,
   FormularioPersona,
   FormularioSesion,
@@ -57,6 +62,18 @@ function Faltante({ children }: { children: React.ReactNode }) {
 function Resumen({ estado }: { estado: EstadoDeCapacitacion }) {
   const { cobertura } = estado
 
+  // La coherencia es un hecho POR SESIÓN, distinto de lo que ya cuenta
+  // `cobertura.acreditado` (temas, personas, instructores). Contar cuántas
+  // sesiones están en cada estado es presentación pura sobre lo que el motor
+  // ya calculó por sesión (`coherenciaDeSesion`): la UI no decide el estado,
+  // solo lo agrega para el resumen.
+  const sesionesSinDeclarar = estado.sesiones.filter((s) => s.coherencia.estado === 'sin_declarar')
+  const sesionesSobreOtra = estado.sesiones.filter(
+    (s) => s.coherencia.estado === 'sobre_otra_evaluacion',
+  )
+  const hayFaltantesDeCoherencia = sesionesSinDeclarar.length > 0 || sesionesSobreOtra.length > 0
+  const cubierto = cobertura.acreditado && !hayFaltantesDeCoherencia
+
   return (
     <div className="tarjeta" style={{ display: 'grid', gap: '1.1rem' }}>
       <div>
@@ -67,14 +84,14 @@ function Resumen({ estado }: { estado: EstadoDeCapacitacion }) {
           className={
             estado.plazos.anticipado
               ? 'estado neutro'
-              : cobertura.acreditado
+              : cubierto
                 ? 'estado ok'
                 : 'estado aviso'
           }
         >
           {estado.plazos.anticipado
             ? `El periodo ${String(estado.anio)} todavía no empieza`
-            : cobertura.acreditado
+            : cubierto
               ? `El periodo ${String(estado.anio)} está cubierto`
               : `Al periodo ${String(estado.anio)} le falta`}
         </span>
@@ -85,7 +102,7 @@ function Resumen({ estado }: { estado: EstadoDeCapacitacion }) {
         )}
       </div>
 
-      {!cobertura.acreditado && (
+      {!cubierto && (
         <div className="rejilla" style={{ gap: '1.2rem' }}>
           <div>
             <div className="tenue pequeno" style={{ marginBottom: '.4rem' }}>
@@ -160,6 +177,29 @@ function Resumen({ estado }: { estado: EstadoDeCapacitacion }) {
               </ul>
             )}
           </div>
+
+          {hayFaltantesDeCoherencia && (
+            <div>
+              <div className="tenue pequeno" style={{ marginBottom: '.4rem' }}>
+                Coherencia con la metodología
+              </div>
+              <ul style={{ margin: 0, paddingLeft: '1.05rem' }}>
+                {sesionesSinDeclarar.length > 0 && (
+                  <Faltante>
+                    {String(sesionesSinDeclarar.length)} sesión(es) sin declarar coherencia con la
+                    metodología <span className="tenue">· {FUNDAMENTO_DE_LA_COHERENCIA}</span>
+                  </Faltante>
+                )}
+                {sesionesSobreOtra.length > 0 && (
+                  <Faltante>
+                    {String(sesionesSobreOtra.length)} sesión(es) declarada(s) sobre otra
+                    evaluación de entidad{' '}
+                    <span className="tenue">· {FUNDAMENTO_DE_LA_COHERENCIA}</span>
+                  </Faltante>
+                )}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 
@@ -368,14 +408,16 @@ export default async function Capacitacion() {
                 <th>Fecha</th>
                 <th>Sesión</th>
                 <th>Temas</th>
+                <th>Dirigida a</th>
                 <th>Impartió</th>
                 <th>Asistencia</th>
+                <th>Coherencia</th>
               </tr>
             </thead>
             <tbody>
               {estado.sesiones.length === 0 ? (
                 <tr>
-                  <td className="vacia" colSpan={5}>
+                  <td className="vacia" colSpan={7}>
                     Ninguna sesión registrada en {anio}.
                   </td>
                 </tr>
@@ -388,6 +430,9 @@ export default async function Capacitacion() {
                       {s.temas.map((t) => (
                         <div key={t}>{NOMBRE_DEL_TEMA[t]}</div>
                       ))}
+                    </td>
+                    <td className="pequeno">
+                      {s.dirigidaA.map((r) => NOMBRE_DEL_ROL[r]).join(', ')}
                     </td>
                     <td className="pequeno">
                       {s.instructorNombre}
@@ -407,6 +452,46 @@ export default async function Capacitacion() {
                     >
                       {String(s.conConstancia.length)} de {String(s.asistentes.length)} con
                       constancia
+                    </td>
+                    <td className="pequeno">
+                      {s.coherencia.estado === 'declarada' ? (
+                        <span className="estado ok">
+                          Declarada · {s.coherencia.declaradaEn.slice(0, 10)}
+                        </span>
+                      ) : (
+                        <>
+                          <span className="estado aviso">
+                            {s.coherencia.estado === 'sin_declarar'
+                              ? 'Sin declarar'
+                              : `Sobre otra evaluación · ${s.coherencia.declaradaEn.slice(0, 10)}`}
+                          </span>
+                          {estado.evaluacionVigente === null ? (
+                            <p className="pequeno tenue" style={{ margin: '.3rem 0 0' }}>
+                              Primero corre la evaluación de la entidad (Cap. II Quáter): la
+                              coherencia se declara contra sus resultados.
+                            </p>
+                          ) : (
+                            puede && (
+                              <div style={{ marginTop: '.3rem' }}>
+                                <p className="pequeno tenue" style={{ margin: '0 0 .3rem' }}>
+                                  contra la evaluación de entidad del{' '}
+                                  {estado.evaluacionVigente.evaluadoEn.slice(0, 10)}{' '}
+                                  · {FUNDAMENTO_DE_LA_COHERENCIA}
+                                </p>
+                                <FormularioDeclararCoherencia
+                                  sesionId={s.id}
+                                  etiqueta={
+                                    s.coherencia.estado === 'sobre_otra_evaluacion'
+                                      ? 'Declarar contra la nueva'
+                                      : 'Declarar coherencia'
+                                  }
+                                  puede={puede}
+                                />
+                              </div>
+                            )
+                          )}
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))

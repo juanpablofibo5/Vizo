@@ -2,8 +2,10 @@ import type { EjecutorSql } from '../catalogo/cargador'
 import { enTransaccionDeSesion, exigirSesionActiva, type ContextoSesion } from './transaccion'
 import {
   coberturaDelPeriodo,
+  coherenciaDeSesion,
   ingresosSinCapacitar,
   type CoberturaDelPeriodo,
+  type CoherenciaDeSesion,
   type IngresoSinCapacitar,
   type PersonaEnPlantilla,
   type RolCapacitacion,
@@ -36,6 +38,26 @@ export class PlazoDeCapacitacionAusente extends Error {
         'un número: el plazo se siembra con su fuente del DOF (regla dura 1).',
     )
     this.name = 'PlazoDeCapacitacionAusente'
+  }
+}
+
+/**
+ * No hay ninguna evaluación de entidad contra la cual declarar coherencia.
+ *
+ * El Art. 39 Bis fr. I, párrafo final, pide coherencia con los RESULTADOS de
+ * la metodología del Cap. II Quáter: sin una evaluación de entidad corrida no
+ * hay resultado que citar, y la base lo respalda con un trigger (nivel 2). El
+ * mensaje dice qué hacer, no solo qué faltó.
+ */
+export class SinEvaluacionDeEntidad extends Error {
+  constructor() {
+    super(
+      'Este obligado todavía no tiene ninguna evaluación de entidad. El Art. 39 Bis fr. I pide ' +
+        'coherencia con los resultados de la metodología del Capítulo II Quáter: primero hay que ' +
+        'correr esa evaluación (Configuración → Riesgo de la entidad) y luego declarar la ' +
+        'coherencia de la sesión.',
+    )
+    this.name = 'SinEvaluacionDeEntidad'
   }
 }
 
@@ -92,6 +114,10 @@ export interface SesionGuardada extends SesionImpartida {
   readonly instructorAcreditaHash: string | null
   readonly instructorAcreditaArchivo: string | null
   readonly materialHash: string | null
+  /** A qué papeles del ¶1 se dirigió (Art. 39 Bis fr. I, línea 433: «adecuarse a las responsabilidades»). */
+  readonly dirigidaA: readonly RolCapacitacion[]
+  /** ¿Sus temas están declarados coherentes con los resultados de la metodología vigente? */
+  readonly coherencia: CoherenciaDeSesion
 }
 
 /**
@@ -118,6 +144,8 @@ export interface EstadoDeCapacitacion {
   /** ¶3 del Art. 39 Bis 1: obligación distinta de la anual. */
   readonly ingresosPendientes: readonly IngresoSinCapacitar[]
   readonly plazos: PlazosDeCapacitacion
+  /** Contra qué evaluación de entidad se declararía coherencia hoy. `null` = todavía ninguna. */
+  readonly evaluacionVigente: { readonly id: string; readonly evaluadoEn: string } | null
 }
 
 interface FilaPersona {
@@ -128,11 +156,17 @@ interface FilaPersona {
   baja_del_area: string | null
 }
 
+interface FilaDeclaracion {
+  evaluacionEntidadId: string
+  declaradaEn: string
+}
+
 interface FilaSesion {
   id: string
   titulo: string
   fecha: string
   temas: TemaCapacitacion[]
+  dirigida_a: RolCapacitacion[]
   instructor_nombre: string
   instructor_anios_experiencia: number
   instructor_acredita_hash: string | null
@@ -140,6 +174,7 @@ interface FilaSesion {
   material_hash: string | null
   asistentes: string[]
   con_constancia: string[]
+  declaraciones: FilaDeclaracion[]
 }
 
 export async function estadoDeCapacitacion(
@@ -172,13 +207,31 @@ export async function estadoDeCapacitacion(
   )
   const programaId = (prog.rows[0] as { id: string } | undefined)?.id ?? null
 
-  // Las asistencias y las constancias se agregan en la misma consulta: quien
-  // tiene constancia es un subconjunto de quien asistió, y traerlos por
-  // separado abre la puerta a que las dos listas se desincronicen entre sí.
+  // La evaluación de entidad más reciente del obligado: es contra la que
+  // `declararCoherencia` ancla, y contra la que aquí se compara cada sesión.
+  // Una sola consulta, fuera del bucle de sesiones — igual que la plantilla.
+  const eval_ = await db.query(
+    `select id::text, evaluado_en::text as evaluado_en
+       from evaluaciones_entidad
+      where tenant_id = $1
+      order by secuencia desc
+      limit 1`,
+    [p.sesion.tenantId],
+  )
+  const evalVigente = eval_.rows[0] as { id: string; evaluado_en: string } | undefined
+  const evaluacionVigente = evalVigente === undefined
+    ? null
+    : { id: evalVigente.id, evaluadoEn: evalVigente.evaluado_en }
+
+  // Las asistencias, las constancias y las declaraciones de coherencia se
+  // agregan en la misma consulta: son subconjuntos de la sesión, y traerlos
+  // por separado abre la puerta a que se desincronicen entre sí (misma razón
+  // que ya juntaba asistentes y con_constancia).
   const ses = programaId === null
     ? { rows: [] }
     : await db.query(
         `select s.id::text, s.titulo, s.fecha::text, s.temas::text[] as temas,
+                s.dirigida_a::text[] as dirigida_a,
                 s.instructor_nombre, s.instructor_anios_experiencia,
                 s.instructor_acredita_hash, s.instructor_acredita_archivo, s.material_hash,
                 coalesce((select array_agg(a.persona_id::text)
@@ -187,7 +240,13 @@ export async function estadoDeCapacitacion(
                 coalesce((select array_agg(a.persona_id::text)
                             from asistencias_capacitacion a
                            where a.sesion_id = s.id and a.constancia_folio is not null),
-                         '{}'::text[]) as con_constancia
+                         '{}'::text[]) as con_constancia,
+                coalesce(
+                  (select jsonb_agg(jsonb_build_object(
+                             'evaluacionEntidadId', dc.evaluacion_entidad_id::text,
+                             'declaradaEn', dc.created_at::text))
+                     from declaraciones_coherencia dc where dc.sesion_id = s.id),
+                  '[]'::jsonb) as declaraciones
            from sesiones_capacitacion s
           where s.tenant_id = $1 and s.programa_id = $2
           order by s.fecha`,
@@ -199,6 +258,7 @@ export async function estadoDeCapacitacion(
     titulo: f.titulo,
     fecha: f.fecha,
     temas: f.temas,
+    dirigidaA: f.dirigida_a,
     instructorNombre: f.instructor_nombre,
     instructorAniosExperiencia: f.instructor_anios_experiencia,
     // «contar Y acreditar»: el documento es la segunda mitad de la fr. III.
@@ -208,6 +268,10 @@ export async function estadoDeCapacitacion(
     instructorAcreditaHash: f.instructor_acredita_hash,
     instructorAcreditaArchivo: f.instructor_acredita_archivo,
     materialHash: f.material_hash,
+    coherencia: coherenciaDeSesion({
+      declaraciones: f.declaraciones,
+      evaluacionVigenteId: evaluacionVigente?.id ?? null,
+    }),
   }))
 
   const pen = programaId === null
@@ -249,6 +313,7 @@ export async function estadoDeCapacitacion(
     }),
     ingresosPendientes: ingresosSinCapacitar({ personas: plantilla, sesiones, hoy: p.hoy }),
     plazos,
+    evaluacionVigente,
   }
 }
 
@@ -318,6 +383,8 @@ export interface DatosSesion {
   readonly titulo: string
   readonly fecha: string
   readonly temas: readonly TemaCapacitacion[]
+  /** A qué papeles del ¶1 se dirigió (Art. 39 Bis fr. I, línea 433: «adecuarse a las responsabilidades»). */
+  readonly dirigidaA: readonly RolCapacitacion[]
   readonly instructorNombre: string
   readonly instructorAniosExperiencia: number
   readonly acreditacion?:
@@ -354,6 +421,14 @@ export async function registrarSesion(
     }
     if (p.datos.instructorNombre.trim() === '') {
       problemas.push('Falta quién impartió la sesión (Art. 39 Bis fr. III).')
+    }
+    if (p.datos.dirigidaA.length === 0) {
+      problemas.push(
+        'La sesión no dice a qué papeles se dirigió. El Art. 39 Bis fr. I, línea 433, exige ' +
+          '«adecuarse a las responsabilidades de los miembros de sus respectivos consejos de ' +
+          'administración, administrador único, directivos, funcionarios y, en todo caso de sus ' +
+          'empleados»: sin destinatario declarado no hay con qué responsabilidad adecuarse.',
+      )
     }
 
     const plazos = await plazosDeCapacitacion(db, p.hoy)
@@ -398,12 +473,15 @@ export async function registrarSesion(
     const programaId = (prog.rows[0] as { id: string }).id
 
     const a = p.datos.acreditacion
+    // Deduplicar: declarar el mismo papel dos veces no dirige la sesión a más
+    // gente, y dejarlo pasar produciría un array con relleno que no dice nada.
+    const dirigidaA = [...new Set(p.datos.dirigidaA)]
     const { rows } = await db.query(
       `insert into sesiones_capacitacion
-         (tenant_id, programa_id, titulo, fecha, temas, instructor_nombre,
+         (tenant_id, programa_id, titulo, fecha, temas, dirigida_a, instructor_nombre,
           instructor_anios_experiencia, instructor_acredita_hash,
           instructor_acredita_archivo, registrado_por)
-       values ($1,$2,$3,$4::date,$5::tema_capacitacion[],$6,$7,$8,$9,$10)
+       values ($1,$2,$3,$4::date,$5::tema_capacitacion[],$6::rol_capacitacion[],$7,$8,$9,$10,$11)
        returning id::text`,
       [
         p.sesion.tenantId,
@@ -411,6 +489,7 @@ export async function registrarSesion(
         p.datos.titulo.trim(),
         p.datos.fecha,
         `{${p.datos.temas.join(',')}}`,
+        `{${dirigidaA.join(',')}}`,
         p.datos.instructorNombre.trim(),
         p.datos.instructorAniosExperiencia,
         a?.hash ?? null,
@@ -486,6 +565,78 @@ export async function evaluarYAcreditar(
       throw new DatoDeCapacitacionInvalido([
         'Esa asistencia no existe en este obligado: no hay a quién evaluar.',
       ])
+    }
+  })
+}
+
+/**
+ * Declara que los temas de una sesión son coherentes con los resultados de
+ * la evaluación de entidad más reciente (Art. 39 Bis fr. I, línea 433).
+ *
+ * ────────────────────────────────────────────────────────────────────────
+ * CONTRA QUÉ SE ANCLA, Y POR QUÉ AQUÍ Y NO EN LA BASE SOLAMENTE
+ * ────────────────────────────────────────────────────────────────────────
+ * Esta función elige sola la evaluación vigente (`order by secuencia desc
+ * limit 1`, el mismo criterio que `estadoDeLaEntidad`): es el nivel 1 de la
+ * regla dura 6 — que el error sea imposible de expresar, no que se detecte
+ * después. El trigger `declaracion_contra_la_ultima_evaluacion` de la base es
+ * el nivel 2, por si algún día algo se salta esta función.
+ *
+ * NO llama a ninguna otra función de persistencia: no hay riesgo de que
+ * `enTransaccionDeSesion` se anide (ADR-41).
+ */
+export async function declararCoherencia(
+  db: EjecutorTransaccional,
+  p: { sesion: ContextoSesion; sesionId: string },
+): Promise<{ declaracionId: string; evaluacionEntidadId: string }> {
+  return enTransaccionDeSesion(db, p.sesion, async () => {
+    const ev = await db.query(
+      `select id::text from evaluaciones_entidad
+        where tenant_id = $1
+        order by secuencia desc
+        limit 1`,
+      [p.sesion.tenantId],
+    )
+    const evaluacion = ev.rows[0] as { id: string } | undefined
+    if (evaluacion === undefined) throw new SinEvaluacionDeEntidad()
+
+    try {
+      const { rows } = await db.query(
+        `insert into declaraciones_coherencia
+           (tenant_id, sesion_id, evaluacion_entidad_id, declarada_por)
+         values ($1,$2,$3,$4)
+         returning id::text`,
+        [p.sesion.tenantId, p.sesionId, evaluacion.id, p.sesion.usuarioId],
+      )
+      const declaracionId = (rows[0] as { id: string } | undefined)?.id
+      // `returning` sin fila: mismo modo de falla que `evaluarYAcreditar` con
+      // un id ajeno — RLS filtra en vez de fallar, y sin este chequeo la
+      // pantalla diría «declarada» sobre una sesión que en realidad no se tocó.
+      if (declaracionId === undefined) {
+        throw new DatoDeCapacitacionInvalido([
+          'La declaración de coherencia no se registró: no hubo confirmación de la base.',
+        ])
+      }
+      return { declaracionId, evaluacionEntidadId: evaluacion.id }
+    } catch (e) {
+      if (e instanceof DatoDeCapacitacionInvalido) throw e
+      // Las guardas de la base, dichas en palabras del artículo. Dejarlas
+      // subir como `unique_violation` o `foreign_key_violation` obligaría al
+      // usuario a adivinar qué constraint tiene ese nombre.
+      const bruto = e instanceof Error ? e.message : String(e)
+      if (/una_declaracion_por_sesion_y_evaluacion/.test(bruto)) {
+        throw new DatoDeCapacitacionInvalido([
+          'Esta sesión ya tiene una declaración de coherencia contra la evaluación de entidad ' +
+            'vigente. Corregirla no es un UPDATE: si algo cambió, se declara de nuevo cuando ' +
+            'llegue una evaluación de entidad nueva.',
+        ])
+      }
+      if (/declaraciones_coherencia_tenant_id_sesion_id_fkey/.test(bruto)) {
+        throw new DatoDeCapacitacionInvalido([
+          'Esa sesión no existe en este obligado: no hay a qué declararle coherencia.',
+        ])
+      }
+      throw e
     }
   })
 }

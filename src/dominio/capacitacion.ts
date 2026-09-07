@@ -97,6 +97,96 @@ export interface SesionImpartida {
   readonly conConstancia: readonly string[]
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// La coherencia temas↔metodología (Art. 39 Bis fr. I, párrafo final)
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * El fundamento que la UI cita junto al estado de coherencia.
+ *
+ * Sigue el estilo de `FUNDAMENTO_DEL_TEMA`: una cadena corta y estable, para
+ * que la pantalla no tenga que repetir el artículo entero cada vez.
+ */
+export const FUNDAMENTO_DE_LA_COHERENCIA = 'Art. 39 Bis fr. I, párrafo final'
+
+/**
+ * ¿La sesión tiene una declaración de coherencia, y sigue mirando a la
+ * evaluación de entidad vigente?
+ *
+ * ────────────────────────────────────────────────────────────────────────
+ * POR QUÉ TRES ESTADOS Y NO UN BOOLEANO
+ * ────────────────────────────────────────────────────────────────────────
+ * El párrafo final del Art. 39 Bis fr. I (línea 433) pide que los temas sean
+ * «coherentes con los RESULTADOS de la implementación de la metodología». La
+ * metodología no es estática: cada vez que se corre una evaluación de entidad
+ * nueva (Cap. II Quáter), hay resultados nuevos contra los que medir. Una
+ * declaración vieja no se vuelve FALSA cuando eso pasa —sigue siendo cierto
+ * que, en su momento, alguien la declaró coherente con lo que existía
+ * entonces—; se vuelve una declaración que habla de OTRA evaluación. Decirlo
+ * como «sobre otra evaluación» es un hecho; decir «vencida» inventaría un
+ * plazo que el artículo no fija (mismo criterio del ADR-25 con el
+ * cuestionario del Art. 23 Ter 3).
+ *
+ * `sin_declarar` y `sobre_otra_evaluacion` son ambos "no cubierto" para la
+ * cobertura del periodo, pero la pantalla necesita distinguirlos: al segundo
+ * ya se le declaró coherencia alguna vez, solo que contra un resultado que ya
+ * no es el último.
+ */
+export type CoherenciaDeSesion =
+  | { readonly estado: 'sin_declarar' }
+  | { readonly estado: 'declarada'; readonly evaluacionEntidadId: string; readonly declaradaEn: string }
+  | {
+      readonly estado: 'sobre_otra_evaluacion'
+      readonly evaluacionEntidadId: string
+      readonly declaradaEn: string
+    }
+
+/**
+ * Resuelve la coherencia de una sesión a partir de sus declaraciones y de
+ * cuál es la evaluación de entidad vigente del obligado.
+ *
+ * Solo mira la declaración MÁS RECIENTE (por `declaradaEn`): re-declarar es
+ * una fila nueva, nunca una corrección de la anterior (ADR-34), así que la
+ * pregunta «¿esta sesión está cubierta?» solo la contesta la última palabra
+ * que alguien dijo sobre ella.
+ *
+ * Si hay declaraciones pero no hay evaluación vigente, es un dato que no
+ * cuadra: las evaluaciones de entidad son append-only (`evaluaciones_entidad`
+ * nunca se vacía), así que una declaración solo puede existir si en algún
+ * momento hubo, al menos, la evaluación contra la que se ancló. La regla dura
+ * 6 manda morir en vez de adivinar cuál «hueco» mostrar.
+ */
+export function coherenciaDeSesion(args: {
+  readonly declaraciones: readonly { evaluacionEntidadId: string; declaradaEn: string }[]
+  readonly evaluacionVigenteId: string | null
+}): CoherenciaDeSesion {
+  const { declaraciones, evaluacionVigenteId } = args
+  if (declaraciones.length === 0) return { estado: 'sin_declarar' }
+
+  const masReciente = [...declaraciones].sort((a, b) =>
+    a.declaradaEn < b.declaradaEn ? 1 : a.declaradaEn > b.declaradaEn ? -1 : 0,
+  )[0]
+  // El sort no puede dejar `masReciente` en `undefined`: ya se comprobó arriba
+  // que `declaraciones.length > 0`.
+  if (masReciente === undefined) throw new Error('coherenciaDeSesion: estado inalcanzable')
+
+  if (evaluacionVigenteId === null) {
+    throw new Error(
+      'Hay una declaración de coherencia sin ninguna evaluación de entidad vigente. Las ' +
+        'evaluaciones de entidad son append-only: no pueden desaparecer. Es un dato que no ' +
+        'cuadra, y no se calcula en silencio sobre él (regla dura 6).',
+    )
+  }
+
+  return masReciente.evaluacionEntidadId === evaluacionVigenteId
+    ? { estado: 'declarada', evaluacionEntidadId: masReciente.evaluacionEntidadId, declaradaEn: masReciente.declaradaEn }
+    : {
+        estado: 'sobre_otra_evaluacion',
+        evaluacionEntidadId: masReciente.evaluacionEntidadId,
+        declaradaEn: masReciente.declaradaEn,
+      }
+}
+
 /**
  * Quién debía capacitarse en el periodo.
  *

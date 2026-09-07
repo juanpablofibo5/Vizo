@@ -123,7 +123,7 @@ Art. 39 Bis: cursos **al menos una vez al año** para consejo, administrador, di
 
 **El Art. 39 Bis 2 quedó construido el 3-sep-2026 (ADR-34).** De sus tres exigencias, VIZO acredita la única que se puede acreditar con un dato: la declaración firmada del ¶2, con sus dos fracciones y su huella. Los procedimientos del ¶1 y las medidas del ¶3 son del obligado y van al Manual. Se guarda tal como se firmó —incluso cuando una manifestación viene en falso, porque eso es evidencia y no un error de captura— y el Transitorio Sexto se respeta con una fecha de contratación nueva, distinta de la de ingreso al área; sin ella la respuesta no es «no aplica», es que no se sabe.
 
-**Lo que sigue sin cubrir del capítulo:** la coherencia entre los temas impartidos y los resultados de la metodología del Cap. II Quáter, que hoy no se contrasta.
+**La coherencia temas↔metodología quedó construida el 7-sep-2026 (ADR-42) — y con ella el capítulo no tiene huecos declarados.** VIZO no juzga la coherencia —es un juicio sobre contenido, la misma frontera que el capacitador de la fr. III—: registra los dos hechos que el párrafo final de la fr. I sí deja registrar. Cada sesión declara **a qué papeles se dirigió** (`dirigida_a`, los nueve del ¶1), y un humano **declara la coherencia** de sus temas contra la evaluación de entidad vigente del Cap. II Quáter, con fecha y firma, en una fila append-only. Si llega una evaluación nueva, la declaración no se invalida: la sesión dice «sobre otra evaluación» y se declara de nuevo contra la vigente — el criterio del ADR-25, otra vez.
 
 ### Cap. XIII · Mecanismos automatizados — **1 jun 2027**
 Art. 41, **seis** funciones mínimas. Es una especificación de producto ya escrita:

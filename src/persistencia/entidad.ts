@@ -4,6 +4,7 @@ import { enTransaccionDeSesion, exigirSesionActiva, type ContextoSesion } from '
 import { DatoDeRiesgoInvalido, PlazoDeRiesgoAusente } from './riesgo'
 import type { GradoConfigurado } from '../dominio/riesgo'
 import {
+  auditoriaQueCorresponde,
   evaluarEntidad,
   type ConfiguracionEntidad,
   type MitiganteDeclarado,
@@ -167,7 +168,7 @@ const aEvaluacionEntidad = (f: FilaEvaluacionEntidad): EvaluacionDeEntidad => ({
   gradoClave: f.grado_clave,
   gradoNombre: f.grado_nombre,
   esAlto: f.es_alto,
-  auditoria: f.es_alto ? 'externa_obligatoria' : 'interna_permitida',
+  auditoria: auditoriaQueCorresponde(f.es_alto),
   inherente: Number(f.inherente),
   mitigacion: Number(f.mitigacion),
   residual: Number(f.residual),

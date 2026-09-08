@@ -44,6 +44,7 @@ export type Icono =
   | 'evidencia'
   | 'calendario'
   | 'capacitacion'
+  | 'auditoria'
   | 'configuracion'
 
 export interface SubEnlace {
@@ -128,6 +129,21 @@ export const NAVEGACION: Grupo[] = [
           { ruta: '/capacitacion', ancla: 'sesiones', nombre: 'Sesiones del periodo' },
           { ruta: '/capacitacion', ancla: 'plantilla', nombre: 'Plantilla' },
           { ruta: '/capacitacion', ancla: 'seleccion', nombre: 'Selección de personal' },
+        ],
+      },
+      // El periodo de revisión, la ruta (interna/externa) y el auditor del
+      // Cap. XIV. Va después de Capacitación y no antes: la ruta depende del
+      // riesgo de la entidad, y un auditor interno necesita al menos una
+      // acreditación de capacitación del Cap. XII (Art. 44).
+      {
+        estado: 'lista',
+        ruta: '/auditoria',
+        nombre: 'Auditoría',
+        icono: 'auditoria',
+        sub: [
+          { ruta: '/auditoria', ancla: 'periodo', nombre: 'El periodo' },
+          { ruta: '/auditoria', ancla: 'auditor', nombre: 'El auditor' },
+          { ruta: '/auditoria', ancla: 'historia', nombre: 'Historia de sustituciones' },
         ],
       },
       { estado: 'lista', ruta: '/mer', nombre: 'MER', icono: 'mer' },

@@ -106,6 +106,18 @@ const TRAZOS: Record<Icono, React.ReactNode> = {
       <path d="M6.2 16.4a3 3 0 0 1 5.6 0" />
     </>
   ),
+  // Un documento revisado con lupa: la auditoría examina lo ya registrado,
+  // no genera nada nuevo.
+  auditoria: (
+    <>
+      <path d="M4 2.6h7.4L15 6.2v3.7" />
+      <path d="M11.4 2.6v3.9h3.6" />
+      <path d="M6 9.5h4.2" />
+      <path d="M6 12h2.4" />
+      <circle cx="13.2" cy="13.2" r="2.6" />
+      <path d="M15.1 15.1 16.6 16.6" />
+    </>
+  ),
   // Deslizadores: lo que se ajusta una vez y se deja.
   configuracion: (
     <>

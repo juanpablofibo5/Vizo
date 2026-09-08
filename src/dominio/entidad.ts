@@ -45,6 +45,31 @@ import {
 /** Los métodos de entidad que este motor sabe ejecutar. */
 export type MetodoEntidad = 'residual_por_elemento'
 
+/**
+ * Qué artículo del Cap. XIV le toca al obligado según su propio grado.
+ *
+ * Vive aquí, en una sola función, porque es una REGLA REGULATORIA y la regla
+ * dura 1 no quiere reglas repartidas: el Art. 44 permite el dictamen de
+ * auditoría interna «cuando el Riesgo […] sea evaluado como bajo o medio», y
+ * el Art. 45 exige persona auditora externa independiente «cuando lo elija
+ * quien realice la Actividad Vulnerable o su Riesgo sea evaluado como alto».
+ *
+ * Ojo con la asimetría, que es del texto y no de la implementación: el grado
+ * alto OBLIGA a externa, pero el bajo o medio solo PERMITE la interna — el
+ * obligado siempre puede elegir externa. Por eso el nombre del valor es
+ * `interna_permitida` y no `interna_obligatoria`.
+ *
+ * Llegó a estar escrita tres veces (aquí, en la persistencia de entidad y en
+ * la de auditoría). Hoy las tres coincidían; el día que una cambiara, las
+ * otras seguirían calculando en silencio — el modo de falla de la regla dura
+ * 6. Quien necesite la ruta, la pide aquí.
+ */
+export function auditoriaQueCorresponde(
+  esAlto: boolean,
+): 'externa_obligatoria' | 'interna_permitida' {
+  return esAlto ? 'externa_obligatoria' : 'interna_permitida'
+}
+
 export interface NivelDeclarado {
   readonly id: string
   readonly clave: string
@@ -111,8 +136,7 @@ export type ResultadoEntidad =
       readonly esAlto: boolean
       /**
        * La consecuencia de los Arts. 44/45, ya resuelta: la pantalla la pinta,
-       * no la deriva. `externa_obligatoria` cuando el grado es alto;
-       * `interna_permitida` cuando no — la externa siempre puede elegirse.
+       * no la deriva. La regla vive en `auditoriaQueCorresponde`.
        */
       readonly auditoria: 'externa_obligatoria' | 'interna_permitida'
       readonly porElemento: readonly ElementoEvaluado[]
@@ -243,7 +267,7 @@ export function evaluarEntidad(configuracion: ConfiguracionEntidad): ResultadoEn
     gradoId: grado.id,
     gradoClave: grado.clave,
     esAlto: grado.esAlto,
-    auditoria: grado.esAlto ? 'externa_obligatoria' : 'interna_permitida',
+    auditoria: auditoriaQueCorresponde(grado.esAlto),
     porElemento,
     corteAplicado: grado.puntajeMinimo,
   }

@@ -10,6 +10,7 @@ import {
 } from '../../src/dominio/capacitacion'
 import {
   accionAgregarAPlantilla,
+  accionDeclararCoherencia,
   accionRecabarDeclaracion,
   accionRegistrarContratacion,
   accionDarDeBaja,
@@ -203,6 +204,29 @@ export function FormularioSesion({
               <span>
                 {NOMBRE_DEL_TEMA[t]} <span className="tenue">· {FUNDAMENTO_DEL_TEMA[t]}</span>
               </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
+        <legend className="pequeno" style={{ padding: 0, marginBottom: '.5rem' }}>
+          A quién se dirigió{' '}
+          <span className="pista">
+            adecuarse a las responsabilidades de cada papel, Art. 39 Bis fr. I párrafo final
+          </span>
+        </legend>
+        <div style={{ display: 'grid', gap: '.45rem' }}>
+          {ROLES.map((r) => (
+            <label key={r} className="pequeno" style={{ margin: 0, display: 'flex', gap: '.5rem' }}>
+              <input
+                type="checkbox"
+                name="dirigidaA"
+                value={r}
+                defaultChecked={marcado('dirigidaA', r)}
+                disabled={!puede}
+              />
+              <span>{NOMBRE_DEL_ROL[r]}</span>
             </label>
           ))}
         </div>
@@ -412,6 +436,41 @@ export function FormularioBaja({
       </label>
       <button type="submit" className="secundario pequeno" disabled={!puede || guardando}>
         {guardando ? 'Registrando…' : 'Registrar la baja'}
+      </button>
+    </form>
+  )
+}
+
+/**
+ * Declara coherencia temas↔metodología para una sesión (Art. 39 Bis fr. I,
+ * párrafo final).
+ *
+ * A diferencia de `FormularioBaja`/`FormularioContratacion`, no hay un dato
+ * que capturar —la persistencia elige sola contra qué evaluación ancla—, así
+ * que no hace falta el paso intermedio de "abrir" el formulario: el botón
+ * envía directo. `sesionId` viaja oculto, igual que `personaId` en los otros.
+ */
+export function FormularioDeclararCoherencia({
+  sesionId,
+  etiqueta,
+  puede,
+}: {
+  sesionId: string
+  etiqueta: string
+  puede: boolean
+}) {
+  const [estado, accion, guardando] = useActionState<Resultado, FormData>(
+    accionDeclararCoherencia,
+    INICIAL,
+  )
+  const { clave } = useRepintado(estado)
+
+  return (
+    <form key={clave} action={accion} style={{ display: 'grid', gap: '.3rem' }}>
+      <Mensaje estado={estado} />
+      <input type="hidden" name="sesionId" value={sesionId} />
+      <button type="submit" className="secundario pequeno" disabled={!puede || guardando}>
+        {guardando ? 'Declarando…' : etiqueta}
       </button>
     </form>
   )

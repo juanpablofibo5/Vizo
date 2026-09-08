@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   coberturaDelPeriodo,
+  coherenciaDeSesion,
   ingresosSinCapacitar,
   plantillaDelPeriodo,
   type PersonaEnPlantilla,
@@ -214,5 +215,57 @@ describe('el ¶3: capacitación previa o simultánea al ingreso', () => {
       sesiones: [], hoy: '2027-03-03',
     })
     expect(r).toEqual([])
+  })
+})
+
+describe('la coherencia temas↔metodología (Art. 39 Bis fr. I, párrafo final)', () => {
+  it('sin ninguna declaración, sin_declarar', () => {
+    expect(coherenciaDeSesion({ declaraciones: [], evaluacionVigenteId: 'e1' })).toEqual({
+      estado: 'sin_declarar',
+    })
+    // Ni siquiera hay evaluación vigente: sigue siendo sin_declarar, no un error.
+    expect(coherenciaDeSesion({ declaraciones: [], evaluacionVigenteId: null })).toEqual({
+      estado: 'sin_declarar',
+    })
+  })
+
+  it('declarada contra la evaluación vigente', () => {
+    const r = coherenciaDeSesion({
+      declaraciones: [{ evaluacionEntidadId: 'e1', declaradaEn: '2027-03-11T10:00:00Z' }],
+      evaluacionVigenteId: 'e1',
+    })
+    expect(r).toEqual({ estado: 'declarada', evaluacionEntidadId: 'e1', declaradaEn: '2027-03-11T10:00:00Z' })
+  })
+
+  it('ENVEJECE cuando llega una evaluación nueva: sobre_otra_evaluacion, no inválida', () => {
+    // La declaración original no se toca; lo que cambió fue cuál evaluación
+    // es la vigente. Mismo criterio del ADR-25: es un hecho, no un error.
+    const r = coherenciaDeSesion({
+      declaraciones: [{ evaluacionEntidadId: 'e1', declaradaEn: '2027-03-11T10:00:00Z' }],
+      evaluacionVigenteId: 'e2',
+    })
+    expect(r).toEqual({ estado: 'sobre_otra_evaluacion', evaluacionEntidadId: 'e1', declaradaEn: '2027-03-11T10:00:00Z' })
+  })
+
+  it('con varias declaraciones, gana la MÁS RECIENTE por declaradaEn, sin importar el orden del array', () => {
+    const r = coherenciaDeSesion({
+      declaraciones: [
+        { evaluacionEntidadId: 'e2', declaradaEn: '2027-06-01T00:00:00Z' },
+        { evaluacionEntidadId: 'e1', declaradaEn: '2027-03-11T10:00:00Z' },
+      ],
+      evaluacionVigenteId: 'e2',
+    })
+    expect(r).toEqual({ estado: 'declarada', evaluacionEntidadId: 'e2', declaradaEn: '2027-06-01T00:00:00Z' })
+  })
+
+  it('con declaraciones pero SIN evaluación vigente, lanza: es un dato que no cuadra', () => {
+    // Las evaluaciones de entidad son append-only: no pueden desaparecer. Si
+    // hay una declaración, tuvo que haber, al menos, la evaluación que citó.
+    expect(() =>
+      coherenciaDeSesion({
+        declaraciones: [{ evaluacionEntidadId: 'e1', declaradaEn: '2027-03-11T10:00:00Z' }],
+        evaluacionVigenteId: null,
+      }),
+    ).toThrow(/no cuadra/)
   })
 })

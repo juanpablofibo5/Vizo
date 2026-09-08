@@ -722,6 +722,21 @@ El supuesto (1) depende de una lista que el propio ¶3 pone a cargo de la UIF �
 
 **Fijado con:** las 7 aserciones de las migraciones `20260906150000/150100`, `tests/persistencia/eventos-estructurales.test.ts` (6 de punta a punta), 3 de riel, y el ciclo completo verificado en navegador: identificado → evento → «Estructura cambió» → reevaluación → atendido.
 
+## ADR-42 · La coherencia temas↔metodología: dos hechos firmados, cero juicio — 2026-09-07
+
+**Contexto.** El párrafo final de la fr. I del Art. 39 Bis (línea 433 del DOF) pide dos cosas de los temas de capacitación: ser «coherentes con los resultados de la implementación de la metodología» del Cap. II Quáter y «adecuarse a las responsabilidades» de los nueve papeles del ¶1. Ninguna de las dos la puede juzgar un software —son juicios sobre contenido, la misma frontera que el capacitador de la fr. III—. Era el último hueco declarado del capítulo en el ROADMAP.
+
+**Decisión.** Cuatro piezas:
+
+1. **La sesión declara a quién se dirigió** (`dirigida_a`, los nueve papeles del enum que ya existía), NOT NULL sin default. La migración **asevera que la tabla está vacía** antes de agregar la columna en vez de asumirlo: ninguna fila puede existir antes del primer periodo (2027, Transitorio Séptimo), y si existiera sería un dato que no cuadra — la migración muere (regla dura 6), no le inventa un destinatario de relleno.
+2. **La coherencia es una fila firmada, no un flag.** `declaraciones_coherencia`: sesión + evaluación de entidad + quién + cuándo, append-only. La persistencia ancla **sola** a la evaluación más reciente (nivel 1: el error no se puede expresar) y un trigger lo respalda en la base (nivel 2). `evaluaciones_entidad` ganó su `unique(tenant_id, id)` para que la FK compuesta fuera posible.
+3. **Envejece, no se invalida.** Evaluación de entidad nueva → la sesión dice «sobre otra evaluación» — el criterio del ADR-25: se dice sobre qué se hizo, nunca «vencida», porque el artículo no da plazo. Corregir = declarar de nuevo contra la vigente (ADR-34), y la unicidad es por par (sesión, evaluación): la re-declaración legítima pasa, el doble clic del formulario no.
+4. **La granularidad es la sesión, no el programa.** Los temas viven en la sesión; una declaración por programa envejecería con cada sesión nueva sin decir cuál quedó fuera. Y declarar no es requisito para registrar la sesión: la evidencia del 39 Bis 1 se conserva aunque la declaración falte — el faltante se dice en la cobertura, el hecho no se bloquea.
+
+Sin evaluación de entidad no hay contra qué declarar: error accionable que manda correr primero la del Cap. II Quáter, nunca un default.
+
+**Fijado con:** las 10 aserciones de la migración `20260907120000` (patrón GUARD: siembra, verifica y se revierte sola), 13 pruebas nuevas (5 de dominio puro, 8 de persistencia contra base real), siete sabotajes confirmados en rojo y restaurados —incluido tirar cada trigger y constraint en vivo—, y las seis guardas estructurales en cero.
+
 ## POR CONFIRMAR con el especialista PLD (bloquea afirmaciones, no el build)
 
 > **Los números son identificadores estables, no un orden.** Se citan desde el código y desde

@@ -5,8 +5,10 @@ import { conBase } from '../../src/supabase/conexion'
 import {
   DatoDeCapacitacionInvalido,
   PlazoDeCapacitacionAusente,
+  SinEvaluacionDeEntidad,
   agregarAPlantilla,
   darDeBajaDelArea,
+  declararCoherencia,
   evaluarYAcreditar,
   registrarSesion,
 } from '../../src/persistencia/capacitacion'
@@ -61,10 +63,18 @@ const POR_RESTRICCION: Record<string, string> = {
     'No se expide constancia sin evaluación satisfactoria (Art. 39 Bis 1 ¶2).',
   un_programa_por_anio: 'Ya existe un programa de ese periodo.',
   una_asistencia_por_persona_y_sesion: 'Esa persona ya está en la lista de asistencia.',
+  sesion_declara_a_quien_se_dirige:
+    'La sesión no dice a qué papeles se dirigió (Art. 39 Bis fr. I, párrafo final).',
+  una_declaracion_por_sesion_y_evaluacion:
+    'Esta sesión ya tiene declaración de coherencia contra la evaluación vigente.',
 }
 
 function traducir(e: unknown, valores: Record<string, string | string[]>): Resultado {
-  if (e instanceof DatoDeCapacitacionInvalido || e instanceof PlazoDeCapacitacionAusente) {
+  if (
+    e instanceof DatoDeCapacitacionInvalido ||
+    e instanceof PlazoDeCapacitacionAusente ||
+    e instanceof SinEvaluacionDeEntidad
+  ) {
     return { ok: false, mensaje: e.message, valores }
   }
 
@@ -124,6 +134,7 @@ export async function accionRegistrarSesion(
           titulo: String(datos.get('titulo') ?? ''),
           fecha: String(datos.get('fecha') ?? ''),
           temas: datos.getAll('temas').map(String) as TemaCapacitacion[],
+          dirigidaA: datos.getAll('dirigidaA').map(String) as RolCapacitacion[],
           instructorNombre: String(datos.get('instructorNombre') ?? ''),
           // Un campo vacío es NaN y no 0: `Number('')` da cero, y eso diría
           // «declaró cero años» donde lo cierto es que no declaró nada.
@@ -136,7 +147,7 @@ export async function accionRegistrarSesion(
     refrescar()
     return { ok: true, mensaje: 'Sesión registrada con su lista de asistencia.' }
   } catch (e) {
-    return traducir(e, capturado(datos, ['temas', 'asistentes']))
+    return traducir(e, capturado(datos, ['temas', 'dirigidaA', 'asistentes']))
   }
 }
 
@@ -183,6 +194,37 @@ export async function accionDarDeBaja(_previo: Resultado, datos: FormData): Prom
       mensaje:
         'Baja registrada. Sigue contando en los periodos en los que estuvo en su área: la baja ' +
         'dice desde cuándo dejó de contar, no borra lo anterior.',
+    }
+  } catch (e) {
+    return traducir(e, capturado(datos))
+  }
+}
+
+/**
+ * Declara que los temas de una sesión son coherentes con los resultados de la
+ * evaluación de entidad vigente (Art. 39 Bis fr. I, párrafo final).
+ *
+ * La función de persistencia elige sola contra qué evaluación ancla —no se le
+ * pasa un id—, así que aquí no hay nada que decidir: solo traducir el error si
+ * todavía no hay ninguna evaluación de entidad corrida.
+ */
+export async function accionDeclararCoherencia(
+  _previo: Resultado,
+  datos: FormData,
+): Promise<Resultado> {
+  try {
+    await conBase(({ db, sesion }) =>
+      declararCoherencia(db, {
+        sesion,
+        sesionId: String(datos.get('sesionId') ?? ''),
+      }),
+    )
+    refrescar()
+    return {
+      ok: true,
+      mensaje:
+        'Coherencia declarada contra la evaluación de entidad vigente. Si llega una evaluación ' +
+        'nueva, esta sesión se mostrará "sobre otra evaluación" y se podrá volver a declarar.',
     }
   } catch (e) {
     return traducir(e, capturado(datos))
